@@ -30,9 +30,9 @@ def main(args_str):
 
     data.to_csv(args.full)
     data_size = len(data.index)
-    test_size = int(args.test_size * data_size)
-    data.iloc[test_size:].to_csv(args.test)
-    data.iloc[:test_size].to_csv(args.train)
+    train_size = int((1 - args.test_size) * data_size)
+    data.iloc[train_size:].to_csv(args.test)
+    data.iloc[:train_size].to_csv(args.train)
 
 
 if __name__ == '__main__':
