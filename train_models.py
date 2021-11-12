@@ -17,14 +17,27 @@ from data_processing.util import get_docs_text
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-e", dest="epochs", action="store", type=int, help="The number of epochs for training models",
+        "-e",
+        dest="epochs",
+        action="store",
+        type=int,
+        help="The number of epochs for training models",
     )
     parser.add_argument(
-        "--vs", dest="vector_size", action="store", type=int, default=300, help="Embedding vector size",
+        "--vs",
+        dest="vector_size",
+        action="store",
+        type=int,
+        default=300,
+        help="Embedding vector size",
     )
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
     parser.add_argument(
-        "--docs", dest="docs", action="extend", nargs="+", help="Paths to preprocessed docs",
+        "--docs",
+        dest="docs",
+        action="extend",
+        nargs="+",
+        help="Paths to preprocessed docs",
     )
     parser.add_argument(
         "--tmp_file",
@@ -75,7 +88,12 @@ def main(args_str):
     train_pretrained(train_corpus, args.vector_size, args.epochs, init_vocab, args.tmp_file)
     print("Train pretrained SUCCESS")
     train_pretrained(
-        train_corpus + docs_text, args.vector_size, args.epochs, init_vocab, args.tmp_file, is_finetuning=True,
+        train_corpus + docs_text,
+        args.vector_size,
+        args.epochs,
+        init_vocab,
+        args.tmp_file,
+        is_finetuning=True,
     )
     print("Train fine-tuned SUCCESS")
 
