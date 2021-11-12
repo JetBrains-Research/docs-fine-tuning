@@ -3,7 +3,6 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from sklearn.metrics.pairwise import cosine_similarity
 from gensim.models.word2vec import Word2Vec
 from data_processing.util import get_corpus
 
@@ -50,20 +49,25 @@ def find_top_duplicate(bug_descr, embeddings, model, topn):
     return sims
 
 
-def get_recall(train, test, model, topn):
-    embeddings = get_reports_embeddings(model.wv, train)
-    test_size = len(test.index)
+def get_recall(data, test, model, master_ids, topn):
+    embeddings = get_reports_embeddings(model.wv, data)
+    test_size = 0
     test_corpus = get_corpus(test)
+    TP = 0.
     model.build_vocab(test_corpus, update=True)
-    TP = 0.0
     for ind, descr in enumerate(test_corpus):
-        dupl_ids = find_top_duplicate(descr, embeddings, model.wv, topn=topn)
-        val = 0.0
-        for dupl_id in dupl_ids:
-            if train.iloc[dupl_id]["Issue_id"] == test.iloc[ind]["Duplicated_issue"]:
-                val = 1.0
-                break
-        TP += val
+        if test.iloc[ind]['id'] not in master_ids:
+            dupl_ids = find_top_duplicate(descr, embeddings, model.wv, topn)
+            val = 0.
+            for dupl_id in dupl_ids:
+                if data.iloc[dupl_id]['disc_id'] == test.iloc[ind]['disc_id']:
+                    val = 1.
+                    break
+            TP += val
+            test_size += 1
+
+        data = data.append(test.iloc[ind], ignore_index=True)
+        embeddings.append(get_doc_embedding(descr, model.wv))
     return TP / test_size
 
 
@@ -72,17 +76,15 @@ def main(args_str):
 
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
+    master_ids_from_test = np.unique(test["disc_id"].to_numpy())
 
     model_random = Word2Vec.load(args.model_random)
     model_pretrained = Word2Vec.load(args.model_pretrained)
     model_finetuned = Word2Vec.load(args.model_finetuned)
 
-    master_reports = train[train.isnull().any(axis=1)]
-    dupl_test_reports = test.dropna(axis=0, subset=["Duplicated_issue"])
-
-    print(f"Recall random = {get_recall(master_reports, dupl_test_reports, model_random, args.topn)}")
-    print(f"Recall pretrained = {get_recall(master_reports, dupl_test_reports, model_pretrained, args.topn)}")
-    print(f"Recall finetuned = {get_recall(master_reports, dupl_test_reports, model_finetuned, args.topn)}")
+    print(f"Recall random = {get_recall(train, test, model_random, master_ids_from_test, args.topn)}")
+    print(f"Recall pretrained = {get_recall(train, test, model_pretrained, master_ids_from_test, args.topn)}")
+    print(f"Recall finetuned = {get_recall(train, test, model_finetuned, master_ids_from_test, args.topn)}")
 
 
 if __name__ == "__main__":

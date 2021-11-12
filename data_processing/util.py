@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 
 def get_corpus(data):
     corpus = []
-    for str_list in data["Description"].tolist():
+    for str_list in data["description"].tolist():
         word_lst = ast.literal_eval(str_list)
         corpus.append(word_lst)
     return corpus

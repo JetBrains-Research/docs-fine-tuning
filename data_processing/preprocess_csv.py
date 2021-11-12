@@ -24,15 +24,15 @@ def main(args_str):
     args = parse_arguments(args_str)
     data = pd.read_csv(args.full)
 
-    data = data.drop(
-        columns=["Priority", "Component", "Status", "Resolution", "Version", "Created_time", "Resolved_time"], axis=1
-    )
-    data = data.dropna(axis=0, subset=["Description"])
-    data["Title"] = data["Title"].apply(remove_noise)
-    data["Description"] = data["Description"].apply(remove_noise)
-    data["Title"] = data["Title"].apply(tokenize_and_normalize)
-    data["Description"] = data["Description"].apply(tokenize_and_normalize)
-    data = data.dropna(axis=0, subset=["Description"])
+    # data = data.drop(
+    #    columns=["Priority", "Component", "Status", "Resolution", "Version", "Created_time", "Resolved_time"], axis=1
+    # )
+    data = data.dropna(axis=0, subset=["description"])
+    # data["Title"] = data["Title"].apply(remove_noise)
+    data["description"] = data["description"].apply(remove_noise)
+    # data["Title"] = data["Title"].apply(tokenize_and_normalize)
+    data["description"] = data["description"].apply(tokenize_and_normalize)
+    data = data.dropna(axis=0, subset=["description"])
 
     data_size = len(data.index)
     train_size = int((1 - args.test_size) * data_size)
