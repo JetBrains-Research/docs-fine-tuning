@@ -3,18 +3,20 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from sklearn.metrics.pairwise import cosine_similarity
 from gensim.models.word2vec import Word2Vec
 from data_processing.util import get_corpus
 
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", dest="train", action="store")
-    parser.add_argument("--test", dest="test", action="store")
-    parser.add_argument("-r", dest="model_random", action="store")
-    parser.add_argument("-p", dest="model_pretrained", action="store")
-    parser.add_argument("-f", dest="model_finetuned", action="store")
-    parser.add_argument("--topn", dest="topn", action="store", type=int, default=5)
+    parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
+    parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
+    parser.add_argument("-r", dest="model_random", action="store", help="The path to random model")
+    parser.add_argument("-p", dest="model_pretrained", action="store", help="The path to pretrained model")
+    parser.add_argument("-f", dest="model_finetuned", action="store", help="The path to fine-tuned model")
+    parser.add_argument("--topn", dest="topn", action="store", type=int, default=5,
+                        help="The number of predicted duplicate bug-reports for one report")
     return parser.parse_args(arguments)
 
 
@@ -35,7 +37,7 @@ def get_reports_embeddings(model, data):
 
 
 def sim(vec1, vec2):
-    return np.linalg.norm(vec1 - vec2)
+    return vec1.dot(vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 
 def find_top_duplicate(bug_descr, embeddings, model, topn):
@@ -44,7 +46,7 @@ def find_top_duplicate(bug_descr, embeddings, model, topn):
     for report_emb in embeddings:
         sims.append(sim(report_emb, doc_emb))
     sims = np.array(sims)
-    sims = sims.argsort()[:topn]
+    sims = sims.argsort()[::-1][:topn]
     return sims
 
 

@@ -6,3 +6,5 @@ __pycache__/
 models/
 models_2017/
 data/
+
+.ipynb_checkpoints/

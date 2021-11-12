@@ -8,16 +8,21 @@ from util import tokenize_and_normalize
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--full", dest="full", action="store")
-    parser.add_argument("--train", dest="train", action="store")
-    parser.add_argument("--test", dest="test", action="store")
-    parser.add_argument("--test_size", dest="test_size", action="store", type=float, default=0.2)
+    parser.add_argument("--full", dest="full", action="store", help="The path to the full dataset to be preprocesse")
+    parser.add_argument("--train", dest="train", action="store", help="The path to the file where the user wants "
+                                                                      "to save the train portion of preprocessed "
+                                                                      "dataset")
+    parser.add_argument("--test", dest="test", action="store", help="The path to the file where the user wants "
+                                                                    "to save the test portion of preprocessed "
+                                                                    "dataset")
+    parser.add_argument("--test_size", dest="test_size", action="store", type=float, default=0.2,
+                        help="The share of the test sample relative to the entire dataset")
     return parser.parse_args(arguments)
 
 
 def main(args_str):
-    data = pd.read_csv(args_str[0])
-    args = parse_arguments(args_str[1:])
+    args = parse_arguments(args_str)
+    data = pd.read_csv(args.full)
 
     data = data.drop(
         columns=["Priority", "Component", "Status", "Resolution", "Version", "Created_time", "Resolved_time"], axis=1
@@ -29,7 +34,6 @@ def main(args_str):
     data["Description"] = data["Description"].apply(tokenize_and_normalize)
     data = data.dropna(axis=0, subset=["Description"])
 
-    data.to_csv(args.full)
     data_size = len(data.index)
     train_size = int((1 - args.test_size) * data_size)
     data.iloc[train_size:].to_csv(args.test)

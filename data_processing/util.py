@@ -24,11 +24,11 @@ def remove_noise(text):
     text = re.sub("\(.*?\)", "", text)
     text = re.sub("\[.*]\)", "", text)
     text = text.lower()
-    text = re.sub("[%s]" % re.escape(string.punctuation), "", text)
+    text = re.sub("[%s]" % re.escape(string.punctuation), " ", text)
 
-    text = re.sub("[‘’“”…]", "", text)
-    text = re.sub("\n", "", text)
-    text = re.sub("\t", "", text)
+    text = re.sub("[‘’“”…]", " ", text)
+    text = re.sub("\n", " ", text)
+    text = re.sub("\t", " ", text)
 
     return text
 
