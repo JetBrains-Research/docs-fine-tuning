@@ -10,8 +10,9 @@ from util import tokenize_and_normalize
 
 def parse_arguments(arguments):
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--docs", dest="docs", action="extend", nargs="+", help="Paths to pdf docs to be "
-                                                                                    "preprocessed")
+    arg_parser.add_argument(
+        "--docs", dest="docs", action="extend", nargs="+", help="Paths to pdf docs to be " "preprocessed",
+    )
     return arg_parser.parse_args(arguments)
 
 
