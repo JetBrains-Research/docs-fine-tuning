@@ -9,7 +9,7 @@ from data_processing.util import get_corpus
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", dest="train", action='store')
+    parser.add_argument("--train", dest="train", action="store")
     parser.add_argument("--test", dest="test", action="store")
     parser.add_argument("-r", dest="model_random", action="store")
     parser.add_argument("-p", dest="model_pretrained", action="store")
@@ -53,13 +53,13 @@ def get_recall(train, test, model, topn):
     test_size = len(test.index)
     test_corpus = get_corpus(test)
     model.build_vocab(test_corpus, update=True)
-    TP = 0.
+    TP = 0.0
     for ind, descr in enumerate(test_corpus):
         dupl_ids = find_top_duplicate(descr, embeddings, model.wv, topn=topn)
-        val = 0.
+        val = 0.0
         for dupl_id in dupl_ids:
-            if train.iloc[dupl_id]['Issue_id'] == test.iloc[ind]['Duplicated_issue']:
-                val = 1.
+            if train.iloc[dupl_id]["Issue_id"] == test.iloc[ind]["Duplicated_issue"]:
+                val = 1.0
                 break
         TP += val
     return TP / test_size
@@ -76,14 +76,12 @@ def main(args_str):
     model_finetuned = Word2Vec.load(args.model_finetuned)
 
     master_reports = train[train.isnull().any(axis=1)]
-    dupl_test_reports = test.dropna(axis=0, subset=['Duplicated_issue'])
+    dupl_test_reports = test.dropna(axis=0, subset=["Duplicated_issue"])
 
     print(f"Recall random = {get_recall(master_reports, dupl_test_reports, model_random, args.topn)}")
     print(f"Recall pretrained = {get_recall(master_reports, dupl_test_reports, model_pretrained, args.topn)}")
     print(f"Recall finetuned = {get_recall(master_reports, dupl_test_reports, model_finetuned, args.topn)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])
-
-

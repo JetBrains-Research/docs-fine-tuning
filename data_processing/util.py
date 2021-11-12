@@ -11,35 +11,35 @@ from nltk.corpus import stopwords
 
 def get_corpus(data):
     corpus = []
-    for str_list in data['Description'].tolist():
+    for str_list in data["Description"].tolist():
         word_lst = ast.literal_eval(str_list)
         corpus.append(word_lst)
     return corpus
 
 
 def remove_noise(text):
-    text = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', text, flags=re.MULTILINE)
-    text = re.sub('\w*\d\w*', '', text)
-    text = re.sub('\w*\f\w*', '', text)
-    text = re.sub('\(.*?\)', '', text)
-    text = re.sub('\[.*]\)', '', text)
+    text = re.sub(r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE)
+    text = re.sub("\w*\d\w*", "", text)
+    text = re.sub("\w*\f\w*", "", text)
+    text = re.sub("\(.*?\)", "", text)
+    text = re.sub("\[.*]\)", "", text)
     text = text.lower()
-    text = re.sub('[%s]' % re.escape(string.punctuation), '', text)
+    text = re.sub("[%s]" % re.escape(string.punctuation), "", text)
 
-    text = re.sub('[‘’“”…]', '', text)
-    text = re.sub('\n', '', text)
-    text = re.sub('\t', '', text)
+    text = re.sub("[‘’“”…]", "", text)
+    text = re.sub("\n", "", text)
+    text = re.sub("\t", "", text)
 
     return text
 
 
 def lemmatize(text):
-    return WordNetLemmatizer().lemmatize(text, pos='v')
+    return WordNetLemmatizer().lemmatize(text, pos="v")
 
 
 def tokenize_and_normalize(text):
     result = []
-    STOPWORDS = stopwords.words('english') + ['http', 'https']
+    STOPWORDS = stopwords.words("english") + ["http", "https"]
     for token in simple_preprocess(text, min_len=3):
         if token not in STOPWORDS:
             result.append(lemmatize(token))
