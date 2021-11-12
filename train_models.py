@@ -15,10 +15,10 @@ from data_processing.util import get_docs_text
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', dest='epochs', action='store', type=int)
-    parser.add_argument('--vs', dest='vector_size', action='store', type=int)
-    parser.add_argument('--train', dest='train', action='store')
-    parser.add_argument('--docs', dest='docs', action='extend', nargs="+")
+    parser.add_argument("-e", dest="epochs", action="store", type=int)
+    parser.add_argument("--vs", dest="vector_size", action="store", type=int)
+    parser.add_argument("--train", dest="train", action="store")
+    parser.add_argument("--docs", dest="docs", action="extend", nargs="+")
     return parser.parse_args(arguments)
 
 
@@ -30,7 +30,7 @@ def get_init_vocab(vector_size):
 
 def train_random(train_corpus, vector_size, epochs):
     model = Word2Vec(train_corpus, vector_size=vector_size, min_count=0, epochs=epochs)
-    model.save('models/word2vec_random.model')
+    model.save("models/word2vec_random.model")
 
 
 def pretrain_model(model, init_vocab):
@@ -45,7 +45,7 @@ def train_pretrained(train_corpus, vector_size, epochs, init_vocab):
     model.build_vocab(train_corpus)
     model = pretrain_model(model, init_vocab)
     model.train(train_corpus, total_examples=len(train_corpus), epochs=epochs)
-    model.save('models/word2vec_pretrained.model')
+    model.save("models/word2vec_pretrained.model")
 
 
 def train_finetuned(train_corpus, vector_size, epochs, docs, init_vocab):
@@ -55,7 +55,7 @@ def train_finetuned(train_corpus, vector_size, epochs, docs, init_vocab):
     model = pretrain_model(model, init_vocab)
     model.train(docs, total_examples=len(docs), epochs=epochs)
     model.train(train_corpus, total_examples=len(train_corpus), epochs=epochs)
-    model.save('models/word2vec_finetuned.model')
+    model.save("models/word2vec_finetuned.model")
 
 
 def main(args_str):
@@ -73,11 +73,6 @@ def main(args_str):
     print("Train finetuned SUCCESS")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tmp_file = get_tmpfile("pretrained_vectors.txt")
     main(sys.argv[1:])
-
-
-
-
-
