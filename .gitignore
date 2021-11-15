@@ -1,10 +1,11 @@
 .DS_Store
+results.ipynb
 .idea/
 venv/
 __pycache__/
 
-models/
-models_2017/
+saved_models/
+pretrained_models/
 data/
 
 .ipynb_checkpoints/

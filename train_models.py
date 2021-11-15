@@ -13,6 +13,8 @@ from gensim.test.utils import get_tmpfile
 from data_processing.util import get_corpus
 from data_processing.util import get_docs_text
 
+from models import W2VModel, FastTextModel, GloveModel
+
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
@@ -21,7 +23,7 @@ def parse_arguments(arguments):
         dest="epochs",
         action="store",
         type=int,
-        help="The number of epochs for training models",
+        help="The number of epochs for training saved_models",
     )
     parser.add_argument(
         "--vs",
@@ -46,6 +48,9 @@ def parse_arguments(arguments):
         default=get_tmpfile("pretrained_vectors.txt"),
         help="The path to tmp file to store pretrained embeddings",
     )
+    parser.add_argument("--w2v", dest="w2v", action="store_true", help="Train and save word2vec model")
+    parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
+    parser.add_argument("--glove", dest="glove", action="store_true", help="Train and save glove model")
     return parser.parse_args(arguments)
 
 
@@ -57,7 +62,7 @@ def get_init_vocab(vector_size, tmp_file):
 
 def train_random(train_corpus, vector_size, epochs):
     model = Word2Vec(train_corpus, vector_size=vector_size, min_count=0, epochs=epochs)
-    model.save(os.path.join("models", "word2vec_random.model"))
+    model.save(os.path.join("saved_models", "word2vec_random.model"))
 
 
 def train_pretrained(train_corpus, vector_size, epochs, init_vocab, tmp_file, is_finetuning=False):
@@ -73,29 +78,24 @@ def train_pretrained(train_corpus, vector_size, epochs, init_vocab, tmp_file, is
     model_name = "word2vec_pretrained.model"
     if is_finetuning:
         model_name = "word2vec_finetuned.model"
-    model.save(os.path.join("models", model_name))
+    model.save(os.path.join("saved_models", model_name))
 
 
 def main(args_str):
     args = parse_arguments(args_str)
     train = pd.read_csv(args.train)
-    init_vocab = get_init_vocab(args.vector_size, args.tmp_file)
     train_corpus = get_corpus(train)
-    docs_text = get_docs_text(args.docs)
+    docs_corpus = get_docs_text(args.docs)
 
-    train_random(train_corpus, args.vector_size, args.epochs)
-    print("Train random SUCCESS")
-    train_pretrained(train_corpus, args.vector_size, args.epochs, init_vocab, args.tmp_file)
-    print("Train pretrained SUCCESS")
-    train_pretrained(
-        train_corpus + docs_text,
-        args.vector_size,
-        args.epochs,
-        init_vocab,
-        args.tmp_file,
-        is_finetuning=True,
-    )
-    print("Train fine-tuned SUCCESS")
+    if args.w2v:
+        model = W2VModel(vector_size=args.vector_size, epochs=args.epochs, tmp_file=args.tmp_file)
+        model.train_and_save_all(train_corpus, docs_corpus)
+    if args.fasttext:
+        model = FastTextModel(vector_size=args.vector_size, epochs=args.epochs)
+        model.train_and_save_all(train_corpus, docs_corpus)
+    if args.glove:
+        model = GloveModel()
+        model.train_and_save_all(train_corpus, docs_corpus)
 
 
 if __name__ == "__main__":

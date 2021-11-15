@@ -39,7 +39,8 @@ def lemmatize(text):
 
 def tokenize_and_normalize(text):
     result = []
-    STOPWORDS = stopwords.words("english") + ["http", "https"]
+    STOPWORDS = stopwords.words("english") + \
+                ["http", "https", "org", "use", "com"]
     for token in simple_preprocess(text, min_len=3):
         if token not in STOPWORDS:
             result.append(lemmatize(token))
@@ -51,5 +52,8 @@ def tokenize_and_normalize(text):
 def get_docs_text(docs_names):
     result = []
     for doc_name in docs_names:
+        if doc_name == "data/docs/readmes.txt":
+            result = result + ast.literal_eval(Path(doc_name).read_text())
+            continue
         result.append(ast.literal_eval(Path(doc_name).read_text()))
     return result

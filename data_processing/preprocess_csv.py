@@ -42,14 +42,22 @@ def main(args_str):
     data = pd.read_csv(args.full)
 
     data = data.dropna(axis=0, subset=["description"])
+    data.reset_index(drop=True)
     data["description"] = data["description"].apply(remove_noise)
     data["description"] = data["description"].apply(tokenize_and_normalize)
     data = data.dropna(axis=0, subset=["description"])
+    data.reset_index(drop=True)
 
     data_size = len(data.index)
     train_size = int((1 - args.test_size) * data_size)
-    data.iloc[train_size:].to_csv(args.test)
-    data.iloc[:train_size].to_csv(args.train)
+
+    test = data.iloc[train_size:]
+    test.reset_index(drop=True)
+    test.to_csv(args.test, index=False)
+
+    train = data.iloc[:train_size]
+    train.reset_index(drop=True)
+    train.to_csv(args.train, index=False)
 
 
 if __name__ == "__main__":
