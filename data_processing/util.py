@@ -39,8 +39,7 @@ def lemmatize(text):
 
 def tokenize_and_normalize(text):
     result = []
-    STOPWORDS = stopwords.words("english") + \
-                ["http", "https", "org", "use", "com"]
+    STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for token in simple_preprocess(text, min_len=3):
         if token not in STOPWORDS:
             result.append(lemmatize(token))

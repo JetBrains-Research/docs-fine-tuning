@@ -36,7 +36,9 @@ def parse_arguments(arguments):
         help="The number of predicted duplicate bug-reports for one report",
     )
     parser.add_argument("--w2v", dest="w2v", action="store_true", help="Use word2vec model for classification")
-    parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification")
+    parser.add_argument(
+        "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
+    )
     return parser.parse_args(arguments)
 
 
@@ -89,7 +91,7 @@ def get_recall(data, test, model, master_ids, topn):
 
         data = data.append(test.iloc[ind], ignore_index=True)
         embeddings.append(get_doc_embedding(descr, model.wv))
-        data_corpus.append(ast.literal_eval(test.iloc[ind]['description']))
+        data_corpus.append(ast.literal_eval(test.iloc[ind]["description"]))
     return TP / test_size
 
 

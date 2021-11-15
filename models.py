@@ -127,10 +127,10 @@ class GloveModel(AbstractModel):
 
     def __get_cooccurrance_matrix(self, corpus):
         # TODO: get matrix with sliding window
-        docs = [' '.join(doc) for doc in corpus]
+        docs = [" ".join(doc) for doc in corpus]
         cv = CountVectorizer(ngram_range=(1, 1), vocabulary=self.vocab)
         X = cv.fit_transform(docs)
-        Xc = (X.T * X)
+        Xc = X.T * X
         Xc.setdiag(0)
         return Xc.toarray()
 
@@ -147,10 +147,9 @@ class GloveModel(AbstractModel):
 
     @staticmethod
     def __glove2dict(glove_filename):
-        with open(glove_filename, encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter=' ', quoting=csv.QUOTE_NONE)
-            embed = {line[0]: np.array(list(map(float, line[1:])))
-                     for line in reader}
+        with open(glove_filename, encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter=" ", quoting=csv.QUOTE_NONE)
+            embed = {line[0]: np.array(list(map(float, line[1:]))) for line in reader}
         return embed
 
     # TODO: OOV
@@ -158,4 +157,3 @@ class GloveModel(AbstractModel):
     def __get_vocab(corpus):
         flatten_corpus = [token for doc in corpus for token in doc]
         return list(set(flatten_corpus))
-
