@@ -17,9 +17,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 
 class AbstractModel:
-    def __init__(self, model=None):
-        self.model = model
+    def __init__(self, vector_size=300, epochs=5):
+        self.vector_size = vector_size
+        self.epochs = epochs
         self.name = "abstract"
+        self.model = None
 
     def train_random(self, corpus):
         raise NotImplementedError()
@@ -29,6 +31,25 @@ class AbstractModel:
 
     def train_finetuned(self, base_corpus, extra_corpus):
         self.train_pretrained(base_corpus + extra_corpus)
+
+    def get_doc_embedding(self, doc):
+        result = np.zeros(self.vector_size)
+        for word in doc:
+            result += self.model.wv[word]
+        return result / len(doc)
+
+    def get_embeddings(self, corpus, update_vocab=False):
+        if update_vocab:
+            self.model.build_vocab(corpus, update=True)
+
+        embeddings = []
+        for report in corpus:
+            embeddings.append(self.get_doc_embedding(report))
+        return np.array(embeddings)
+
+    @staticmethod
+    def load(path):
+        raise NotImplementedError()
 
     def save(self, path):
         self.model.save(path)
@@ -48,27 +69,27 @@ class AbstractModel:
 
 
 class W2VModel(AbstractModel):
-    def __init__(self, vector_size=300, epochs=5, tmp_file=get_tmpfile("pretrained_vectors.txt")):
-        super().__init__()
-        self.vector_size = vector_size
+    def __init__(self, vector_size=300, epochs=5, min_count=1, tmp_file=get_tmpfile("pretrained_vectors.txt")):
+        super().__init__(vector_size, epochs)
         self.name = "w2v"
-        self.epochs = epochs
         self.tmp_file = tmp_file
         self.init_vocab = self.__get_init_vocab()
+        self.min_count = min_count
 
     def train_random(self, corpus):
-        self.model = Word2Vec(corpus, vector_size=self.vector_size, min_count=1, epochs=self.epochs)
+        self.model = Word2Vec(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
     def train_pretrained(self, corpus):
         if self.init_vocab is None:
             raise RuntimeError("Init vocab is None")
 
-        self.model = Word2Vec(vector_size=self.vector_size, min_count=1, epochs=self.epochs)
+        self.model = Word2Vec(vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
         self.model.build_vocab(corpus)
+        self.model.min_count = 1
         self.model.build_vocab(self.init_vocab, update=True)
         self.model.wv.vectors_lockf = np.ones(len(self.model.wv))
         self.model.wv.intersect_word2vec_format(self.tmp_file, binary=False, lockf=1.0)
-
+        self.model.min_count = self.min_count
         self.model.train(corpus, total_examples=len(corpus), epochs=self.epochs)
 
     def __get_init_vocab(self):
@@ -76,29 +97,41 @@ class W2VModel(AbstractModel):
         pretrained.save_word2vec_format(self.tmp_file)
         return [list(pretrained.key_to_index.keys())]
 
+    @staticmethod
+    def load(path):
+        loaded_model = Word2Vec.load(path)
+        created_model = W2VModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
+        created_model.model = loaded_model
+        return created_model
+
 
 class FastTextModel(AbstractModel):
-    def __init__(self, vector_size=300, epochs=5):
-        super().__init__()
+    def __init__(self, vector_size=300, epochs=5, min_count=1):
+        super().__init__(vector_size, epochs)
         self.name = "ft"
-        self.vector_size = vector_size
-        self.epochs = epochs
+        self.min_count = min_count
 
     def train_random(self, corpus):
-        self.model = FastText(corpus, vector_size=self.vector_size, min_count=1, epochs=self.epochs)
+        self.model = FastText(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
     def train_pretrained(self, corpus):
         self.model = load_facebook_model(os.path.join("pretrained_models", "cc.en.300.bin"))
         self.model.build_vocab(corpus, update=True)
         self.model.train(corpus, total_examples=len(corpus), epochs=self.epochs)
 
+    @staticmethod
+    def load(path):
+        loaded_model = FastText.load(path)
+        created_model = FastTextModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
+        created_model.model = loaded_model
+        return created_model
+
 
 # TODO: save embeddings format and build vocabulary
 class GloveModel(AbstractModel):
     def __init__(self, corpus=None, vector_size=300, max_iter=100):
-        super().__init__()
+        super().__init__(vector_size)
         self.name = "glove"
-        self.vector_size = vector_size
         self.max_iter = max_iter
         self.vocab = self.__get_vocab(corpus)
         self.cooccurrence = self.__get_cooccurrance_matrix(corpus)
@@ -124,6 +157,9 @@ class GloveModel(AbstractModel):
 
     def save(self, path):
         self.keyed_vectors.save(path)
+
+    def load(self, path):
+        self.model = KeyedVectors.load(path)
 
     def __get_cooccurrance_matrix(self, corpus):
         # TODO: get matrix with sliding window

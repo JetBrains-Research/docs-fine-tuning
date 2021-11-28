@@ -7,6 +7,7 @@ from pathlib import Path
 from gensim.utils import simple_preprocess
 from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
+from nltk import FreqDist
 
 
 def get_corpus(data):
@@ -51,8 +52,33 @@ def tokenize_and_normalize(text):
 def get_docs_text(docs_names):
     result = []
     for doc_name in docs_names:
-        if doc_name == "data/docs/readmes.txt":
-            result = result + ast.literal_eval(Path(doc_name).read_text())
-            continue
-        result.append(ast.literal_eval(Path(doc_name).read_text()))
+        result = result + get_doc_sentences(doc_name)
     return result
+
+
+def get_doc_sentences(doc_name):
+    text = Path(doc_name).read_text()
+    text = text.split(sep="], [")
+    text = [sent.split("', '") for sent in text]
+    for sent in text:
+        sent[0] = sent[0][1:]
+        sent[-1] = sent[-1][:-1]
+    text[0][0] = text[0][0][2:]
+    text[-1][-1] = text[-1][-1][:-2]
+    return text
+
+
+def parse_list(doc_name):
+    return ast.literal_eval(Path(doc_name).read_text())
+
+
+def replace_rarest_words(corpus, min_count):
+    d = FreqDist()
+    for docs in corpus:
+        d.update(FreqDist(docs))
+
+    for doc in corpus:
+        for i in range(len(doc)):
+            if d[doc[i]] < min_count:
+                doc[i] = "<UNK>"
+    return corpus

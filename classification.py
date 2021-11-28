@@ -3,11 +3,10 @@ import argparse
 import numpy as np
 import pandas as pd
 
-import ast
-
-from gensim.models.word2vec import Word2Vec
-from gensim.models import FastText
+from models import AbstractModel, W2VModel, FastTextModel
 from data_processing.util import get_corpus
+
+import faiss
 
 
 def parse_arguments(arguments):
@@ -42,56 +41,35 @@ def parse_arguments(arguments):
     return parser.parse_args(arguments)
 
 
-def get_doc_embedding(doc, model):
-    result = np.zeros(model.vector_size)
-    for word in doc:
-        result += model[word]
+def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
+    index = faiss.IndexFlatIP(model.vector_size)
 
-    return result / len(doc)
-
-
-def get_reports_embeddings(model, corpus):
-    embeddings = []
-    for report in corpus:
-        embeddings.append(get_doc_embedding(report, model))
-    return embeddings
-
-
-def sim(vec1, vec2):
-    return vec1.dot(vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
-
-
-def find_top_duplicate(bug_descr, embeddings, model, topn):
-    doc_emb = get_doc_embedding(bug_descr, model)
-    sims = []
-    for report_emb in embeddings:
-        sims.append(sim(report_emb, doc_emb))
-    sims = np.array(sims)
-    sims = sims.argsort()[::-1][:topn]
-    return sims
-
-
-def get_recall(data, test, model, master_ids, topn):
-    data_corpus = get_corpus(data)
-    embeddings = get_reports_embeddings(model.wv, data_corpus)
-    test_size = 0
+    train_corpus = get_corpus(train)
+    embeddings = model.get_embeddings(train_corpus).astype(np.float32)
+    faiss.normalize_L2(embeddings)
+    index.add(embeddings)
     test_corpus = get_corpus(test)
+    test_embs = model.get_embeddings(test_corpus, update_vocab=True).astype(np.float32)
+
+    test_size = 0
     TP = 0
-    model.build_vocab(test_corpus, update=True)
     for ind, descr in enumerate(test_corpus):
-        if test.iloc[ind]["id"] not in master_ids:
-            dupl_ids = find_top_duplicate(descr, embeddings, model.wv, topn)
+        if test.iloc[ind]["id"] != test.iloc[ind]["disc_id"]:  # not in master_ids
+            dupl_ids = index.search(test_embs[ind].reshape(1, -1), topn)[1][0]
             val = 0
             for dupl_id in dupl_ids:
-                if data.iloc[dupl_id]["disc_id"] == test.iloc[ind]["disc_id"]:
+                if train.iloc[dupl_id]["disc_id"] == test.iloc[ind]["disc_id"]:
                     val = 1
                     break
             TP += val
             test_size += 1
 
-        data = data.append(test.iloc[ind], ignore_index=True)
-        embeddings.append(get_doc_embedding(descr, model.wv))
-        data_corpus.append(ast.literal_eval(test.iloc[ind]["description"]))
+        train = train.append(test.iloc[ind], ignore_index=True)
+
+        tmp_emb = np.array([test_embs[ind]])
+        faiss.normalize_L2(tmp_emb)
+        index.add(tmp_emb)
+
     return TP / test_size
 
 
@@ -102,19 +80,20 @@ def main(args_str):
 
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
-    master_ids_from_test = np.unique(test["disc_id"].to_numpy())
 
-    model_type = Word2Vec
+    model_type = W2VModel
     if args.fasttext:
-        model_type = FastText
+        model_type = FastTextModel
 
     model_random = model_type.load(args.model_random)
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 
-    print(f"Recall random = {get_recall(train, test, model_random, master_ids_from_test, args.topn)}")
-    print(f"Recall pretrained = {get_recall(train, test, model_pretrained, master_ids_from_test, args.topn)}")
-    print(f"Recall finetuned = {get_recall(train, test, model_finetuned, master_ids_from_test, args.topn)}")
+    # print(f"Recall FULL random = {get_recall(train, test, Word2Vec(vector_size=300, min_count=1), args.topn)}")
+
+    print(f"Recall random = {get_recall(train, test, model_random, args.topn)}")
+    print(f"Recall pretrained = {get_recall(train, test, model_pretrained, args.topn)}")
+    print(f"Recall finetuned = {get_recall(train, test, model_finetuned, args.topn)}")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 black==21.10b0
-scikit-learn>=0.24.2
+scikit-learn>=0.24.1
 numpy>=1.19.5
 pandas>=1.1.5
 nltk>=3.6.5
 gensim==4.1.2
 tika==1.24
 mittens~=0.2
+faiss~=1.6.3

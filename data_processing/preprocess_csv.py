@@ -54,10 +54,12 @@ def main(args_str):
     test = data.iloc[train_size:]
     test = test.reset_index(drop=True)
     test.to_csv(args.test, index=False)
+    print(f"Test size = {len(test.index)}")
 
     train = data.iloc[:train_size]
     train = train.reset_index(drop=True)
     train.to_csv(args.train, index=False)
+    print(f"Train size = {len(train.index)}")
 
 
 if __name__ == "__main__":
