@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from models import AbstractModel, W2VModel, FastTextModel
+from models import AbstractModel, W2VModel, FastTextModel, BertModel
 from data_processing.util import get_corpus
 
 import faiss
@@ -15,16 +15,10 @@ def parse_arguments(arguments):
     parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
     parser.add_argument("-r", dest="model_random", action="store", help="The path to random model")
     parser.add_argument(
-        "-p",
-        dest="model_pretrained",
-        action="store",
-        help="The path to pretrained model",
+        "-p", dest="model_pretrained", action="store", help="The path to pretrained model",
     )
     parser.add_argument(
-        "-f",
-        dest="model_finetuned",
-        action="store",
-        help="The path to fine-tuned model",
+        "-f", dest="model_finetuned", action="store", help="The path to fine-tuned model",
     )
     parser.add_argument(
         "--topn",
@@ -38,14 +32,16 @@ def parse_arguments(arguments):
     parser.add_argument(
         "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
     )
+    parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
     return parser.parse_args(arguments)
 
 
 def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
-    index = faiss.IndexFlatIP(model.vector_size)
 
     train_corpus = get_corpus(train)
     embeddings = model.get_embeddings(train_corpus).astype(np.float32)
+    index = faiss.IndexFlatIP(embeddings.shape[1])
+
     faiss.normalize_L2(embeddings)
     index.add(embeddings)
     test_corpus = get_corpus(test)
@@ -84,12 +80,12 @@ def main(args_str):
     model_type = W2VModel
     if args.fasttext:
         model_type = FastTextModel
+    elif args.bert:
+        model_type = BertModel
 
     model_random = model_type.load(args.model_random)
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
-
-    # print(f"Recall FULL random = {get_recall(train, test, Word2Vec(vector_size=300, min_count=1), args.topn)}")
 
     print(f"Recall random = {get_recall(train, test, model_random, args.topn)}")
     print(f"Recall pretrained = {get_recall(train, test, model_pretrained, args.topn)}")

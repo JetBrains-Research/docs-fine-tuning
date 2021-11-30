@@ -1,7 +1,17 @@
 import os.path
+import os
 
 import numpy as np
+import torch
 import csv
+
+from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
+from transformers import TrainingArguments, Trainer
+from transformers import RobertaTokenizer, RobertaConfig, RobertaForMaskedLM
+from torch.utils.data import Dataset
+from tokenizers import ByteLevelBPETokenizer
+
+from tqdm import tqdm
 
 import gensim.downloader as api
 
@@ -14,6 +24,8 @@ from gensim.models.keyedvectors import Vocab
 
 from mittens import GloVe, Mittens
 from sklearn.feature_extraction.text import CountVectorizer
+
+from data_processing.util import get_corpus_properties
 
 
 class AbstractModel:
@@ -193,3 +205,158 @@ class GloveModel(AbstractModel):
     def __get_vocab(corpus):
         flatten_corpus = [token for doc in corpus for token in doc]
         return list(set(flatten_corpus))
+
+
+class MeditationsDataset(Dataset):
+    def __init__(self, encodings):
+        self.encodings = encodings
+
+    def __getitem__(self, idx):
+        return {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+
+    def __len__(self):
+        return len(self.encodings.input_ids)
+
+
+class BertModel(AbstractModel):
+    def __init__(self, vector_size=384, epochs=5, batch_size=16, tmp_file=get_tmpfile("pretrained_vectors.txt")):
+        super().__init__(vector_size, epochs)
+        self.tokenizer = None
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.name = "bert"
+        self.tmp_file = tmp_file
+        self.batch_size = batch_size
+
+        self.vocab_size = None
+        self.max_len = 512
+
+    def train_random(self, corpus):
+        self.vocab_size, self.max_len = get_corpus_properties(corpus)
+        self.max_len = 512
+
+        train_sentences = [" ".join(doc) for doc in corpus]
+        with open(self.tmp_file, "w") as fp:
+            fp.write("\n".join(train_sentences))
+
+        tokenizer = ByteLevelBPETokenizer()
+        tokenizer.train(
+            files=[self.tmp_file],
+            vocab_size=self.vocab_size,
+            min_frequency=1,
+            special_tokens=["<s>", "<pad>", "</s>", "<unk>", "<mask>"],
+        )
+
+        tokenizer.save_model(os.path.join("pretrained_models", "bert_tokenizer"))
+
+        self.tokenizer = RobertaTokenizer.from_pretrained(
+            os.path.join("pretrained_models", "bert_tokenizer"), max_length=self.max_len
+        )
+        config = RobertaConfig(
+            vocab_size=self.vocab_size,
+            max_position_embeddings=self.max_len + 2,
+            hidden_size=768,  # maybe vector_size
+            num_attention_heads=12,
+            num_hidden_layers=6,
+            type_vocab_size=1,
+        )
+        self.model = RobertaForMaskedLM(config)
+
+        inputs = self.tokenizer(
+            train_sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        dataset = BertModel.__get_dataset(inputs, mask_id=3, cls_id=0, sep_id=2, pad_id=1)
+        self.__train(dataset)
+
+    def train_pretrained(self, corpus):
+        self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        self.model = AutoModelForMaskedLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        sentences = [" ".join(sentence) for sentence in corpus]
+        inputs = self.tokenizer(
+            sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        dataset = BertModel.__get_dataset(inputs)
+        self.__train(dataset)
+
+    def train_finetuned(self, base_corpus, extra_corpus):
+        sentences = [" ".join(sentence) for sentence in extra_corpus]
+        inputs = self.tokenizer(
+            sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        dataset = BertModel.__get_dataset(inputs)
+        self.__train(dataset)
+
+    @staticmethod
+    def __get_dataset(inputs, mask_id=103, cls_id=102, sep_id=101, pad_id=0):
+        inputs["labels"] = inputs.input_ids.detach().clone()
+
+        rand = torch.rand(inputs.input_ids.shape)
+        mask_arr = (
+            (rand < 0.15) * (inputs.input_ids != cls_id) * (inputs.input_ids != sep_id) * (inputs.input_ids != pad_id)
+        )
+
+        selection = []
+
+        for i in range(inputs.input_ids.shape[0]):
+            selection.append(torch.flatten(mask_arr[i].nonzero()).tolist())
+
+        for i in range(inputs.input_ids.shape[0]):
+            inputs.input_ids[i, selection[i]] = mask_id
+
+        return MeditationsDataset(inputs)
+
+    def __train(self, dataset):
+        args = TrainingArguments(
+            output_dir="saved_models", per_device_train_batch_size=self.batch_size, num_train_epochs=self.epochs
+        )
+
+        trainer = Trainer(model=self.model, args=args, train_dataset=dataset)
+
+        trainer.train()
+
+    def get_doc_embedding(self, doc):
+        return self.get_embeddings([doc])[0]
+
+    def get_embeddings(self, corpus, update_vocab=False):
+        descriptions = [" ".join(doc) for doc in corpus]  # full description embedding
+        encoded_input = self.tokenizer(
+            descriptions, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        dataset = MeditationsDataset(encoded_input)
+        loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+
+        result = []
+        loop = tqdm(loader, leave=True)
+        for batch in loop:
+            input_ids = batch["input_ids"].to(self.device)
+            attention_mask = batch["attention_mask"].to(self.device)
+            with torch.no_grad():
+                model_output = self.model(input_ids, attention_mask=attention_mask)
+
+            sentence_embeddings = BertModel.__mean_pooling(model_output, attention_mask)
+            result += sentence_embeddings.tolist()
+
+        return np.array(result).astype(np.float32)
+
+    @staticmethod
+    def __mean_pooling(model_output, attention_mask):
+        token_embeddings = model_output[0]
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+    def save(self, path):
+        self.tokenizer.save_pretrained(path)
+        self.model.save_pretrained(path)
+
+    @staticmethod
+    def load(path):
+        bertModel = BertModel()
+        model = AutoModel.from_pretrained(path)
+        tokenizer = AutoTokenizer.from_pretrained(path)
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+        bertModel.model = model
+        bertModel.device = device
+        bertModel.tokenizer = tokenizer
+
+        bertModel.model.to(device)
+        return bertModel

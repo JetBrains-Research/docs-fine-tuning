@@ -8,33 +8,29 @@ from gensim.test.utils import get_tmpfile
 from data_processing.util import get_corpus
 from data_processing.util import get_docs_text
 
-from models import W2VModel, FastTextModel, GloveModel
+from models import W2VModel, FastTextModel, GloveModel, BertModel
+
+
+# for python 3.7 support
+class ExtendAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest) or []
+        items.extend(values)
+        setattr(namespace, self.dest, items)
 
 
 def parse_arguments(arguments):
     parser = argparse.ArgumentParser()
+    parser.register("action", "my_extend", ExtendAction)
     parser.add_argument(
-        "-e",
-        dest="epochs",
-        action="store",
-        type=int,
-        help="The number of epochs for training saved_models",
+        "-e", dest="epochs", action="store", type=int, help="The number of epochs for training saved_models",
     )
     parser.add_argument(
-        "--vs",
-        dest="vector_size",
-        action="store",
-        type=int,
-        default=300,
-        help="Embedding vector size",
+        "--vs", dest="vector_size", action="store", type=int, default=300, help="Embedding vector size",
     )
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
     parser.add_argument(
-        "--docs",
-        dest="docs",
-        action="extend",
-        nargs="+",
-        help="Paths to preprocessed docs",
+        "--docs", dest="docs", action="my_extend", nargs="+", help="Paths to preprocessed docs",
     )
     parser.add_argument(
         "--tmp_file",
@@ -43,14 +39,24 @@ def parse_arguments(arguments):
         default=get_tmpfile("pretrained_vectors.txt"),
         help="The path to tmp file to store pretrained embeddings",
     )
+    parser.add_argument(
+        "--batch_size",
+        dest="batch_size",
+        action="store",
+        type=int,
+        default=16,
+        help="Batch Size for Bert Model training.",
+    )
     parser.add_argument("--w2v", dest="w2v", action="store_true", help="Train and save word2vec model")
     parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
     parser.add_argument("--glove", dest="glove", action="store_true", help="Train and save glove model")
+    parser.add_argument("--bert", dest="bert", action="store_true", help="Train and save BERT model on MLM task.")
     return parser.parse_args(arguments)
 
 
 def main(args_str):
     args = parse_arguments(args_str)
+
     train = pd.read_csv(args.train)
     train_corpus = get_corpus(train)
     docs_corpus = get_docs_text(args.docs)
@@ -64,6 +70,11 @@ def main(args_str):
     if args.glove:
         model = GloveModel()
         model.train_and_save_all(train_corpus, docs_corpus)
+    if args.bert:
+        model = BertModel(
+            vector_size=args.vector_size, epochs=args.epochs, batch_size=args.batch_size, tmp_file=args.tmp_file
+        )
+        model.train_and_save_all(train_corpus, docs_corpus)  # base_corpus = get_corpus(train, sentences=True)
 
 
 if __name__ == "__main__":

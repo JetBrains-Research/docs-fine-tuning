@@ -1,6 +1,7 @@
 import re
-import string
 import ast
+
+import nltk
 import numpy as np
 
 from pathlib import Path
@@ -10,12 +11,34 @@ from nltk.corpus import stopwords
 from nltk import FreqDist
 
 
-def get_corpus(data):
+def get_corpus(data, sentences=False):
     corpus = []
     for str_list in data["description"].tolist():
-        word_lst = ast.literal_eval(str_list)
-        corpus.append(word_lst)
-    return corpus
+        corpus.append(ast.literal_eval(str_list))
+    return flatten(corpus) if sentences else list(map(flatten, corpus))
+
+
+def flatten(t):
+    return [item for sublist in t for item in sublist]
+
+
+def get_docs_text(docs_names):
+    result = []
+    for doc_name in docs_names:
+        text = Path(doc_name).read_text()
+        result = result + get_doc_sentences(text)
+    return result
+
+
+def get_doc_sentences(text):
+    text = text.split(sep="], [")
+    text = [sent.split("', '") for sent in text]
+    for sent in text:
+        sent[0] = sent[0][1:]
+        sent[-1] = sent[-1][:-1]
+    text[0][0] = text[0][0][2:]
+    text[-1][-1] = text[-1][-1][:-2]
+    return text
 
 
 def remove_noise(text):
@@ -25,7 +48,7 @@ def remove_noise(text):
     text = re.sub("\(.*?\)", "", text)
     text = re.sub("\[.*]\)", "", text)
     text = text.lower()
-    text = re.sub("[%s]" % re.escape(string.punctuation), " ", text)
+    # text = re.sub("[%s]" % re.escape(string.punctuation), " ", text)
 
     text = re.sub("[‘’“”…]", " ", text)
     text = re.sub("\n", " ", text)
@@ -41,31 +64,18 @@ def lemmatize(text):
 def tokenize_and_normalize(text):
     result = []
     STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
-    for token in simple_preprocess(text, min_len=3):
-        if token not in STOPWORDS:
-            result.append(lemmatize(token))
+    sentences = split_sentences(text)
+    for sentence in sentences:
+        tokens = []
+        for token in simple_preprocess(sentence, min_len=3):
+            if token not in STOPWORDS:
+                tokens.append(lemmatize(token))
+        if len(tokens) >= 3:
+            result.append(tokens)
     if len(result) == 0:
         return np.nan
+    # return '\n'.join([' '.join(sentence) for sentence in result])
     return result
-
-
-def get_docs_text(docs_names):
-    result = []
-    for doc_name in docs_names:
-        result = result + get_doc_sentences(doc_name)
-    return result
-
-
-def get_doc_sentences(doc_name):
-    text = Path(doc_name).read_text()
-    text = text.split(sep="], [")
-    text = [sent.split("', '") for sent in text]
-    for sent in text:
-        sent[0] = sent[0][1:]
-        sent[-1] = sent[-1][:-1]
-    text[0][0] = text[0][0][2:]
-    text[-1][-1] = text[-1][-1][:-2]
-    return text
 
 
 def parse_list(doc_name):
@@ -82,3 +92,18 @@ def replace_rarest_words(corpus, min_count):
             if d[doc[i]] < min_count:
                 doc[i] = "<UNK>"
     return corpus
+
+
+def get_corpus_properties(corpus):
+    d = FreqDist()
+    max_len = 0
+    for docs in corpus:
+        max_len = max(max_len, len(docs))
+        d.update(FreqDist(docs))
+
+    return len(d), max_len
+
+
+def split_sentences(text):
+    tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+    return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))

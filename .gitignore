@@ -1,6 +1,7 @@
 .DS_Store
 results.ipynb
 transformers.ipynb
+out/
 .idea/
 venv/
 __pycache__/
