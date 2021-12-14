@@ -48,7 +48,6 @@ def remove_noise(text):
     text = re.sub("\(.*?\)", "", text)
     text = re.sub("\[.*]\)", "", text)
     text = text.lower()
-    # text = re.sub("[%s]" % re.escape(string.punctuation), " ", text)
 
     text = re.sub("[‘’“”…]", " ", text)
     text = re.sub("\n", " ", text)
@@ -61,10 +60,10 @@ def lemmatize(text):
     return WordNetLemmatizer().lemmatize(text, pos="v")
 
 
-def tokenize_and_normalize(text):
+def tokenize_and_normalize(sentences):
     result = []
     STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
-    sentences = split_sentences(text)
+    # sentences = split_sentences(text)
     for sentence in sentences:
         tokens = []
         for token in simple_preprocess(sentence, min_len=3):
@@ -72,9 +71,9 @@ def tokenize_and_normalize(text):
                 tokens.append(lemmatize(token))
         if len(tokens) >= 3:
             result.append(tokens)
+    # in preprocess_csv.py we use DataFrame.dropna() method to
     if len(result) == 0:
         return np.nan
-    # return '\n'.join([' '.join(sentence) for sentence in result])
     return result
 
 

@@ -1,12 +1,11 @@
-import sys
 import argparse
 import pandas as pd
 
-from util import remove_noise
+from util import remove_noise, split_sentences
 from util import tokenize_and_normalize
 
 
-def parse_arguments(arguments):
+def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--full", dest="full", action="store", help="The path to the full dataset to be preprocessed",
@@ -31,16 +30,17 @@ def parse_arguments(arguments):
         default=0.2,
         help="The share of the test sample relative to the entire dataset",
     )
-    return parser.parse_args(arguments)
+    return parser.parse_args()
 
 
-def main(args_str):
-    args = parse_arguments(args_str)
+def main():
+    args = parse_arguments()
     data = pd.read_csv(args.full)
 
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
     data["description"] = data["description"].apply(remove_noise)
+    data["description"] = data["description"].apply(split_sentences)
     data["description"] = data["description"].apply(tokenize_and_normalize)
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
@@ -60,4 +60,4 @@ def main(args_str):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

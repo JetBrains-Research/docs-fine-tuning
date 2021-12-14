@@ -8,9 +8,8 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
 from transformers import TrainingArguments, Trainer
-from transformers import RobertaTokenizer
-from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizer, BertTokenizerFast
-from tokenizers import ByteLevelBPETokenizer, BertWordPieceTokenizer
+from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizerFast
+from tokenizers import BertWordPieceTokenizer
 
 from sentence_transformers import SentenceTransformer, losses, models
 from sentence_transformers.readers import InputExample
@@ -45,18 +44,18 @@ class AbstractModel:
 
     def get_doc_embedding(self, doc):
         result = np.zeros(self.vector_size)
+        size = 0
         for word in doc:
-            result += self.model.wv[word]
-        return result / len(doc)
+            if word in self.model.wv:
+                result += self.model.wv[word]
+                size += 1
+        return result / size
 
     def get_embeddings(self, corpus, update_vocab=False):
         if update_vocab:
             self.model.build_vocab(corpus, update=True)
 
-        embeddings = []
-        for report in corpus:
-            embeddings.append(self.get_doc_embedding(report))
-        return np.array(embeddings)
+        return np.array([self.get_doc_embedding(report) for report in corpus]).astype(np.float32)
 
     @staticmethod
     def load(path):
@@ -222,7 +221,6 @@ class BertModelMLM(AbstractModel):
         with open(tmp_file, "w") as fp:
             fp.write("\n".join(train_sentences))
 
-        # tokenizer = ByteLevelBPETokenizer()
         tokenizer = BertWordPieceTokenizer(
             clean_text=True, handle_chinese_chars=False, strip_accents=False, lowercase=True
         )
@@ -231,7 +229,6 @@ class BertModelMLM(AbstractModel):
             vocab_size=vocab_size,
             min_frequency=1,
             wordpieces_prefix="##",
-            # special_tokens=["<s>", "<pad>", "</s>", "<unk>", "<mask>"],
             special_tokens=["[CLS]", "[PAD]", "[SEP]", "[UNK]", "[MASK]"],
         )
 
@@ -374,7 +371,7 @@ class SBertModel(AbstractModel):
         )
 
     def get_embeddings(self, corpus, update_vocab=False):
-        return self.model.encode([" ".join(report) for report in corpus])
+        return self.model.encode([" ".join(report) for report in corpus]).astype(np.float32)
 
     def get_doc_embedding(self, doc):
         return self.get_embeddings([" ".join(doc)])[0]

@@ -1,4 +1,3 @@
-import sys
 import argparse
 import numpy as np
 import pandas as pd
@@ -9,7 +8,7 @@ from data_processing.util import get_corpus
 import faiss
 
 
-def parse_arguments(arguments):
+def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
     parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
@@ -34,7 +33,7 @@ def parse_arguments(arguments):
     )
     parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
-    return parser.parse_args(arguments)
+    return parser.parse_args()
 
 
 def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
@@ -46,7 +45,7 @@ def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, to
     faiss.normalize_L2(embeddings)
     index.add(embeddings)
     test_corpus = get_corpus(test)
-    test_embs = model.get_embeddings(test_corpus, update_vocab=True).astype(np.float32)
+    test_embs = model.get_embeddings(test_corpus, update_vocab=False).astype(np.float32)
 
     test_size = 0
     TP = 0
@@ -70,21 +69,22 @@ def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, to
     return TP / test_size
 
 
-def main(args_str):
-    args = parse_arguments(args_str)
-    if args.w2v is None and args.fasttext is None:
-        raise ValueError("Please select a model")
+def main():
+    args = parse_arguments()
 
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
 
-    model_type = W2VModel
-    if args.fasttext:
+    if args.w2v:
+        model_type = W2VModel
+    elif args.fasttext:
         model_type = FastTextModel
     elif args.bert:
         model_type = BertModelMLM
     elif args.sbert:
         model_type = SBertModel
+    else:
+        raise ValueError("Please select a model")
 
     model_random = model_type.load(args.model_random)
     model_pretrained = model_type.load(args.model_pretrained)
@@ -96,4 +96,4 @@ def main(args_str):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

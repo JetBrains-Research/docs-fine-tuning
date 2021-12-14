@@ -1,4 +1,3 @@
-import sys
 import argparse
 
 import pandas as pd
@@ -19,7 +18,7 @@ class ExtendAction(argparse.Action):
         setattr(namespace, self.dest, items)
 
 
-def parse_arguments(arguments):
+def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.register("action", "my_extend", ExtendAction)
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
@@ -58,11 +57,11 @@ def parse_arguments(arguments):
         type=int,
         help="Number of bug reports pairs for SBERT train for STS task",
     )
-    return parser.parse_args(arguments)
+    return parser.parse_args()
 
 
-def main(args_str):
-    args = parse_arguments(args_str)
+def main():
+    args = parse_arguments()
 
     train = pd.read_csv(args.train)
     train_corpus = get_corpus(train)
@@ -91,10 +90,10 @@ def main(args_str):
             epochs=args.epochs,
             batch_size=args.batch_size,
             tmp_file=args.tmp_file,
-            n_examples=int(args.n_examples),
+            n_examples=args.n_examples,
         )
         model.train_and_save_all(train_corpus, docs_corpus)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
