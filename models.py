@@ -49,7 +49,7 @@ class AbstractModel:
             if word in self.model.wv:
                 result += self.model.wv[word]
                 size += 1
-        return result / size
+        return result if size == 0 else result / size
 
     def get_embeddings(self, corpus, update_vocab=False):
         if update_vocab:
