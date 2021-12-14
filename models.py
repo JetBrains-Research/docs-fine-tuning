@@ -3,13 +3,17 @@ import os
 
 import numpy as np
 import torch
-import csv
 
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
 from transformers import TrainingArguments, Trainer
-from transformers import RobertaTokenizer, RobertaConfig, RobertaForMaskedLM
-from torch.utils.data import Dataset
-from tokenizers import ByteLevelBPETokenizer
+from transformers import RobertaTokenizer
+from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizer, BertTokenizerFast
+from tokenizers import ByteLevelBPETokenizer, BertWordPieceTokenizer
+
+from sentence_transformers import SentenceTransformer, losses, models
+from sentence_transformers.readers import InputExample
 
 from tqdm import tqdm
 
@@ -19,11 +23,6 @@ from gensim.test.utils import get_tmpfile
 from gensim.models.word2vec import Word2Vec
 from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
-from gensim.models import KeyedVectors
-from gensim.models.keyedvectors import Vocab
-
-from mittens import GloVe, Mittens
-from sklearn.feature_extraction.text import CountVectorizer
 
 from data_processing.util import get_corpus_properties
 
@@ -139,74 +138,6 @@ class FastTextModel(AbstractModel):
         return created_model
 
 
-# TODO: save embeddings format and build vocabulary
-class GloveModel(AbstractModel):
-    def __init__(self, corpus=None, vector_size=300, max_iter=100):
-        super().__init__(vector_size)
-        self.name = "glove"
-        self.max_iter = max_iter
-        self.vocab = self.__get_vocab(corpus)
-        self.cooccurrence = self.__get_cooccurrance_matrix(corpus)
-        self.pretrained = self.__glove2dict(os.path.join("pretrained_models", f"glove.6B.{self.vector_size}d.txt"))
-
-        self.keyed_vectors = None
-
-    def train_random(self, corpus):
-        self.model = GloVe(n=self.vector_size, max_iter=self.max_iter)
-        embeddings = self.model.fit(self.cooccurrence)
-        self.keyed_vectors = self.__embeddings2model(embeddings)
-
-    def train_pretrained(self, corpus):
-        self.model = Mittens(n=self.vector_size, max_iter=self.max_iter)
-        embeddings = self.model.fit(self.cooccurrence, vocab=self.vocab, initial_embedding_dict=self.pretrained)
-        self.keyed_vectors = self.__embeddings2model(embeddings)
-
-    def train_finetuned(self, base_corpus, extra_corpus):
-        full_corpus = base_corpus + extra_corpus
-        self.cooccurrence = self.__get_cooccurrance_matrix(full_corpus)
-        self.vocab = self.__get_vocab(full_corpus)
-        self.train_pretrained(full_corpus)
-
-    def save(self, path):
-        self.keyed_vectors.save(path)
-
-    def load(self, path):
-        self.model = KeyedVectors.load(path)
-
-    def __get_cooccurrance_matrix(self, corpus):
-        # TODO: get matrix with sliding window
-        docs = [" ".join(doc) for doc in corpus]
-        cv = CountVectorizer(ngram_range=(1, 1), vocabulary=self.vocab)
-        X = cv.fit_transform(docs)
-        Xc = X.T * X
-        Xc.setdiag(0)
-        return Xc.toarray()
-
-    def __embeddings2model(self, embeddings):
-        word_dict = dict(zip(self.vocab, embeddings))
-        vocab_size = len(word_dict)
-        result = KeyedVectors(self.vector_size)
-        result.vectors = np.array([np.array(v) for v in word_dict.values()])
-
-        for i, word in enumerate(word_dict.keys()):
-            result.vocab[word] = Vocab(index=i, count=vocab_size - i)
-            result.index2word.append(word)
-        return result
-
-    @staticmethod
-    def __glove2dict(glove_filename):
-        with open(glove_filename, encoding="utf-8") as f:
-            reader = csv.reader(f, delimiter=" ", quoting=csv.QUOTE_NONE)
-            embed = {line[0]: np.array(list(map(float, line[1:]))) for line in reader}
-        return embed
-
-    # TODO: OOV
-    @staticmethod
-    def __get_vocab(corpus):
-        flatten_corpus = [token for doc in corpus for token in doc]
-        return list(set(flatten_corpus))
-
-
 class MeditationsDataset(Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
@@ -218,7 +149,7 @@ class MeditationsDataset(Dataset):
         return len(self.encodings.input_ids)
 
 
-class BertModel(AbstractModel):
+class BertModelMLM(AbstractModel):
     def __init__(self, vector_size=384, epochs=5, batch_size=16, tmp_file=get_tmpfile("pretrained_vectors.txt")):
         super().__init__(vector_size, epochs)
         self.tokenizer = None
@@ -231,50 +162,24 @@ class BertModel(AbstractModel):
         self.max_len = 512
 
     def train_random(self, corpus):
-        self.vocab_size, self.max_len = get_corpus_properties(corpus)
-        self.max_len = 512
-
         train_sentences = [" ".join(doc) for doc in corpus]
-        with open(self.tmp_file, "w") as fp:
-            fp.write("\n".join(train_sentences))
-
-        tokenizer = ByteLevelBPETokenizer()
-        tokenizer.train(
-            files=[self.tmp_file],
-            vocab_size=self.vocab_size,
-            min_frequency=1,
-            special_tokens=["<s>", "<pad>", "</s>", "<unk>", "<mask>"],
-        )
-
-        tokenizer.save_model(os.path.join("pretrained_models", "bert_tokenizer"))
-
-        self.tokenizer = RobertaTokenizer.from_pretrained(
-            os.path.join("pretrained_models", "bert_tokenizer"), max_length=self.max_len
-        )
-        config = RobertaConfig(
-            vocab_size=self.vocab_size,
-            max_position_embeddings=self.max_len + 2,
-            hidden_size=768,  # maybe vector_size
-            num_attention_heads=12,
-            num_hidden_layers=6,
-            type_vocab_size=1,
-        )
-        self.model = RobertaForMaskedLM(config)
+        self.model, self.tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len)
 
         inputs = self.tokenizer(
             train_sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModel.__get_dataset(inputs, mask_id=3, cls_id=0, sep_id=2, pad_id=1)
+        dataset = BertModelMLM.get_dataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1)
         self.__train(dataset)
 
     def train_pretrained(self, corpus):
         self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         self.model = AutoModelForMaskedLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        print(self.tokenizer(["I [MASK] love you", "When my time comes?"]))
         sentences = [" ".join(sentence) for sentence in corpus]
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModel.__get_dataset(inputs)
+        dataset = BertModelMLM.get_dataset(inputs)
         self.__train(dataset)
 
     def train_finetuned(self, base_corpus, extra_corpus):
@@ -282,11 +187,11 @@ class BertModel(AbstractModel):
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModel.__get_dataset(inputs)
+        dataset = BertModelMLM.get_dataset(inputs)
         self.__train(dataset)
 
     @staticmethod
-    def __get_dataset(inputs, mask_id=103, cls_id=102, sep_id=101, pad_id=0):
+    def get_dataset(inputs, mask_id=103, cls_id=102, sep_id=101, pad_id=0):
         inputs["labels"] = inputs.input_ids.detach().clone()
 
         rand = torch.rand(inputs.input_ids.shape)
@@ -304,6 +209,49 @@ class BertModel(AbstractModel):
 
         return MeditationsDataset(inputs)
 
+    @staticmethod
+    def create_bert_model(train_sentences, tmp_file, max_len, task="mlm"):
+        if task == "mlm":
+            model_type = BertForMaskedLM
+        elif task == "sts":
+            model_type = BertModel
+        else:
+            raise ValueError("Unsupported task")
+
+        vocab_size, _ = get_corpus_properties([sentence.split(" ") for sentence in train_sentences])
+        with open(tmp_file, "w") as fp:
+            fp.write("\n".join(train_sentences))
+
+        # tokenizer = ByteLevelBPETokenizer()
+        tokenizer = BertWordPieceTokenizer(
+            clean_text=True, handle_chinese_chars=False, strip_accents=False, lowercase=True
+        )
+        tokenizer.train(
+            files=[tmp_file],
+            vocab_size=vocab_size,
+            min_frequency=1,
+            wordpieces_prefix="##",
+            # special_tokens=["<s>", "<pad>", "</s>", "<unk>", "<mask>"],
+            special_tokens=["[CLS]", "[PAD]", "[SEP]", "[UNK]", "[MASK]"],
+        )
+
+        tokenizer.save_model(os.path.join("pretrained_models", "bert_tokenizer"))
+
+        tokenizer = BertTokenizerFast.from_pretrained(
+            os.path.join("pretrained_models", "bert_tokenizer"), max_len=max_len + 2
+        )
+        config = BertConfig(
+            vocab_size=vocab_size,
+            max_position_embeddings=max_len + 2,
+            hidden_size=768,  # maybe vector_size
+            num_attention_heads=12,
+            num_hidden_layers=6,
+            type_vocab_size=1,
+        )
+        dumb_model = model_type(config)
+
+        return dumb_model, tokenizer
+
     def __train(self, dataset):
         args = TrainingArguments(
             output_dir="saved_models", per_device_train_batch_size=self.batch_size, num_train_epochs=self.epochs
@@ -317,7 +265,7 @@ class BertModel(AbstractModel):
         return self.get_embeddings([doc])[0]
 
     def get_embeddings(self, corpus, update_vocab=False):
-        descriptions = [" ".join(doc) for doc in corpus]  # full description embedding
+        descriptions = [" ".join(doc) for doc in corpus]
         encoded_input = self.tokenizer(
             descriptions, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
@@ -332,7 +280,7 @@ class BertModel(AbstractModel):
             with torch.no_grad():
                 model_output = self.model(input_ids, attention_mask=attention_mask)
 
-            sentence_embeddings = BertModel.__mean_pooling(model_output, attention_mask)
+            sentence_embeddings = BertModelMLM.__mean_pooling(model_output, attention_mask)
             result += sentence_embeddings.tolist()
 
         return np.array(result).astype(np.float32)
@@ -349,7 +297,7 @@ class BertModel(AbstractModel):
 
     @staticmethod
     def load(path):
-        bertModel = BertModel()
+        bertModel = BertModelMLM()
         model = AutoModel.from_pretrained(path)
         tokenizer = AutoTokenizer.from_pretrained(path)
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -360,3 +308,111 @@ class BertModel(AbstractModel):
 
         bertModel.model.to(device)
         return bertModel
+
+
+class SBertModel(AbstractModel):
+    def __init__(
+        self,
+        corpus=None,
+        disc_ids=None,
+        vector_size=256,
+        epochs=2,
+        batch_size=16,
+        tmp_file=get_tmpfile("pretrained_vectors.txt"),
+        n_examples=None,
+    ):
+        super().__init__(vector_size, epochs)
+        self.name = "sbert"
+        self.tmp_file = tmp_file
+        self.batch_size = batch_size
+
+        if corpus is not None and disc_ids is not None:
+            self.train_sts_dataloader = self.__get_train_dataloader_from_reports(corpus, disc_ids, n_examples)
+            self.warmup_steps = int(len(self.train_sts_dataloader) * self.epochs * 0.1)  # 10% of train data
+
+        self.max_len = 512
+
+    def train_random(self, corpus):
+        train_sentences = [" ".join(doc) for doc in corpus]
+        dumb_model, tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len, task="sts")
+
+        dumb_model_name = os.path.join("saved_models", "dumb_bert")
+        tokenizer.save_pretrained(dumb_model_name)
+        dumb_model.save_pretrained(dumb_model_name)
+
+        word_embedding_model = models.Transformer(dumb_model_name)
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(),
+            pooling_mode_mean_tokens=True,
+            pooling_mode_cls_token=False,
+            pooling_mode_max_tokens=False,
+        )
+
+        dense_model = models.Dense(
+            in_features=pooling_model.get_sentence_embedding_dimension(),
+            out_features=self.vector_size,
+            activation_function=nn.Tanh(),
+        )
+
+        self.model = SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model])
+        self.__train_sts(self.train_sts_dataloader)
+
+    def train_pretrained(self, corpus):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.__train_sts(self.train_sts_dataloader)
+
+    def train_finetuned(self, base_corpus, extra_corpus):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        extra_train_dataloader = self.__get_train_dataloader_from_docs(extra_corpus)
+        self.__train_sts(extra_train_dataloader)
+        self.__train_sts(self.train_sts_dataloader)
+
+    def __train_sts(self, train_dataloader):
+        train_loss = losses.CosineSimilarityLoss(self.model)
+        self.model.fit(
+            train_objectives=[(train_dataloader, train_loss)], epochs=self.epochs, warmup_steps=self.warmup_steps
+        )
+
+    def get_embeddings(self, corpus, update_vocab=False):
+        return self.model.encode([" ".join(report) for report in corpus])
+
+    def get_doc_embedding(self, doc):
+        return self.get_embeddings([" ".join(doc)])[0]
+
+    @staticmethod
+    def load(path):
+        sbert_model = SentenceTransformer(path)
+        model = SBertModel()
+        model.model = sbert_model
+        return model
+
+    def save(self, path):
+        self.model.save(path)
+
+    def __get_train_dataloader_from_reports(self, corpus, disc_ids, n_examples):
+        corpus = list(map(lambda x: " ".join(x), corpus))
+        train_data = []
+        lngth = len(corpus)
+        for i in range(lngth):
+            for j in range(i + 1, lngth):
+                label = 1.0 if disc_ids[i] == disc_ids[j] else 0.0
+                train_data.append(InputExample(texts=[corpus[i], corpus[j]], label=label))
+        np.random.shuffle(train_data)
+        if n_examples is not None:
+            train_data = train_data[:n_examples]
+        return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
+
+    def __get_train_dataloader_from_docs(self, docs_corpus):
+        train_data = []
+        corpus = list(map(lambda x: " ".join(x), docs_corpus))
+        lngth = len(docs_corpus) - 1
+        forget_const = 10
+        for i in range(lngth):
+            train_data.append(InputExample(texts=[corpus[i], corpus[i + 1]], label=1.0))
+            if i + forget_const < lngth:
+                train_data.append(
+                    InputExample(texts=[corpus[i], corpus[i + np.random.randint(forget_const, lngth - i)]], label=0.0)
+                )
+
+        np.random.shuffle(train_data)
+        return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)

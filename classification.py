@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from models import AbstractModel, W2VModel, FastTextModel, BertModel
+from models import AbstractModel, W2VModel, FastTextModel, BertModelMLM, SBertModel
 from data_processing.util import get_corpus
 
 import faiss
@@ -33,6 +33,7 @@ def parse_arguments(arguments):
         "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
     )
     parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
+    parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
     return parser.parse_args(arguments)
 
 
@@ -81,7 +82,9 @@ def main(args_str):
     if args.fasttext:
         model_type = FastTextModel
     elif args.bert:
-        model_type = BertModel
+        model_type = BertModelMLM
+    elif args.sbert:
+        model_type = SBertModel
 
     model_random = model_type.load(args.model_random)
     model_pretrained = model_type.load(args.model_pretrained)
