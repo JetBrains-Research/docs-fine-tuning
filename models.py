@@ -33,7 +33,7 @@ class AbstractModel:
         self.name = "abstract"
         self.model = None
 
-    def train_random(self, corpus):
+    def train_from_scratch(self, corpus):
         raise NotImplementedError()
 
     def train_pretrained(self, corpus):
@@ -65,7 +65,7 @@ class AbstractModel:
         self.model.save(path)
 
     def train_and_save_all(self, base_corpus, extra_corpus):
-        self.train_random(base_corpus)
+        self.train_from_scratch(base_corpus)
         print(f"Train random {self.name} SUCCESS")
         self.save(os.path.join("saved_models", f"{self.name}_random.model"))
 
@@ -86,7 +86,7 @@ class W2VModel(AbstractModel):
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count
 
-    def train_random(self, corpus):
+    def train_from_scratch(self, corpus):
         self.model = Word2Vec(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
     def train_pretrained(self, corpus):
@@ -121,7 +121,7 @@ class FastTextModel(AbstractModel):
         self.name = "ft"
         self.min_count = min_count
 
-    def train_random(self, corpus):
+    def train_from_scratch(self, corpus):
         self.model = FastText(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
     def train_pretrained(self, corpus):
@@ -160,7 +160,7 @@ class BertModelMLM(AbstractModel):
         self.vocab_size = None
         self.max_len = 512
 
-    def train_random(self, corpus):
+    def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
         self.model, self.tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len)
 
@@ -329,7 +329,7 @@ class SBertModel(AbstractModel):
 
         self.max_len = 512
 
-    def train_random(self, corpus):
+    def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
         dumb_model, tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len, task="sts")
 

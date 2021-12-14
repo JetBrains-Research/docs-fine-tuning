@@ -86,13 +86,13 @@ def main():
     else:
         raise ValueError("Please select a model")
 
-    model_random = model_type.load(args.model_random)
+    model_trained_from_scratch = model_type.load(args.model_random)
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 
-    print(f"Recall random = {get_recall(train, test, model_random, args.topn)}")
-    print(f"Recall pretrained = {get_recall(train, test, model_pretrained, args.topn)}")
-    print(f"Recall finetuned = {get_recall(train, test, model_finetuned, args.topn)}")
+    print(f"Recall 'from scratch' = {get_recall(train, test, model_trained_from_scratch, args.topn)}")
+    print(f"Recall 'pretrained' = {get_recall(train, test, model_pretrained, args.topn)}")
+    print(f"Recall 'fine-tuned' = {get_recall(train, test, model_finetuned, args.topn)}")
 
 
 if __name__ == "__main__":
