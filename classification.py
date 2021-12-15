@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
+from nltk import FreqDist
 
 from models import AbstractModel, W2VModel, FastTextModel, BertModelMLM, SBertModel
 from models import RandomEmbeddingModel
@@ -35,7 +36,54 @@ def parse_arguments():
     parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
     parser.add_argument("--random", dest="random", action="store_true", help="Use random embeddings for classification")
+    parser.add_argument(
+        "--intersection", dest="intersection", action="store_true", help="Use word intersections for recall evaluation"
+    )
+    parser.add_argument(
+        "--min_count",
+        dest="min_count",
+        action="store",
+        type=int,
+        default=1,
+        help="Ignore all words with total frequency lower than this in intersection mode",
+    )
     return parser.parse_args()
+
+
+def get_recall_by_intersection(train: pd.DataFrame, test: pd.DataFrame, min_count: int, topn: int):
+    train_corpus = get_corpus(train)
+    test_corpus = get_corpus(test)
+
+    freq_dict = FreqDist()
+    for report in train_corpus:
+        freq_dict.update(report)
+    for report in test_corpus:
+        freq_dict.update(report)
+    test_corpus = [list(filter(lambda x: freq_dict[x] >= min_count, report)) for report in test_corpus]
+    train_corpus = [list(filter(lambda x: freq_dict[x] >= min_count, report)) for report in train_corpus]
+
+    test_size = 0
+    TP = 0
+    for ind, descr in enumerate(test_corpus):
+        if test.iloc[ind]["id"] != test.iloc[ind]["disc_id"]:
+
+            counts = []
+            for report in train_corpus:
+                count = len(list(set(report) & set(descr)))
+                counts.append(count)
+            dupl_ids = np.argsort(counts)[::-1][:topn]
+
+            val = 0
+            for dupl_id in dupl_ids:
+                if train.iloc[dupl_id]["disc_id"] == test.iloc[ind]["disc_id"]:
+                    val = 1
+                    break
+            TP += val
+            test_size += 1
+
+        train_corpus.append(test_corpus[ind])
+        train = train.append(test.iloc[ind], ignore_index=True)
+    return TP / test_size
 
 
 def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
@@ -76,6 +124,9 @@ def main():
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
 
+    if args.intersection:
+        print(f"Recall 'intersection' = {get_recall_by_intersection(train, test, args.min_count, args.topn)}")
+        return
     if args.random:
         model = RandomEmbeddingModel.load(args.model_from_scratch)
         print(f"Recall 'random' = {get_recall(train, test, model, args.topn)}")
