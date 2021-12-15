@@ -7,7 +7,7 @@ from gensim.test.utils import get_tmpfile
 from data_processing.util import get_corpus
 from data_processing.util import get_docs_text
 
-from models import W2VModel, FastTextModel, BertModelMLM, SBertModel
+from models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
 
 
 # for python <=3.7 support
@@ -30,6 +30,14 @@ def parse_arguments():
     )
     parser.add_argument(
         "--vs", dest="vector_size", action="store", type=int, default=300, help="Embedding vector size",
+    )
+    parser.add_argument(
+        "--min_count",
+        dest="min_count",
+        action="store",
+        type=int,
+        default=1,
+        help="Ignore all words with total frequency lower than this in W2V, Fasttext and Random models",
     )
     parser.add_argument(
         "--tmp_file",
@@ -57,6 +65,9 @@ def parse_arguments():
         type=int,
         help="Number of bug reports pairs for SBERT train for STS task",
     )
+    parser.add_argument(
+        "--random", dest="random", action="store_true", help="Initialize random embeddings and save them in json format"
+    )
     return parser.parse_args()
 
 
@@ -67,11 +78,16 @@ def main():
     train_corpus = get_corpus(train)
     docs_corpus = get_docs_text(args.docs)
 
+    if args.random:
+        model = RandomEmbeddingModel(vector_size=args.vector_size, min_count=args.min_count, w2v=args.w2v)
+        model.train_and_save_all(train_corpus, docs_corpus)
     if args.w2v:
-        model = W2VModel(vector_size=args.vector_size, epochs=args.epochs, tmp_file=args.tmp_file)
+        model = W2VModel(
+            vector_size=args.vector_size, epochs=args.epochs, min_count=args.min_count, tmp_file=args.tmp_file
+        )
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.fasttext:
-        model = FastTextModel(vector_size=args.vector_size, epochs=args.epochs)
+        model = FastTextModel(vector_size=args.vector_size, epochs=args.epochs, min_count=args.min_count)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.bert:
         model = BertModelMLM(

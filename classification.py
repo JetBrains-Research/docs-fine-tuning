@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from models import AbstractModel, W2VModel, FastTextModel, BertModelMLM, SBertModel
+from models import RandomEmbeddingModel
 from data_processing.util import get_corpus
 
 import faiss
@@ -12,7 +13,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
     parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
-    parser.add_argument("-r", dest="model_random", action="store", help="The path to random model")
+    parser.add_argument("-s", dest="model_from_scratch", action="store", help="The path to model training from scratch")
     parser.add_argument(
         "-p", dest="model_pretrained", action="store", help="The path to pretrained model",
     )
@@ -33,11 +34,11 @@ def parse_arguments():
     )
     parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
+    parser.add_argument("--random", dest="random", action="store_true", help="Use random embeddings for classification")
     return parser.parse_args()
 
 
 def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
-
     train_corpus = get_corpus(train)
     embeddings = model.get_embeddings(train_corpus).astype(np.float32)
     index = faiss.IndexFlatIP(embeddings.shape[1])
@@ -45,7 +46,7 @@ def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, to
     faiss.normalize_L2(embeddings)
     index.add(embeddings)
     test_corpus = get_corpus(test)
-    test_embs = model.get_embeddings(test_corpus, update_vocab=False).astype(np.float32)
+    test_embs = model.get_embeddings(test_corpus).astype(np.float32)
 
     test_size = 0
     TP = 0
@@ -75,7 +76,11 @@ def main():
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
 
-    if args.w2v:
+    if args.random:
+        model = RandomEmbeddingModel.load(args.model_from_scratch)
+        print(f"Recall 'random' = {get_recall(train, test, model, args.topn)}")
+        return
+    elif args.w2v:
         model_type = W2VModel
     elif args.fasttext:
         model_type = FastTextModel
@@ -86,7 +91,7 @@ def main():
     else:
         raise ValueError("Please select a model")
 
-    model_trained_from_scratch = model_type.load(args.model_random)
+    model_trained_from_scratch = model_type.load(args.model_from_scratch)
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 

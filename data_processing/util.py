@@ -10,6 +10,8 @@ from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk import FreqDist
 
+from json import JSONEncoder
+
 
 def get_corpus(data, sentences=False):
     corpus = []
@@ -106,3 +108,10 @@ def get_corpus_properties(corpus):
 def split_sentences(text):
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
+
+
+class NumpyArrayEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)

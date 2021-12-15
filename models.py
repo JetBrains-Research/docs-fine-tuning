@@ -1,8 +1,10 @@
 import os.path
 import os
+import json
 
 import numpy as np
 import torch
+from nltk import FreqDist
 
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
@@ -24,6 +26,7 @@ from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
 
 from data_processing.util import get_corpus_properties
+from data_processing.util import NumpyArrayEncoder
 
 
 class AbstractModel:
@@ -46,15 +49,12 @@ class AbstractModel:
         result = np.zeros(self.vector_size)
         size = 0
         for word in doc:
-            if word in self.model.wv:
-                result += self.model.wv[word]
+            if word in self.model:
+                result += self.model[word]
                 size += 1
         return result if size == 0 else result / size
 
-    def get_embeddings(self, corpus, update_vocab=False):
-        if update_vocab:
-            self.model.build_vocab(corpus, update=True)
-
+    def get_embeddings(self, corpus):
         return np.array([self.get_doc_embedding(report) for report in corpus]).astype(np.float32)
 
     @staticmethod
@@ -111,7 +111,7 @@ class W2VModel(AbstractModel):
     def load(path):
         loaded_model = Word2Vec.load(path)
         created_model = W2VModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
-        created_model.model = loaded_model
+        created_model.model = loaded_model.wv
         return created_model
 
 
@@ -133,7 +133,7 @@ class FastTextModel(AbstractModel):
     def load(path):
         loaded_model = FastText.load(path)
         created_model = FastTextModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
-        created_model.model = loaded_model
+        created_model.model = loaded_model.wv
         return created_model
 
 
@@ -261,7 +261,7 @@ class BertModelMLM(AbstractModel):
     def get_doc_embedding(self, doc):
         return self.get_embeddings([doc])[0]
 
-    def get_embeddings(self, corpus, update_vocab=False):
+    def get_embeddings(self, corpus):
         descriptions = [" ".join(doc) for doc in corpus]
         encoded_input = self.tokenizer(
             descriptions, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
@@ -370,7 +370,7 @@ class SBertModel(AbstractModel):
             train_objectives=[(train_dataloader, train_loss)], epochs=self.epochs, warmup_steps=self.warmup_steps
         )
 
-    def get_embeddings(self, corpus, update_vocab=False):
+    def get_embeddings(self, corpus):
         return self.model.encode([" ".join(report) for report in corpus]).astype(np.float32)
 
     def get_doc_embedding(self, doc):
@@ -413,3 +413,65 @@ class SBertModel(AbstractModel):
 
         np.random.shuffle(train_data)
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
+
+
+class RandomEmbeddingModel(AbstractModel):
+    def __init__(self, vector_size=300, min_count=1, random_seed=42, w2v=False, update_vocab=False):
+        super().__init__(vector_size=vector_size)
+        self.min_count = min_count
+        self.name = "random"
+        np.random.seed(random_seed)
+
+        self.w2v = w2v
+        self.update_vocab = update_vocab
+        if self.w2v:
+            self.dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=random_seed)
+
+    def train(self, corpus):
+        self.model = dict()
+        if self.w2v:
+            self.dumb_w2v.build_vocab(corpus)
+
+        d = FreqDist()
+        for docs in corpus:
+            d.update(FreqDist(docs))
+
+        for word, freq in d.items():
+            if freq >= self.min_count:
+                self.model[word] = self.__get_random_emb(word)
+
+    def __get_random_emb(self, word):
+        return self.dumb_w2v.wv[word] if self.w2v else np.random.rand(self.vector_size)
+
+    def get_embeddings(self, corpus):
+        if self.w2v and self.update_vocab:
+            self.dumb_w2v.build_vocab(corpus, update=True)
+
+        return super().get_embeddings(corpus)
+
+    def train_from_scratch(self, corpus):
+        self.train(corpus)
+
+    def train_pretrained(self, corpus):
+        self.train(corpus)
+
+    def save(self, path):
+        with open(path, "w+") as fp:
+            json.dump(self.model, fp, cls=NumpyArrayEncoder)
+
+    @staticmethod
+    def load(path):
+        with open(path) as json_file:
+            model = json.load(json_file)
+        for word, emb in model.items():
+            model[word] = np.array(emb)
+
+        random_model = RandomEmbeddingModel()
+        random_model.model = model
+        random_model.vector_size = len(list(model.values())[0])
+        return random_model
+
+    def train_and_save_all(self, base_corpus, extra_corpus):
+        self.train(base_corpus)
+        print(f"Train {self.name} SUCCESS")
+        self.save(os.path.join("saved_models", f"{self.name}_model.json"))
