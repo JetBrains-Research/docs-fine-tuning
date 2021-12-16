@@ -66,8 +66,8 @@ class AbstractModel:
 
     def train_and_save_all(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus)
-        print(f"Train random {self.name} SUCCESS")
-        self.save(os.path.join("saved_models", f"{self.name}_random.model"))
+        print(f"Train from scratch {self.name} SUCCESS")
+        self.save(os.path.join("saved_models", f"{self.name}.model"))
 
         self.train_pretrained(base_corpus)
         print(f"Train pretrained {self.name} SUCCESS")
@@ -103,7 +103,7 @@ class W2VModel(AbstractModel):
         self.model.train(corpus, total_examples=len(corpus), epochs=self.epochs)
 
     def __get_init_vocab(self):
-        pretrained = api.load(f"glove-wiki-gigaword-{self.vector_size}")  # TODO: change to 'word2vec-google-news-300'
+        pretrained = api.load(f"word2vec-google-news-{self.vector_size}")  # TODO: change to glove-wiki-gigaword-300
         pretrained.save_word2vec_format(self.tmp_file)
         return [list(pretrained.key_to_index.keys())]
 
@@ -416,44 +416,25 @@ class SBertModel(AbstractModel):
 
 
 class RandomEmbeddingModel(AbstractModel):
-    def __init__(self, vector_size=300, min_count=1, random_seed=42, w2v=False, update_vocab=False):
+    def __init__(self, train_corpus=None, vector_size=300, min_count=1, random_seed=42, w2v=False):
         super().__init__(vector_size=vector_size)
         self.min_count = min_count
         self.name = "random"
         np.random.seed(random_seed)
 
-        self.w2v = w2v
-        self.update_vocab = update_vocab
-        if self.w2v:
-            self.dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=random_seed)
+        freq_dict = FreqDist()
+        for docs in train_corpus:
+            freq_dict.update(FreqDist(docs))
 
-    def train(self, corpus):
-        self.model = dict()
-        if self.w2v:
-            self.dumb_w2v.build_vocab(corpus)
+        dumb_w2v = None
+        if w2v:
+            dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=random_seed, min_count=self.min_count)
+            dumb_w2v.build_vocab(train_corpus)
 
-        d = FreqDist()
-        for docs in corpus:
-            d.update(FreqDist(docs))
-
-        for word, freq in d.items():
+        self.model = {}
+        for word, freq in freq_dict.items():
             if freq >= self.min_count:
-                self.model[word] = self.__get_random_emb(word)
-
-    def __get_random_emb(self, word):
-        return self.dumb_w2v.wv[word] if self.w2v else np.random.rand(self.vector_size)
-
-    def get_embeddings(self, corpus):
-        if self.w2v and self.update_vocab:
-            self.dumb_w2v.build_vocab(corpus, update=True)
-
-        return super().get_embeddings(corpus)
-
-    def train_from_scratch(self, corpus):
-        self.train(corpus)
-
-    def train_pretrained(self, corpus):
-        self.train(corpus)
+                self.model[word] = dumb_w2v.wv[word] if w2v else np.random.rand(self.vector_size)
 
     def save(self, path):
         with open(path, "w+") as fp:
@@ -471,7 +452,11 @@ class RandomEmbeddingModel(AbstractModel):
         random_model.vector_size = len(list(model.values())[0])
         return random_model
 
-    def train_and_save_all(self, base_corpus, extra_corpus):
-        self.train(base_corpus)
-        print(f"Train {self.name} SUCCESS")
-        self.save(os.path.join("saved_models", f"{self.name}_model.json"))
+    def train_from_scratch(self, corpus):
+        pass
+
+    def train_pretrained(self, corpus):
+        pass
+
+    def train_finetuned(self, base_corpus, extra_corpus):
+        pass

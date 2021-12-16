@@ -128,7 +128,7 @@ def main():
         print(f"Recall 'intersection' = {get_recall_by_intersection(train, test, args.min_count, args.topn)}")
         return
     if args.random:
-        model = RandomEmbeddingModel.load(args.model_from_scratch)
+        model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
         print(f"Recall 'random' = {get_recall(train, test, model, args.topn)}")
         return
     elif args.w2v:

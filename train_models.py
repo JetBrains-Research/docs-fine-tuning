@@ -65,9 +65,6 @@ def parse_arguments():
         type=int,
         help="Number of bug reports pairs for SBERT train for STS task",
     )
-    parser.add_argument(
-        "--random", dest="random", action="store_true", help="Initialize random embeddings and save them in json format"
-    )
     return parser.parse_args()
 
 
@@ -78,9 +75,6 @@ def main():
     train_corpus = get_corpus(train)
     docs_corpus = get_docs_text(args.docs)
 
-    if args.random:
-        model = RandomEmbeddingModel(vector_size=args.vector_size, min_count=args.min_count, w2v=args.w2v)
-        model.train_and_save_all(train_corpus, docs_corpus)
     if args.w2v:
         model = W2VModel(
             vector_size=args.vector_size, epochs=args.epochs, min_count=args.min_count, tmp_file=args.tmp_file
