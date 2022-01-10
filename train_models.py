@@ -7,7 +7,7 @@ from gensim.test.utils import get_tmpfile
 from data_processing.util import get_corpus
 from data_processing.util import get_docs_text
 
-from models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
+from models import W2VModel, FastTextModel, BertModelMLM, SBertModel
 
 
 # for python <=3.7 support

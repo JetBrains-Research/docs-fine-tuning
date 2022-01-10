@@ -37,7 +37,10 @@ def parse_arguments():
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
     parser.add_argument("--random", dest="random", action="store_true", help="Use random embeddings for classification")
     parser.add_argument(
-        "--intersection", dest="intersection", action="store_true", help="Use word intersections for recall evaluation"
+        "--intersection",
+        dest="intersection",
+        action="store_true",
+        help="Use word intersections for success rate evaluation",
     )
     parser.add_argument(
         "--min_count",
@@ -50,7 +53,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def get_recall_by_intersection(train: pd.DataFrame, test: pd.DataFrame, min_count: int, topn: int):
+def get_success_rate_by_intersection(train: pd.DataFrame, test: pd.DataFrame, min_count: int, topn: int):
     train_corpus = get_corpus(train)
     test_corpus = get_corpus(test)
 
@@ -86,7 +89,7 @@ def get_recall_by_intersection(train: pd.DataFrame, test: pd.DataFrame, min_coun
     return TP / test_size
 
 
-def get_recall(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
+def get_success_rate(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
     train_corpus = get_corpus(train)
     embeddings = model.get_embeddings(train_corpus).astype(np.float32)
     index = faiss.IndexFlatIP(embeddings.shape[1])
@@ -125,11 +128,13 @@ def main():
     test = pd.read_csv(args.test)
 
     if args.intersection:
-        print(f"Recall 'intersection' = {get_recall_by_intersection(train, test, args.min_count, args.topn)}")
+        print(
+            f"Success Rate 'intersection' = {get_success_rate_by_intersection(train, test, args.min_count, args.topn)}"
+        )
         return
     if args.random:
         model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
-        print(f"Recall 'random' = {get_recall(train, test, model, args.topn)}")
+        print(f"Success Rate 'random' = {get_success_rate(train, test, model, args.topn)}")
         return
     elif args.w2v:
         model_type = W2VModel
@@ -146,9 +151,9 @@ def main():
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 
-    print(f"Recall 'from scratch' = {get_recall(train, test, model_trained_from_scratch, args.topn)}")
-    print(f"Recall 'pretrained' = {get_recall(train, test, model_pretrained, args.topn)}")
-    print(f"Recall 'fine-tuned' = {get_recall(train, test, model_finetuned, args.topn)}")
+    print(f"Success Rate 'from scratch' = {get_success_rate(train, test, model_trained_from_scratch, args.topn)}")
+    print(f"Success Rate 'pretrained' = {get_success_rate(train, test, model_pretrained, args.topn)}")
+    print(f"Success Rate 'fine-tuned' = {get_success_rate(train, test, model_finetuned, args.topn)}")
 
 
 if __name__ == "__main__":
