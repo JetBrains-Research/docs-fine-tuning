@@ -23,13 +23,26 @@ def parse_arguments():
     parser.register("action", "my_extend", ExtendAction)
     parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
     parser.add_argument(
-        "--docs", dest="docs", action="my_extend", nargs="+", help="Paths to preprocessed docs",
+        "--docs",
+        dest="docs",
+        action="my_extend",
+        nargs="+",
+        help="Paths to preprocessed docs",
     )
     parser.add_argument(
-        "-e", dest="epochs", action="store", type=int, help="The number of epochs for training saved_models",
+        "-e",
+        dest="epochs",
+        action="store",
+        type=int,
+        help="The number of epochs for training saved_models",
     )
     parser.add_argument(
-        "--vs", dest="vector_size", action="store", type=int, default=300, help="Embedding vector size",
+        "--vs",
+        dest="vector_size",
+        action="store",
+        type=int,
+        default=300,
+        help="Embedding vector size",
     )
     parser.add_argument(
         "--min_count",

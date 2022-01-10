@@ -11,7 +11,11 @@ from util import split_sentences
 def parse_arguments():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
-        "--docs", dest="docs", action="extend", nargs="+", help="Paths to pdf docs to be preprocessed",
+        "--docs",
+        dest="docs",
+        action="extend",
+        nargs="+",
+        help="Paths to pdf docs to be preprocessed",
     )
     arg_parser.add_argument("-p", dest="prefix", action="store", help="Preprocessed docs file name prefix")
     return arg_parser.parse_args()

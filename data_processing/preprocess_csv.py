@@ -8,7 +8,10 @@ from util import tokenize_and_normalize
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--full", dest="full", action="store", help="The path to the full dataset to be preprocessed",
+        "--full",
+        dest="full",
+        action="store",
+        help="The path to the full dataset to be preprocessed",
     )
     parser.add_argument(
         "--train",

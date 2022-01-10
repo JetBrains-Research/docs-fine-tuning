@@ -16,10 +16,16 @@ def parse_arguments():
     parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
     parser.add_argument("-s", dest="model_from_scratch", action="store", help="The path to model training from scratch")
     parser.add_argument(
-        "-p", dest="model_pretrained", action="store", help="The path to pretrained model",
+        "-p",
+        dest="model_pretrained",
+        action="store",
+        help="The path to pretrained model",
     )
     parser.add_argument(
-        "-f", dest="model_finetuned", action="store", help="The path to fine-tuned model",
+        "-f",
+        dest="model_finetuned",
+        action="store",
+        help="The path to fine-tuned model",
     )
     parser.add_argument(
         "--topn",
