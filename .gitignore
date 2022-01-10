@@ -1,0 +1,13 @@
+.DS_Store
+results.ipynb
+transformers.ipynb
+out/
+.idea/
+venv/
+__pycache__/
+
+saved_models/
+pretrained_models/
+data/
+
+.ipynb_checkpoints/
