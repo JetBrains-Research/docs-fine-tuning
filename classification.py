@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 from nltk import FreqDist
 
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import vstack
+
 from models import AbstractModel, W2VModel, FastTextModel, BertModelMLM, SBertModel
 from models import RandomEmbeddingModel
 from data_processing.util import get_corpus
@@ -56,6 +60,7 @@ def parse_arguments():
         default=1,
         help="Ignore all words with total frequency lower than this in intersection mode",
     )
+    parser.add_argument("--tfidf", dest="tfidf", action="store_true", help="Use tf-idf matrix in evaluation")
     return parser.parse_args()
 
 
@@ -95,15 +100,53 @@ def get_success_rate_by_intersection(train: pd.DataFrame, test: pd.DataFrame, mi
     return TP / test_size
 
 
+def get_success_rate_with_tfidf(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int, w: int = 0.7):
+    train_corpus = get_corpus(train)
+    embeddings = model.get_embeddings(train_corpus)
+
+    test_corpus = get_corpus(test)
+    test_embs = model.get_embeddings(test_corpus)
+
+    tf_idf = TfidfVectorizer(use_idf=True)
+    train_corpus_tf_idf = [" ".join(doc) for doc in train_corpus]
+    tf_idf.fit(train_corpus_tf_idf)
+
+    train_tfidf_vectors = tf_idf.transform(train_corpus_tf_idf)
+    test_tfidf_vectors = tf_idf.transform([" ".join(doc) for doc in test_corpus])
+
+    test_size = 0
+    TP = 0
+
+    for ind, descr in enumerate(test_corpus):
+        if test.iloc[ind]["id"] != test.iloc[ind]["disc_id"]:  # not in master_ids
+            sims_emb = cosine_similarity(embeddings, test_embs[ind].reshape(1, -1)).squeeze()
+            sims_tfidf = cosine_similarity(train_tfidf_vectors, test_tfidf_vectors[ind]).squeeze()
+            sims = w * sims_tfidf + (1 - w) * sims_emb
+            dupl_ids = np.argsort(-sims)[:topn]
+            val = 0
+            for dupl_id in dupl_ids:
+                if train.iloc[dupl_id]["disc_id"] == test.iloc[ind]["disc_id"]:
+                    val = 1
+                    break
+            TP += val
+            test_size += 1
+
+        train = train.append(test.iloc[ind], ignore_index=True)
+        train_tfidf_vectors = vstack((train_tfidf_vectors, test_tfidf_vectors[ind]))
+        embeddings = np.append(embeddings, test_embs[ind].reshape(1, -1), axis=0)
+
+    return TP / test_size
+
+
 def get_success_rate(train: pd.DataFrame, test: pd.DataFrame, model: AbstractModel, topn: int):
     train_corpus = get_corpus(train)
-    embeddings = model.get_embeddings(train_corpus).astype(np.float32)
+    embeddings = model.get_embeddings(train_corpus)
     index = faiss.IndexFlatIP(embeddings.shape[1])
 
     faiss.normalize_L2(embeddings)
     index.add(embeddings)
     test_corpus = get_corpus(test)
-    test_embs = model.get_embeddings(test_corpus).astype(np.float32)
+    test_embs = model.get_embeddings(test_corpus)
 
     test_size = 0
     TP = 0
@@ -133,6 +176,8 @@ def main():
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
 
+    evaluate = get_success_rate_with_tfidf if args.tfidf else get_success_rate
+
     if args.intersection:
         print(
             f"Success Rate 'intersection' = {get_success_rate_by_intersection(train, test, args.min_count, args.topn)}"
@@ -140,7 +185,7 @@ def main():
         return
     if args.random:
         model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
-        print(f"Success Rate 'random' = {get_success_rate(train, test, model, args.topn)}")
+        print(f"Success Rate 'random' = {evaluate(train, test, model, args.topn)}")
         return
     elif args.w2v:
         model_type = W2VModel
@@ -157,9 +202,9 @@ def main():
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 
-    print(f"Success Rate 'from scratch' = {get_success_rate(train, test, model_trained_from_scratch, args.topn)}")
-    print(f"Success Rate 'pretrained' = {get_success_rate(train, test, model_pretrained, args.topn)}")
-    print(f"Success Rate 'fine-tuned' = {get_success_rate(train, test, model_finetuned, args.topn)}")
+    print(f"Success Rate 'from scratch' = {evaluate(train, test, model_trained_from_scratch, args.topn)}")
+    print(f"Success Rate 'pretrained' = {evaluate(train, test, model_pretrained, args.topn)}")
+    print(f"Success Rate 'fine-tuned' = {evaluate(train, test, model_finetuned, args.topn)}")
 
 
 if __name__ == "__main__":
