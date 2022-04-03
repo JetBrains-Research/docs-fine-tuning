@@ -59,7 +59,7 @@ def parse_arguments():
         action="store",
         type=float,
         default=1,
-        help="The weight of text embeddings score in evaluation with tf-idf vectors",
+        help="The weight of tf-idf vectors score in evaluation",
     )
     return parser.parse_args()
 
