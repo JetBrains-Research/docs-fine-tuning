@@ -10,6 +10,7 @@ from scipy.sparse import vstack
 from models import AbstractModel, W2VModel, FastTextModel, BertModelMLM, SBertModel
 from models import RandomEmbeddingModel
 from data_processing.util import get_corpus
+from evaluation import SimpleEvaluation, TfIdfEvaluation, IntersectionEvaluation
 
 import faiss
 
@@ -61,6 +62,14 @@ def parse_arguments():
         help="Ignore all words with total frequency lower than this in intersection mode",
     )
     parser.add_argument("--tfidf", dest="tfidf", action="store_true", help="Use tf-idf matrix in evaluation")
+    parser.add_argument(
+        "-w",
+        dest="w",
+        action="store",
+        type=float,
+        default=1,
+        help="The weight of text embeddings score in evaluation with tf-idf vectors",
+    )
     return parser.parse_args()
 
 
@@ -176,18 +185,20 @@ def main():
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
 
-    evaluate = get_success_rate_with_tfidf if args.tfidf else get_success_rate
+    evaluator = SimpleEvaluation(train, test)
+    if args.tfidf:
+        evaluator = TfIdfEvaluation(train, test, args.w)
+    elif args.intersection:
+        evaluator = IntersectionEvaluation(train, test, args.min_count)
 
     if args.intersection:
-        print(
-            f"Success Rate 'intersection' = {get_success_rate_by_intersection(train, test, args.min_count, args.topn)}"
-        )
+        print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionEvaluation.UtilModel(), args.topn)}")
         return
     if args.random:
         model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
-        print(f"Success Rate 'random' = {evaluate(train, test, model, args.topn)}")
+        print(f"Success Rate 'random' = {evaluator.evaluate(model, args.topn)}")
         return
-    elif args.w2v:
+    if args.w2v:
         model_type = W2VModel
     elif args.fasttext:
         model_type = FastTextModel
@@ -202,9 +213,9 @@ def main():
     model_pretrained = model_type.load(args.model_pretrained)
     model_finetuned = model_type.load(args.model_finetuned)
 
-    print(f"Success Rate 'from scratch' = {evaluate(train, test, model_trained_from_scratch, args.topn)}")
-    print(f"Success Rate 'pretrained' = {evaluate(train, test, model_pretrained, args.topn)}")
-    print(f"Success Rate 'fine-tuned' = {evaluate(train, test, model_finetuned, args.topn)}")
+    print(f"Success Rate 'from scratch' = {evaluator.evaluate(model_trained_from_scratch, args.topn)}")
+    print(f"Success Rate 'pretrained' = {evaluator.evaluate(model_pretrained, args.topn)}")
+    print(f"Success Rate 'fine-tuned' = {evaluator.evaluate(model_finetuned, args.topn)}")
 
 
 if __name__ == "__main__":
