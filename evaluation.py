@@ -1,138 +1,108 @@
-from abc import ABC
-
-import numpy as np
+import argparse
 import pandas as pd
-import faiss
 
-from scipy.sparse import vstack
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from nltk import FreqDist
-
-from models import AbstractModel
+from models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
 from data_processing.util import get_corpus
+from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach
 
 
-class AbstractEvaluation:
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
-        self.train = train
-        self.test = test
-        self.train_corpus = get_corpus(train)
-        self.test_corpus = get_corpus(test)
-
-        self.embeddings = None
-        self.test_embs = None
-
-    def evaluate(self, model: AbstractModel, topn=5):
-        self.embeddings = model.get_embeddings(self.train_corpus)
-        self.test_embs = model.get_embeddings(self.test_corpus)
-
-        self.additional_preparation()
-
-        test_size = 0
-        TP = 0
-        for ind, descr in enumerate(self.test_corpus):
-            if self.test.iloc[ind]["id"] != self.test.iloc[ind]["disc_id"]:  # not in master_ids
-                dupl_ids = self.get_dupl_ids(ind, topn)
-                TP += np.any(self.train.iloc[dupl_ids]["disc_id"] == self.test.iloc[ind]["disc_id"])
-                test_size += 1
-
-            self.train = self.train.append(self.test.iloc[ind], ignore_index=True)
-            self.update_history(ind)
-
-        self.embeddings = None
-        self.test_embs = None
-
-        return TP / test_size
-
-    def additional_preparation(self):
-        raise NotImplementedError()
-
-    def get_dupl_ids(self, query_num: int, topn: int):
-        raise NotImplementedError()
-
-    def update_history(self, query_num: int):
-        raise NotImplementedError()
-
-
-class SimpleEvaluation(AbstractEvaluation):
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
-        super().__init__(train, test)
-
-    def additional_preparation(self):
-        self.index = faiss.IndexFlatIP(self.embeddings.shape[1])
-        faiss.normalize_L2(self.embeddings)
-        self.index.add(self.embeddings)
-
-    def get_dupl_ids(self, query_num, topn: int):
-        return self.index.search(self.test_embs[query_num].reshape(1, -1), topn)[1][0]
-
-    def update_history(self, query_num):
-        tmp_emb = np.array([self.test_embs[query_num]])
-        faiss.normalize_L2(tmp_emb)
-        self.index.add(tmp_emb)
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
+    parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
+    parser.add_argument("-s", dest="model_from_scratch", action="store", help="The path to model training from scratch")
+    parser.add_argument(
+        "-p",
+        dest="model_pretrained",
+        action="store",
+        help="The path to pretrained model",
+    )
+    parser.add_argument(
+        "-f",
+        dest="model_finetuned",
+        action="store",
+        help="The path to fine-tuned model",
+    )
+    parser.add_argument(
+        "--topn",
+        dest="topn",
+        action="store",
+        type=int,
+        default=5,
+        help="The number of predicted duplicate bug-reports for one report",
+    )
+    parser.add_argument("--w2v", dest="w2v", action="store_true", help="Use word2vec model for classification")
+    parser.add_argument(
+        "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
+    )
+    parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
+    parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
+    parser.add_argument("--random", dest="random", action="store_true", help="Use random embeddings for classification")
+    parser.add_argument(
+        "--intersection",
+        dest="intersection",
+        action="store_true",
+        help="Use word intersections for success rate evaluation",
+    )
+    parser.add_argument(
+        "--min_count",
+        dest="min_count",
+        action="store",
+        type=int,
+        default=1,
+        help="Ignore all words with total frequency lower than this in intersection mode",
+    )
+    parser.add_argument("--tfidf", dest="tfidf", action="store_true", help="Use tf-idf matrix in evaluation")
+    parser.add_argument(
+        "-w",
+        dest="w",
+        action="store",
+        type=float,
+        default=1,
+        help="The weight of text embeddings score in evaluation with tf-idf vectors",
+    )
+    return parser.parse_args()
 
 
-class TfIdfEvaluation(AbstractEvaluation):
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame, w: int):
-        super(TfIdfEvaluation, self).__init__(train, test)
-        self.w = w
+def main():
+    args = parse_arguments()
 
-        self.tf_idf = None
-        self.train_tfidf_vectors = None
-        self.test_tfidf_vectors = None
+    train = pd.read_csv(args.train)
+    test = pd.read_csv(args.test)
 
-    def additional_preparation(self):
-        self.tf_idf = TfidfVectorizer(use_idf=True)
-        train_corpus_tf_idf = [" ".join(doc) for doc in self.train_corpus]
-        self.tf_idf.fit(train_corpus_tf_idf)
+    if args.tfidf:
+        evaluator = TfIdfApproach(train, test, args.w)
+    elif args.intersection:
+        evaluator = IntersectionApproach(train, test, args.min_count)
+    else:
+        evaluator = SimpleApproach(train, test)
 
-        self.train_tfidf_vectors = self.tf_idf.transform(train_corpus_tf_idf)
-        self.test_tfidf_vectors = self.tf_idf.transform([" ".join(doc) for doc in self.test_corpus])
+    if args.intersection:
+        print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), args.topn)}")
+        return
+    if args.random:
+        model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
+        print(f"Success Rate 'random' = {evaluator.evaluate(model, args.topn)}")
+        return
+    if args.w2v:
+        model_type = W2VModel
+    elif args.fasttext:
+        model_type = FastTextModel
+    elif args.bert:
+        model_type = BertModelMLM
+    elif args.sbert:
+        model_type = SBertModel
+    else:
+        raise ValueError("Please select a model")
 
-    def get_dupl_ids(self, query_num, topn):
-        sims_emb = cosine_similarity(self.embeddings, self.test_embs[query_num].reshape(1, -1)).squeeze()
-        sims_tfidf = cosine_similarity(self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]).squeeze()
-        sims = self.w * sims_tfidf + (1 - self.w) * sims_emb
-        return np.argsort(-sims)[:topn]
+    model_trained_from_scratch = model_type.load(args.model_from_scratch)
+    model_pretrained = model_type.load(args.model_pretrained)
+    model_finetuned = model_type.load(args.model_finetuned)
 
-    def update_history(self, query_num):
-        self.train_tfidf_vectors = vstack((self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]))
-        self.embeddings = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)
+    print(f"Success Rate 'from scratch' = {evaluator.evaluate(model_trained_from_scratch, args.topn)}")
+    print(f"Success Rate 'pretrained' = {evaluator.evaluate(model_pretrained, args.topn)}")
+    print(f"Success Rate 'fine-tuned' = {evaluator.evaluate(model_finetuned, args.topn)}")
 
 
-class IntersectionEvaluation(AbstractEvaluation):
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame, min_count: int):
-        super(IntersectionEvaluation, self).__init__(train, test)
-        self.min_count = min_count
-
-    def additional_preparation(self):
-        freq_dict = FreqDist()
-        for report in self.train_corpus:
-            freq_dict.update(report)
-        for report in self.test_corpus:
-            freq_dict.update(report)
-        self.test_corpus = [
-            list(filter(lambda x: freq_dict[x] >= self.min_count, report)) for report in self.test_corpus
-        ]
-        self.train_corpus = [
-            list(filter(lambda x: freq_dict[x] >= self.min_count, report)) for report in self.train_corpus
-        ]
-
-    def get_dupl_ids(self, query_num, topn, **kwargs):
-        counts = []
-        for report in self.train_corpus:
-            count = len(list(set(report) & set(self.test_corpus[query_num])))
-            counts.append(count)
-        return np.argsort(counts)[::-1][:topn]
-
-    def update_history(self, query_num: int):
-        self.train_corpus.append(self.test_corpus[query_num])
-
-    class UtilModel(AbstractModel, ABC):
-        def __init__(self):
-            super(IntersectionEvaluation.UtilModel, self).__init__(0, 0)
-            self.name = "Intersection Utility Model"
-
-        def get_embeddings(self, corpus):
-            return None
+if __name__ == "__main__":
+    main()
