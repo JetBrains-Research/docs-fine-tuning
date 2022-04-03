@@ -31,7 +31,7 @@ class AbstractApproach:
 
         test_size = 0
         TP = 0
-        for ind in range(self.test_corpus):
+        for ind in range(len(self.test_corpus)):
             if self.test.iloc[ind]["id"] != self.test.iloc[ind]["disc_id"]:  # not in master_ids
                 dupl_ids = self.get_dupl_ids(ind, topn)
                 TP += np.any(self.train.iloc[dupl_ids]["disc_id"] == self.test.iloc[ind]["disc_id"])

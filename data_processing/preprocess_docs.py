@@ -17,7 +17,9 @@ def parse_arguments():
         nargs="+",
         help="Paths to pdf docs to be preprocessed",
     )
-    arg_parser.add_argument("-p", dest="prefix", action="store", help="Preprocessed docs file name prefix")
+    arg_parser.add_argument(
+        "-p", dest="prefix", action="store", default="doc", help="Preprocessed docs file name prefix"
+    )
     return arg_parser.parse_args()
 
 
@@ -30,9 +32,9 @@ def main():
     args = parse_arguments()
     for i, doc in enumerate(args.docs):
         text = get_text_from_pdf(doc)
+        text = remove_noise(text)
         sentences = split_sentences(text)
-        text = [remove_noise(sentence) for sentence in sentences]
-        text = tokenize_and_normalize(text)
+        text = tokenize_and_normalize(sentences)
         with Path(os.path.join("data", "docs", f"{args.prefix}_{i}.txt")).open(mode="w") as f:
             f.write(str(text))
 

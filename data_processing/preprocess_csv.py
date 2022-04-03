@@ -17,13 +17,13 @@ def parse_arguments():
         "--train",
         dest="train",
         action="store",
-        help="The path to the file where the user wants " "to save the train portion of preprocessed " "dataset",
+        help="The path to the file where the user wants to save the train portion of preprocessed dataset",
     )
     parser.add_argument(
         "--test",
         dest="test",
         action="store",
-        help="The path to the file where the user wants " "to save the test portion of preprocessed " "dataset",
+        help="The path to the file where the user wants to save the test portion of preprocessed dataset",
     )
     parser.add_argument(
         "--test_size",

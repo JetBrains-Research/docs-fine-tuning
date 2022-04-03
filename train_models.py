@@ -59,6 +59,9 @@ def parse_arguments():
         default=get_tmpfile("pretrained_vectors.txt"),
         help="The path to tmp file to store pretrained embeddings",
     )
+    parser.add_argument("--w2v", dest="w2v", action="store_true", help="Train and save word2vec model")
+    parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
+    parser.add_argument("--bert", dest="bert", action="store_true", help="Train and save BERT model for MLM task.")
     parser.add_argument(
         "--batch_size",
         dest="batch_size",
@@ -67,9 +70,6 @@ def parse_arguments():
         default=16,
         help="Batch Size for Bert Model training.",
     )
-    parser.add_argument("--w2v", dest="w2v", action="store_true", help="Train and save word2vec model")
-    parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
-    parser.add_argument("--bert", dest="bert", action="store_true", help="Train and save BERT model for MLM task.")
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Train and save SBERT model for STS tasks.")
     parser.add_argument(
         "--n_examples",
