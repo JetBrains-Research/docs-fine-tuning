@@ -132,7 +132,6 @@ class IntersectionApproach(AbstractApproach):
     class UtilModel(AbstractModel, ABC):
         def __init__(self):
             super(IntersectionApproach.UtilModel, self).__init__(0, 0)
-            self.name = "Intersection Utility Model"
 
         def get_embeddings(self, corpus):
             return None

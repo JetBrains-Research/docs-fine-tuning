@@ -11,3 +11,4 @@ transformers~=4.12.5
 tqdm~=4.59.0
 tokenizers~=0.10.3
 scipy~=1.8.0
+pyyaml~=6.0

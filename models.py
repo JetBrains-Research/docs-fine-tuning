@@ -25,15 +25,18 @@ from gensim.models.word2vec import Word2Vec
 from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
 
-from data_processing.util import get_corpus_properties
+from data_processing.util import get_corpus_properties, load_config
 from data_processing.util import NumpyArrayEncoder
+
+config = load_config()
 
 
 class AbstractModel:
+    name = "abstract"
+
     def __init__(self, vector_size=300, epochs=5):
         self.vector_size = vector_size
         self.epochs = epochs
-        self.name = "abstract"
         self.model = None
 
     def train_from_scratch(self, corpus):
@@ -57,8 +60,8 @@ class AbstractModel:
     def get_embeddings(self, corpus):
         return np.array([self.get_doc_embedding(report) for report in corpus]).astype(np.float32)
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         raise NotImplementedError()
 
     def save(self, path):
@@ -67,21 +70,22 @@ class AbstractModel:
     def train_and_save_all(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus)
         print(f"Train from scratch {self.name} SUCCESS")
-        self.save(os.path.join("saved_models", f"{self.name}.model"))
+        self.save(os.path.join(config["models_directory"], self.name + config["models"]["from_scratch"]))
 
         self.train_pretrained(base_corpus)
         print(f"Train pretrained {self.name} SUCCESS")
-        self.save(os.path.join("saved_models", f"{self.name}_pretrained.model"))
+        self.save(os.path.join(config["models_directory"], self.name + config["models"]["pretrained"]))
 
         self.train_finetuned(base_corpus, extra_corpus)
         print(f"Train fine-tuned {self.name} SUCCESS")
-        self.save(os.path.join("saved_models", f"{self.name}_finetuned.model"))
+        self.save(os.path.join(config["models_directory"], self.name + config["models"]["fine-tuned"]))
 
 
 class W2VModel(AbstractModel):
+    name = "w2v"
+
     def __init__(self, vector_size=300, epochs=5, min_count=1, tmp_file=get_tmpfile("pretrained_vectors.txt")):
         super().__init__(vector_size, epochs)
-        self.name = "w2v"
         self.tmp_file = tmp_file
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count
@@ -107,8 +111,8 @@ class W2VModel(AbstractModel):
         pretrained.save_word2vec_format(self.tmp_file)
         return [list(pretrained.key_to_index.keys())]
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         loaded_model = Word2Vec.load(path)
         created_model = W2VModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
         created_model.model = loaded_model.wv
@@ -118,8 +122,9 @@ class W2VModel(AbstractModel):
 class FastTextModel(AbstractModel):
     def __init__(self, vector_size=300, epochs=5, min_count=1):
         super().__init__(vector_size, epochs)
-        self.name = "ft"
         self.min_count = min_count
+
+    name = "ft"
 
     def train_from_scratch(self, corpus):
         self.model = FastText(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
@@ -129,8 +134,8 @@ class FastTextModel(AbstractModel):
         self.model.build_vocab(corpus, update=True)
         self.model.train(corpus, total_examples=len(corpus), epochs=self.epochs)
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         loaded_model = FastText.load(path)
         created_model = FastTextModel(loaded_model.vector_size, loaded_model.epochs, loaded_model.min_count)
         created_model.model = loaded_model.wv
@@ -153,12 +158,13 @@ class BertModelMLM(AbstractModel):
         super().__init__(vector_size, epochs)
         self.tokenizer = None
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.name = "bert"
         self.tmp_file = tmp_file
         self.batch_size = batch_size
 
         self.vocab_size = None
         self.max_len = 512
+
+    name = "bert"
 
     def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
@@ -292,8 +298,8 @@ class BertModelMLM(AbstractModel):
         self.tokenizer.save_pretrained(path)
         self.model.save_pretrained(path)
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         bertModel = BertModelMLM()
         model = AutoModel.from_pretrained(path)
         tokenizer = AutoTokenizer.from_pretrained(path)
@@ -319,7 +325,6 @@ class SBertModel(AbstractModel):
         n_examples=None,
     ):
         super().__init__(vector_size, epochs)
-        self.name = "sbert"
         self.tmp_file = tmp_file
         self.batch_size = batch_size
 
@@ -328,6 +333,8 @@ class SBertModel(AbstractModel):
             self.warmup_steps = int(len(self.train_sts_dataloader) * self.epochs * 0.1)  # 10% of train data
 
         self.max_len = 512
+
+    name = "sbert"
 
     def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
@@ -376,8 +383,8 @@ class SBertModel(AbstractModel):
     def get_doc_embedding(self, doc):
         return self.get_embeddings([" ".join(doc)])[0]
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         sbert_model = SentenceTransformer(path)
         model = SBertModel()
         model.model = sbert_model
@@ -419,7 +426,6 @@ class RandomEmbeddingModel(AbstractModel):
     def __init__(self, train_corpus=None, vector_size=300, min_count=1, random_seed=42, w2v=False):
         super().__init__(vector_size=vector_size)
         self.min_count = min_count
-        self.name = "random"
         np.random.seed(random_seed)
 
         freq_dict = FreqDist()
@@ -436,12 +442,14 @@ class RandomEmbeddingModel(AbstractModel):
             if freq >= self.min_count:
                 self.model[word] = dumb_w2v.wv[word] if w2v else np.random.rand(self.vector_size)
 
+    name = "random"
+
     def save(self, path):
         with open(path, "w+") as fp:
             json.dump(self.model, fp, cls=NumpyArrayEncoder)
 
-    @staticmethod
-    def load(path):
+    @classmethod
+    def load(cls, path):
         with open(path) as json_file:
             model = json.load(json_file)
         for word, emb in model.items():
