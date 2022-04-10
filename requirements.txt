@@ -13,4 +13,3 @@ tokenizers~=0.10.3
 scipy~=1.8.0
 pyyaml~=6.0
 omegaconf~=2.1.1
-faiss~=1.6.3
