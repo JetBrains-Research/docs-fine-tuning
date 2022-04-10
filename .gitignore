@@ -2,6 +2,7 @@
 results.ipynb
 transformers.ipynb
 tf_idf.ipynb
+docs_parsing.ipynb
 
 out/
 .idea/

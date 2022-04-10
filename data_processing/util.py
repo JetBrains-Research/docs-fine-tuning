@@ -1,7 +1,5 @@
 import re
 import ast
-import yaml
-
 import nltk
 import numpy as np
 
@@ -113,12 +111,6 @@ def get_corpus_properties(corpus):
 def split_sentences(text):
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
-
-
-def load_config(config_path=CONFIG_PATH):
-    with open(config_path) as file:
-        config = yaml.safe_load(file)
-    return config
 
 
 class NumpyArrayEncoder(JSONEncoder):

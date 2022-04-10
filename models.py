@@ -17,6 +17,7 @@ from sentence_transformers import SentenceTransformer, losses, models
 from sentence_transformers.readers import InputExample
 
 from tqdm import tqdm
+from omegaconf import OmegaConf
 
 import gensim.downloader as api
 
@@ -25,10 +26,10 @@ from gensim.models.word2vec import Word2Vec
 from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
 
-from data_processing.util import get_corpus_properties, load_config
+from data_processing.util import get_corpus_properties, CONFIG_PATH
 from data_processing.util import NumpyArrayEncoder
 
-config = load_config()
+config = OmegaConf.load(CONFIG_PATH)
 
 
 class AbstractModel:
@@ -70,15 +71,15 @@ class AbstractModel:
     def train_and_save_all(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus)
         print(f"Train from scratch {self.name} SUCCESS")
-        self.save(os.path.join(config["models_directory"], self.name + config["models"]["from_scratch"]))
+        self.save(os.path.join(config.models_directory, self.name + config.models.from_scratch))
 
         self.train_pretrained(base_corpus)
         print(f"Train pretrained {self.name} SUCCESS")
-        self.save(os.path.join(config["models_directory"], self.name + config["models"]["pretrained"]))
+        self.save(os.path.join(config.models_directory, self.name + config.models.pretrained))
 
         self.train_finetuned(base_corpus, extra_corpus)
         print(f"Train fine-tuned {self.name} SUCCESS")
-        self.save(os.path.join(config["models_directory"], self.name + config["models"]["fine-tuned"]))
+        self.save(os.path.join(config.models_directory, self.name + config.models.finetuned))
 
 
 class W2VModel(AbstractModel):
@@ -243,7 +244,7 @@ class BertModelMLM(AbstractModel):
         tokenizer = BertTokenizerFast.from_pretrained(
             os.path.join("pretrained_models", "bert_tokenizer"), max_len=max_len + 2
         )
-        config = BertConfig(
+        bert_config = BertConfig(
             vocab_size=vocab_size,
             max_position_embeddings=max_len + 2,
             hidden_size=768,  # maybe vector_size
@@ -251,7 +252,7 @@ class BertModelMLM(AbstractModel):
             num_hidden_layers=6,
             type_vocab_size=1,
         )
-        dumb_model = model_type(config)
+        dumb_model = model_type(bert_config)
 
         return dumb_model, tokenizer
 

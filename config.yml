@@ -2,6 +2,5 @@ models_directory: saved_models
 models:
   from_scratch: .model
   pretrained: _pretrained.model
-  fine-tuned: _finetuned.model
-
+  finetuned: _finetuned.model
 
