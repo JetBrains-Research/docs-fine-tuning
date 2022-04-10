@@ -8,8 +8,7 @@ from omegaconf import OmegaConf
 from data_processing.util import get_corpus, get_docs_text
 from data_processing.util import CONFIG_PATH
 
-from models import W2VModel, FastTextModel, BertModelMLM, SBertModel
-
+from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel
 
 # for python <=3.7 support
 class ExtendAction(argparse.Action):

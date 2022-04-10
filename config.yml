@@ -5,7 +5,7 @@ datasets:
 
 docs_directory: data/docs
 
-models_directory: saved_models
+models_directory: text_models/saved
 models_suffixes:
   from_scratch: .model
   pretrained: _pretrained.model

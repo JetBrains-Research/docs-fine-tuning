@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 from omegaconf import OmegaConf
 
-from models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
+from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
 from data_processing.util import get_corpus, CONFIG_PATH
 from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach
 

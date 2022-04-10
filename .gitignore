@@ -9,8 +9,8 @@ out/
 venv/
 __pycache__/
 
-saved_models/
-pretrained_models/
+text_models/saved
+text_models/pretrained
 data/
 
 .ipynb_checkpoints/

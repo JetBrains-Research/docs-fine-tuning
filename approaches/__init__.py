@@ -1,0 +1,4 @@
+from approaches.abstract_approach import AbstractApproach
+from approaches.simple import SimpleApproach
+from approaches.tfidf import TfIdfApproach
+from approaches.intersection import IntersectionApproach
