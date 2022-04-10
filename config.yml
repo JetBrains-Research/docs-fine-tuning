@@ -1,6 +1,51 @@
+datasets:
+  full: data/csv/IDEA2020.csv
+  train: data/csv/train2020.csv
+  test: data/csv/test2020.csv
+
+docs_directory: data/docs
+
 models_directory: saved_models
-models:
+models_suffixes:
   from_scratch: .model
   pretrained: _pretrained.model
   finetuned: _finetuned.model
+
+models:
+  random:
+    vector_size: 300
+    min_count: 1
+    rand_by_w2v: false
+
+  w2v:
+    epochs: 100
+    vector_size: 300
+    min_count: 1
+    tmp_file: null
+
+  fasttext:
+    epochs: 100
+    vector_size: 300
+    min_count: 1
+    tmp_file: null
+
+  bert:
+    vector_size: 300
+    epochs: 2
+    batch_size: 16
+    tmp_file: null
+
+  sbert:
+    vector_size: 300
+    epochs: 2
+    batch_size: 16
+    tmp_file: null
+    n_examples: 5000
+
+approaches:
+  intersection:
+    min_count: 1
+
+  tf_idf:
+    weight: 0.7
 

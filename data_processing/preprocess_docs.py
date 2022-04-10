@@ -3,9 +3,10 @@ import os.path
 
 from pathlib import Path
 from tika import parser
-from util import remove_noise
-from util import tokenize_and_normalize
-from util import split_sentences
+from omegaconf import OmegaConf
+
+from util import remove_noise, tokenize_and_normalize, split_sentences
+from util import CONFIG_PATH
 
 
 def parse_arguments():
@@ -30,12 +31,13 @@ def get_text_from_pdf(file_name):
 
 def main():
     args = parse_arguments()
+    config = OmegaConf.load(CONFIG_PATH)
     for i, doc in enumerate(args.docs):
         text = get_text_from_pdf(doc)
         text = remove_noise(text)
         sentences = split_sentences(text)
         text = tokenize_and_normalize(sentences)
-        with Path(os.path.join("data", "docs", f"{args.prefix}_{i}.txt")).open(mode="w") as f:
+        with Path(os.path.join(config.docs_directory, f"{args.prefix}_{i}.txt")).open(mode="w") as f:
             f.write(str(text))
 
 

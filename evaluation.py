@@ -10,8 +10,6 @@ from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", dest="train", action="store", help="The path to train dataset")
-    parser.add_argument("--test", dest="test", action="store", help="The path to test dataset")
     parser.add_argument(
         "--topn",
         dest="topn",
@@ -33,23 +31,7 @@ def parse_arguments():
         action="store_true",
         help="Use word intersections for success rate evaluation",
     )
-    parser.add_argument(
-        "--min_count",
-        dest="min_count",
-        action="store",
-        type=int,
-        default=1,
-        help="Ignore all words with total frequency lower than this in intersection mode",
-    )
     parser.add_argument("--tfidf", dest="tfidf", action="store_true", help="Use tf-idf matrix in evaluation")
-    parser.add_argument(
-        "-w",
-        dest="w",
-        action="store",
-        type=float,
-        default=1,
-        help="The weight of tf-idf vectors score in evaluation",
-    )
     return parser.parse_args()
 
 
@@ -57,13 +39,13 @@ def main():
     args = parse_arguments()
     config = OmegaConf.load(CONFIG_PATH)
 
-    train = pd.read_csv(args.train)
-    test = pd.read_csv(args.test)
+    train = pd.read_csv(config.datasets.train)
+    test = pd.read_csv(config.datasets.test)
 
     if args.tfidf:
-        evaluator = TfIdfApproach(train, test, args.w)
+        evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.weight)
     elif args.intersection:
-        evaluator = IntersectionApproach(train, test, args.min_count)
+        evaluator = IntersectionApproach(train, test, config.approaches.intersection.min_count)
     else:
         evaluator = SimpleApproach(train, test)
 
@@ -71,7 +53,8 @@ def main():
         print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), args.topn)}")
         return
     if args.random:
-        model = RandomEmbeddingModel(get_corpus(train), min_count=args.min_count, w2v=args.w2v)
+        cnf_random = config.models.random
+        model = RandomEmbeddingModel(get_corpus(train), min_count=cnf_random.min_count, w2v=cnf_random.rand_by_w2v)
         print(f"Success Rate 'random' = {evaluator.evaluate(model, args.topn)}")
         return
     if args.w2v:
@@ -85,9 +68,15 @@ def main():
     else:
         raise ValueError("Please select a model")
 
-    model_trained_from_scratch = model_type.load(os.path.join(config.models_directory, model_type.name + config.models.from_scratch))
-    model_pretrained = model_type.load(os.path.join(config.models_directory, model_type.name + config.models.pretrained))
-    model_finetuned = model_type.load(os.path.join(config.models_directory, model_type.name + config.models.finetuned))
+    model_trained_from_scratch = model_type.load(
+        os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
+    )
+    model_pretrained = model_type.load(
+        os.path.join(config.models_directory, model_type.name + config.models_suffixes.pretrained)
+    )
+    model_finetuned = model_type.load(
+        os.path.join(config.models_directory, model_type.name + config.models_suffixes.finetuned)
+    )
 
     print(f"Success Rate 'from scratch' = {evaluator.evaluate(model_trained_from_scratch, args.topn)}")
     print(f"Success Rate 'pretrained' = {evaluator.evaluate(model_pretrained, args.topn)}")
