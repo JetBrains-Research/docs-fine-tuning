@@ -22,18 +22,21 @@ models:
     vector_size: 300
     min_count: 1
     tmp_file: null
+    pretrained: word2vec-google-news-300 # must match vector_size
 
   fasttext:
     epochs: 100
     vector_size: 300
     min_count: 1
     tmp_file: null
+    pretrained: text_models/pretrained/cc.en.300.bin # must match vector_size
 
   bert:
     vector_size: 300
     epochs: 2
     batch_size: 16
     tmp_file: null
+    pretrained: sentence-transformers/all-MiniLM-L6-v2
 
   sbert:
     vector_size: 300
@@ -41,6 +44,7 @@ models:
     batch_size: 16
     tmp_file: null
     n_examples: 5000
+    pretrained: all-MiniLM-L6-v2
 
 approaches:
   intersection:

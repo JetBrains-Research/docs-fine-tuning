@@ -30,8 +30,15 @@ class MeditationsDataset(Dataset):
 
 
 class BertModelMLM(AbstractModel):
-    def __init__(self, vector_size=384, epochs=5, batch_size=16, tmp_file=get_tmpfile("pretrained_vectors.txt")):
-        super().__init__(vector_size, epochs)
+    def __init__(
+        self,
+        vector_size=384,
+        epochs=5,
+        batch_size=16,
+        pretrained_model="bert-base-uncased",
+        tmp_file=get_tmpfile("pretrained_vectors.txt"),
+    ):
+        super().__init__(vector_size, epochs, pretrained_model)
         self.tokenizer = None
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.tmp_file = tmp_file
@@ -53,8 +60,8 @@ class BertModelMLM(AbstractModel):
         self.__train(dataset)
 
     def train_pretrained(self, corpus):
-        self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-        self.model = AutoModelForMaskedLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_name)
+        self.model = AutoModelForMaskedLM.from_pretrained(self.pretrained_name)
         print(self.tokenizer(["I [MASK] love you", "When my time comes?"]))
         sentences = [" ".join(sentence) for sentence in corpus]
         inputs = self.tokenizer(

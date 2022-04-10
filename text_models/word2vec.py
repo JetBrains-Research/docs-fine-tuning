@@ -11,8 +11,15 @@ from text_models.abstract_model import AbstractModel
 class W2VModel(AbstractModel):
     name = "w2v"
 
-    def __init__(self, vector_size=300, epochs=5, min_count=1, tmp_file=get_tmpfile("pretrained_vectors.txt")):
-        super().__init__(vector_size, epochs)
+    def __init__(
+        self,
+        vector_size=300,
+        epochs=5,
+        min_count=1,
+        pretrained_model="word2vec-google-news-300",
+        tmp_file=get_tmpfile("pretrained_vectors.txt"),
+    ):
+        super().__init__(vector_size, epochs, pretrained_model)
         self.tmp_file = tmp_file
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count
@@ -34,7 +41,7 @@ class W2VModel(AbstractModel):
         self.model.train(corpus, total_examples=len(corpus), epochs=self.epochs)
 
     def __get_init_vocab(self):
-        pretrained = api.load(f"word2vec-google-news-{self.vector_size}")  # TODO: change to glove-wiki-gigaword-300
+        pretrained = api.load(self.pretrained_model)
         pretrained.save_word2vec_format(self.tmp_file)
         return [list(pretrained.key_to_index.keys())]
 

@@ -1,6 +1,4 @@
-import os.path
-import os
-
+import tempfile
 import numpy as np
 
 from torch import nn
@@ -25,8 +23,9 @@ class SBertModel(AbstractModel):
         batch_size=16,
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         n_examples=None,
+        pretrained_model="all-mpnet-base-v2",
     ):
-        super().__init__(vector_size, epochs)
+        super().__init__(vector_size, epochs, pretrained_model)
         self.tmp_file = tmp_file
         self.batch_size = batch_size
 
@@ -42,7 +41,7 @@ class SBertModel(AbstractModel):
         train_sentences = [" ".join(doc) for doc in corpus]
         dumb_model, tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len, task="sts")
 
-        dumb_model_name = os.path.join("saved_models", "dumb_bert")
+        dumb_model_name = tempfile.mkdtemp()
         tokenizer.save_pretrained(dumb_model_name)
         dumb_model.save_pretrained(dumb_model_name)
 
@@ -64,11 +63,11 @@ class SBertModel(AbstractModel):
         self.__train_sts(self.train_sts_dataloader)
 
     def train_pretrained(self, corpus):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer(self.pretrained_model)
         self.__train_sts(self.train_sts_dataloader)
 
     def train_finetuned(self, base_corpus, extra_corpus):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer(self.pretrained_model)
         extra_train_dataloader = self.__get_train_dataloader_from_docs(extra_corpus)
         self.__train_sts(extra_train_dataloader)
         self.__train_sts(self.train_sts_dataloader)

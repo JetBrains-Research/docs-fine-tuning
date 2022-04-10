@@ -10,6 +10,7 @@ from data_processing.util import CONFIG_PATH
 
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel
 
+
 # for python <=3.7 support
 class ExtendAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -49,12 +50,18 @@ def main():
             vector_size=cnf_w2v.vector_size,
             epochs=cnf_w2v.epochs,
             min_count=cnf_w2v.min_count,
+            pretrained_model=cnf_w2v.pretrained,
             tmp_file=cnf_w2v.tmp_file or get_tmpfile("pretrained_vectors.txt"),
         )
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.fasttext:
         cnf_ft = config.models.fasttext
-        model = FastTextModel(vector_size=cnf_ft.vector_size, epochs=cnf_ft.epochs, min_count=cnf_ft.min_count)
+        model = FastTextModel(
+            pretrained_model=cnf_ft.pretrained,
+            vector_size=cnf_ft.vector_size,
+            epochs=cnf_ft.epochs,
+            min_count=cnf_ft.min_count,
+        )
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.bert:
         cnf_bert = config.models.bert
@@ -62,6 +69,7 @@ def main():
             vector_size=cnf_bert.vector_size,
             epochs=cnf_bert.epochs,
             batch_size=cnf_bert.batch_size,
+            pretrained_model=cnf_bert.pretrained,
             tmp_file=cnf_bert.tmp_file or get_tmpfile("pretrained_vectors.txt"),
         )
         model.train_and_save_all(train_corpus, docs_corpus)
@@ -74,6 +82,7 @@ def main():
             vector_size=cnf_sbert.vector_size,
             epochs=cnf_sbert.epochs,
             batch_size=cnf_sbert.batch_size,
+            pretrained_model=cnf_sbert.pretrained,
             tmp_file=cnf_sbert.tmp_file or get_tmpfile("pretrained_vectors.txt"),
             n_examples=cnf_sbert.n_examples,
         )
