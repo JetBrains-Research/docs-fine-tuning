@@ -9,7 +9,7 @@ from text_models.abstract_model import AbstractModel
 
 
 class W2VModel(AbstractModel):
-    name = "w2v"
+    name = "Word2Vec"
 
     def __init__(
         self,

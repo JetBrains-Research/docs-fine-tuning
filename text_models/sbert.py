@@ -69,7 +69,7 @@ class SBertModel(AbstractModel):
         self.max_len = max_len
         self.forget_const = forget_const
 
-    name = "sbert"
+    name = "SBERT"
 
     def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]

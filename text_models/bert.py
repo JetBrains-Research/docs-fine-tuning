@@ -79,7 +79,7 @@ class BertModelMLM(AbstractModel):
         self.vocab_size = None
         self.max_len = max_len
 
-    name = "bert"
+    name = "BERT"
 
     def train_from_scratch(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]

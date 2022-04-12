@@ -18,7 +18,7 @@ class FastTextModel(AbstractModel):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.min_count = min_count
 
-    name = "ft"
+    name = "FastText"
 
     def train_from_scratch(self, corpus):
         self.model = FastText(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
