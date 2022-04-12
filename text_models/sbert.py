@@ -54,10 +54,12 @@ class SBertModel(AbstractModel):
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         n_examples=None,
         pretrained_model="all-mpnet-base-v2",
-        seed=42
+        seed=42,
+        save_to_path="./",
+        models_suffixes=None
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed)
-        self.tmp_file = tmp_file
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
 
         if corpus is not None and disc_ids is not None:

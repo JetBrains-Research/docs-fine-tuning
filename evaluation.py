@@ -1,11 +1,11 @@
-import os
 import argparse
-import pandas as pd
-from omegaconf import OmegaConf
+import os
 
-from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
-from data_processing.util import get_corpus, CONFIG_PATH
+import pandas as pd
+
 from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach
+from data_processing.util import get_corpus, load_config
+from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
 
 
 def parse_arguments():
@@ -37,7 +37,7 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    config = OmegaConf.load(CONFIG_PATH)
+    config = load_config()
 
     train = pd.read_csv(config.datasets.train)
     test = pd.read_csv(config.datasets.test)

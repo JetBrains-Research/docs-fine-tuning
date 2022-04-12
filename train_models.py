@@ -2,12 +2,8 @@ import argparse
 
 import pandas as pd
 
-from gensim.test.utils import get_tmpfile
-from omegaconf import OmegaConf
-
-from data_processing.util import get_corpus, get_docs_text
 from data_processing.util import CONFIG_PATH
-
+from data_processing.util import get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel
 
 
@@ -38,53 +34,27 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    config = OmegaConf.load(CONFIG_PATH)
+    config = load_config()
 
     train = pd.read_csv(config.datasets.train)
     train_corpus = get_corpus(train)
     docs_corpus = get_docs_text(args.docs)
 
     if args.w2v:
-        cnf_w2v = config.models.w2v
-        model = W2VModel(
-            vector_size=cnf_w2v.vector_size,
-            epochs=cnf_w2v.epochs,
-            min_count=cnf_w2v.min_count,
-            pretrained_model=cnf_w2v.pretrained,
-            tmp_file=cnf_w2v.tmp_file or get_tmpfile("pretrained_vectors.txt"),
-        )
+        model = W2VModel(**config.models.w2v)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.fasttext:
-        cnf_ft = config.models.fasttext
-        model = FastTextModel(
-            pretrained_model=cnf_ft.pretrained,
-            vector_size=cnf_ft.vector_size,
-            epochs=cnf_ft.epochs,
-            min_count=cnf_ft.min_count,
-        )
+        model = FastTextModel(**config.models.fasttext)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.bert:
-        cnf_bert = config.models.bert
-        model = BertModelMLM(
-            vector_size=cnf_bert.vector_size,
-            epochs=cnf_bert.epochs,
-            batch_size=cnf_bert.batch_size,
-            pretrained_model=cnf_bert.pretrained,
-            tmp_file=cnf_bert.tmp_file or get_tmpfile("pretrained_vectors.txt"),
-        )
+        model = BertModelMLM(**config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.sbert:
-        cnf_sbert = config.models.sbert
         disc_ids = train["disc_id"].tolist()
         model = SBertModel(
             train_corpus,
             disc_ids,
-            vector_size=cnf_sbert.vector_size,
-            epochs=cnf_sbert.epochs,
-            batch_size=cnf_sbert.batch_size,
-            pretrained_model=cnf_sbert.pretrained,
-            tmp_file=cnf_sbert.tmp_file or get_tmpfile("pretrained_vectors.txt"),
-            n_examples=cnf_sbert.n_examples,
+            **config.models.sbert
         )
         model.train_and_save_all(train_corpus, docs_corpus)
 

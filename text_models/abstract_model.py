@@ -2,21 +2,23 @@ import os
 from abc import ABC
 
 import numpy as np
-from omegaconf import OmegaConf
-
-import data_processing.util as util
-
-config = OmegaConf.load(util.CONFIG_PATH)
 
 
 class AbstractModel(ABC):
     name = "abstract"
 
-    def __init__(self, vector_size=300, epochs=5, pretrained_model=None, seed=42):
+    def __init__(self, vector_size=300, epochs=5, pretrained_model=None, seed=42, save_to_path="./",
+                 models_suffixes=None):
+        if models_suffixes is None:
+            models_suffixes = {"from_scratch": ".model", "pretrained": "_pretrained.model",
+                               "finetuned": "_finetuned.model"}
+
         self.vector_size = vector_size
         self.epochs = epochs
         self.model = None
         self.pretrained_model = pretrained_model
+        self.save_to_path = save_to_path
+        self.models_suffixes = models_suffixes
         np.random.seed(seed)
 
     def train_from_scratch(self, corpus):
@@ -50,12 +52,12 @@ class AbstractModel(ABC):
     def train_and_save_all(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus)
         print(f"Train from scratch {self.name} SUCCESS")
-        self.save(os.path.join(config.models_directory, self.name + config.models_suffixes.from_scratch))
+        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
         self.train_pretrained(base_corpus)
         print(f"Train pretrained {self.name} SUCCESS")
-        self.save(os.path.join(config.models_directory, self.name + config.models_suffixes.pretrained))
+        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
         self.train_finetuned(base_corpus, extra_corpus)
         print(f"Train fine-tuned {self.name} SUCCESS")
-        self.save(os.path.join(config.models_directory, self.name + config.models_suffixes.finetuned))
+        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))

@@ -7,7 +7,6 @@ test_size: 0.1
 
 docs_directory: data/docs
 
-models_directory: text_models/saved
 models_suffixes:
   from_scratch: .model
   pretrained: _pretrained.model
@@ -19,22 +18,24 @@ models:
     min_count: 1
     rand_by_w2v: false
     random_seed: 42
+    save_to_path: text_models/saved
 
   w2v:
     epochs: 100
     vector_size: 300
     min_count: 1
     tmp_file: null
-    pretrained: word2vec-google-news-300 # must match vector_size
+    pretrained_model: word2vec-google-news-300 # must match vector_size
     seed: 42
+    save_to_path: text_models/saved
 
   fasttext:
     epochs: 100
     vector_size: 300
     min_count: 1
-    tmp_file: null
-    pretrained: text_models/pretrained/cc.en.300.bin # must match vector_size
+    pretrained_model: text_models/pretrained/cc.en.300.bin # must match vector_size
     seed: 42
+    save_to_path: text_models/saved
 
   bert:
     vector_size: 300
@@ -43,9 +44,10 @@ models:
     mask_probability: 0.15
     max_len: 512
     tmp_file: null
-    pretrained: sentence-transformers/all-MiniLM-L6-v2
+    pretrained_model: sentence-transformers/all-MiniLM-L6-v2
     device: cpu # 'cuda' or 'cpu'
     seed: 42
+    save_to_path: text_models/saved
 
   sbert:
     vector_size: 300
@@ -56,8 +58,9 @@ models:
     tmp_file: null
     n_examples: 5000
     forget_const: 10
-    pretrained: all-MiniLM-L6-v2
+    pretrained_model: all-MiniLM-L6-v2
     seed: 42
+    save_to_path: text_models/saved
 
 approaches:
   intersection:

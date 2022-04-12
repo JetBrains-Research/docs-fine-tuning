@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 from nltk import FreqDist
 
 from json import JSONEncoder
+from omegaconf import OmegaConf
 
 CONFIG_PATH = "config.yml"
 
@@ -112,6 +113,13 @@ def split_sentences(text):
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
 
+
+def load_config(path=None):
+    cnf_path = CONFIG_PATH if path is None else path
+    config = OmegaConf.load(cnf_path)
+    for cnf in config.models.values():
+        cnf["models_suffixes"] = config.models_suffixes
+    return config
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):

@@ -1,5 +1,6 @@
 import os.path
 import os
+import tempfile
 
 import numpy as np
 import torch
@@ -64,12 +65,14 @@ class BertModelMLM(AbstractModel):
         pretrained_model="bert-base-uncased",
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         device="cpu",
-        seed=42
+        seed=42,
+        save_to_path="./",
+        models_suffixes=None
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed)
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tokenizer = None
         self.device = torch.device(device)
-        self.tmp_file = tmp_file
+        self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
         self.mask_probability = mask_probability
 
@@ -91,7 +94,6 @@ class BertModelMLM(AbstractModel):
     def train_pretrained(self, corpus):
         self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
         self.model = AutoModelForMaskedLM.from_pretrained(self.pretrained_model)
-        print(self.tokenizer(["I [MASK] love you", "When my time comes?"]))
         sentences = [" ".join(sentence) for sentence in corpus]
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
@@ -134,10 +136,12 @@ class BertModelMLM(AbstractModel):
             special_tokens=["[CLS]", "[PAD]", "[SEP]", "[UNK]", "[MASK]"],
         )
 
-        tokenizer.save_model(os.path.join("pretrained_models", "bert_tokenizer"))
+        save_to_path = tempfile.mkdtemp()
+
+        tokenizer.save_model(save_to_path)
 
         tokenizer = BertTokenizerFast.from_pretrained(
-            os.path.join("pretrained_models", "bert_tokenizer"), max_len=max_len + 2
+            save_to_path, max_len=max_len + 2
         )
         bert_config = BertConfig(
             vocab_size=vocab_size,
@@ -153,7 +157,7 @@ class BertModelMLM(AbstractModel):
 
     def __train(self, dataset):
         args = TrainingArguments(
-            output_dir="saved_models", per_device_train_batch_size=self.batch_size, num_train_epochs=self.epochs
+            output_dir=self.save_to_path, per_device_train_batch_size=self.batch_size, num_train_epochs=self.epochs
         )
 
         trainer = Trainer(model=self.model, args=args, train_dataset=dataset)
