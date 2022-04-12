@@ -4,7 +4,7 @@ import os
 import numpy as np
 import torch
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
 from transformers import TrainingArguments, Trainer
 from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizerFast
@@ -18,7 +18,7 @@ from data_processing.util import get_corpus_properties
 from text_models.abstract_model import AbstractModel
 
 
-class MeditationsDataset(Dataset):
+class BertModelDataset(Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
 
@@ -27,6 +27,30 @@ class MeditationsDataset(Dataset):
 
     def __len__(self):
         return len(self.encodings.input_ids)
+
+
+class BertModelMLMDataset(BertModelDataset):
+    def __init__(self, encodings, mask_id=103, cls_id=102, sep_id=101, pad_id=0, mask_probability=0.15):
+        super(BertModelMLMDataset, self).__init__(encodings)
+
+        self.encodings["labels"] = self.encodings.input_ids.detach().clone()
+        self.mask_proba = mask_probability
+        self.mask_id = mask_id
+        self.cls_id = cls_id
+        self.sep_id = sep_id
+        self.pad_id = pad_id
+
+    def __getitem__(self, idx):
+        inputs = self.encodings.input_ids[idx]
+
+        rand = torch.rand(inputs.shape)
+        mask_arr = (
+            (rand < self.mask_proba) * (inputs != self.cls_id) * (inputs != self.sep_id) * (inputs != self.pad_id)
+        )
+        inputs[mask_arr] = self.mask_id
+
+        self.encodings.input_ids[idx] = inputs
+        return super().__getitem__(idx)
 
 
 class BertModelMLM(AbstractModel):
@@ -56,18 +80,18 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             train_sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLM.get_dataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1)
+        dataset = BertModelMLMDataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1)
         self.__train(dataset)
 
     def train_pretrained(self, corpus):
-        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_name)
-        self.model = AutoModelForMaskedLM.from_pretrained(self.pretrained_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
+        self.model = AutoModelForMaskedLM.from_pretrained(self.pretrained_model)
         print(self.tokenizer(["I [MASK] love you", "When my time comes?"]))
         sentences = [" ".join(sentence) for sentence in corpus]
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLM.get_dataset(inputs)
+        dataset = BertModelMLMDataset(inputs)
         self.__train(dataset)
 
     def train_finetuned(self, base_corpus, extra_corpus):
@@ -75,36 +99,20 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLM.get_dataset(inputs)
+        dataset = BertModelMLMDataset(inputs)
         self.__train(dataset)
 
     @staticmethod
-    def get_dataset(inputs, mask_id=103, cls_id=102, sep_id=101, pad_id=0):
-        inputs["labels"] = inputs.input_ids.detach().clone()
-
-        rand = torch.rand(inputs.input_ids.shape)
-        mask_arr = (
-            (rand < 0.15) * (inputs.input_ids != cls_id) * (inputs.input_ids != sep_id) * (inputs.input_ids != pad_id)
-        )
-
-        selection = []
-
-        for i in range(inputs.input_ids.shape[0]):
-            selection.append(torch.flatten(mask_arr[i].nonzero()).tolist())
-
-        for i in range(inputs.input_ids.shape[0]):
-            inputs.input_ids[i, selection[i]] = mask_id
-
-        return MeditationsDataset(inputs)
+    def get_model_type_by_task(task):
+        if task == "mlm":
+            return BertForMaskedLM
+        if task == "sts":
+            return BertModel
+        raise ValueError("Unsupported task")
 
     @staticmethod
     def create_bert_model(train_sentences, tmp_file, max_len, task="mlm"):
-        if task == "mlm":
-            model_type = BertForMaskedLM
-        elif task == "sts":
-            model_type = BertModel
-        else:
-            raise ValueError("Unsupported task")
+        model_type = BertModelMLM.get_model_type_by_task(task)
 
         vocab_size, _ = get_corpus_properties([sentence.split(" ") for sentence in train_sentences])
         with open(tmp_file, "w") as fp:
@@ -155,8 +163,8 @@ class BertModelMLM(AbstractModel):
         encoded_input = self.tokenizer(
             descriptions, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = MeditationsDataset(encoded_input)
-        loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        dataset = BertModelDataset(encoded_input)
+        loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
         result = []
         loop = tqdm(loader, leave=True)

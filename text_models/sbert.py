@@ -2,7 +2,7 @@ import tempfile
 import numpy as np
 
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from sentence_transformers import SentenceTransformer, losses, models
 from sentence_transformers.readers import InputExample
@@ -11,6 +11,33 @@ from gensim.test.utils import get_tmpfile
 
 from text_models.abstract_model import AbstractModel
 from text_models.bert import BertModelMLM
+
+
+class SbertModelDataset(Dataset):
+    def __init__(self, corpus, disc_ids, n_examples, shuffle=False):
+        if shuffle:
+            data = list(zip(corpus, disc_ids))
+            np.random.shuffle(data)
+            corpus, disc_ids = list(zip(*data))
+
+        self.disc_ids = list(disc_ids)
+        self.corpus = list(corpus)
+        self.n_examples = n_examples
+
+    def __getitem__(self, index):
+        i = 0
+        cur_bound = 0
+        while index < cur_bound:
+            i += 1
+            cur_bound += i + 1
+        j = index - i * (i + 1) // 2
+        i += 1
+
+        label = 1.0 if self.disc_ids[i] == self.disc_ids[j] else 0.0
+        return InputExample(texts=[self.corpus[i], self.corpus[j]], label=label)
+
+    def __len__(self):
+        return self.n_examples
 
 
 class SBertModel(AbstractModel):
@@ -96,15 +123,7 @@ class SBertModel(AbstractModel):
 
     def __get_train_dataloader_from_reports(self, corpus, disc_ids, n_examples):
         corpus = list(map(lambda x: " ".join(x), corpus))
-        train_data = []
-        lngth = len(corpus)
-        for i in range(lngth):
-            for j in range(i + 1, lngth):
-                label = 1.0 if disc_ids[i] == disc_ids[j] else 0.0
-                train_data.append(InputExample(texts=[corpus[i], corpus[j]], label=label))
-        np.random.shuffle(train_data)
-        if n_examples is not None:
-            train_data = train_data[:n_examples]
+        train_data = SbertModelDataset(corpus, disc_ids, n_examples, shuffle=True)
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
 
     def __get_train_dataloader_from_docs(self, docs_corpus):
@@ -119,5 +138,4 @@ class SBertModel(AbstractModel):
                     InputExample(texts=[corpus[i], corpus[i + np.random.randint(forget_const, lngth - i)]], label=0.0)
                 )
 
-        np.random.shuffle(train_data)
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
