@@ -5,8 +5,16 @@ from text_models.abstract_model import AbstractModel
 
 
 class FastTextModel(AbstractModel):
-    def __init__(self, vector_size=300, epochs=5, min_count=1, pretrained_model=None, seed=42, save_to_path="./",
-                 models_suffixes=None):
+    def __init__(
+        self,
+        vector_size=300,
+        epochs=5,
+        min_count=1,
+        pretrained_model=None,
+        seed=42,
+        save_to_path="./",
+        models_suffixes=None,
+    ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.min_count = min_count
 

@@ -56,7 +56,7 @@ class SBertModel(AbstractModel):
         pretrained_model="all-mpnet-base-v2",
         seed=42,
         save_to_path="./",
-        models_suffixes=None
+        models_suffixes=None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
@@ -141,7 +141,9 @@ class SBertModel(AbstractModel):
             train_data.append(InputExample(texts=[corpus[i], corpus[i + 1]], label=1.0))
             if i + self.forget_const < lngth:
                 train_data.append(
-                    InputExample(texts=[corpus[i], corpus[i + np.random.randint(self.forget_const, lngth - i)]], label=0.0)
+                    InputExample(
+                        texts=[corpus[i], corpus[i + np.random.randint(self.forget_const, lngth - i)]], label=0.0
+                    )
                 )
 
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)

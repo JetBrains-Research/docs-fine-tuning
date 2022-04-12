@@ -5,7 +5,13 @@ datasets:
 
 test_size: 0.1
 
+models_directory: text_models/saved
 docs_directory: data/docs
+
+topns: [5]
+save_results: true
+save_graph: true
+results_path: ./results
 
 models_suffixes:
   from_scratch: .model

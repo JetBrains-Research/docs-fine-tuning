@@ -67,7 +67,7 @@ class BertModelMLM(AbstractModel):
         device="cpu",
         seed=42,
         save_to_path="./",
-        models_suffixes=None
+        models_suffixes=None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tokenizer = None
@@ -88,7 +88,9 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             train_sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLMDataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1, mask_probability=self.mask_probability)
+        dataset = BertModelMLMDataset(
+            inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1, mask_probability=self.mask_probability
+        )
         self.__train(dataset)
 
     def train_pretrained(self, corpus):
@@ -140,9 +142,7 @@ class BertModelMLM(AbstractModel):
 
         tokenizer.save_model(save_to_path)
 
-        tokenizer = BertTokenizerFast.from_pretrained(
-            save_to_path, max_len=max_len + 2
-        )
+        tokenizer = BertTokenizerFast.from_pretrained(save_to_path, max_len=max_len + 2)
         bert_config = BertConfig(
             vocab_size=vocab_size,
             max_position_embeddings=max_len + 2,
@@ -203,7 +203,7 @@ class BertModelMLM(AbstractModel):
         bertModel = BertModelMLM()
         model = AutoModel.from_pretrained(path)
         tokenizer = AutoTokenizer.from_pretrained(path)
-        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu") # TODO
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")  # TODO
 
         bertModel.model = model
         bertModel.device = device

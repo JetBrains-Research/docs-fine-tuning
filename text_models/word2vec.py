@@ -20,7 +20,7 @@ class W2VModel(AbstractModel):
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         seed=42,
         save_to_path="./",
-        models_suffixes=None
+        models_suffixes=None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")

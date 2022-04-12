@@ -7,11 +7,15 @@ import numpy as np
 class AbstractModel(ABC):
     name = "abstract"
 
-    def __init__(self, vector_size=300, epochs=5, pretrained_model=None, seed=42, save_to_path="./",
-                 models_suffixes=None):
+    def __init__(
+        self, vector_size=300, epochs=5, pretrained_model=None, seed=42, save_to_path="./", models_suffixes=None
+    ):
         if models_suffixes is None:
-            models_suffixes = {"from_scratch": ".model", "pretrained": "_pretrained.model",
-                               "finetuned": "_finetuned.model"}
+            models_suffixes = {
+                "from_scratch": ".model",
+                "pretrained": "_pretrained.model",
+                "finetuned": "_finetuned.model",
+            }
 
         self.vector_size = vector_size
         self.epochs = epochs

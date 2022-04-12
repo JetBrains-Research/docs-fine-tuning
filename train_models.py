@@ -50,11 +50,7 @@ def main():
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.sbert:
         disc_ids = train["disc_id"].tolist()
-        model = SBertModel(
-            train_corpus,
-            disc_ids,
-            **config.models.sbert
-        )
+        model = SBertModel(train_corpus, disc_ids, **config.models.sbert)
         model.train_and_save_all(train_corpus, docs_corpus)
 
 

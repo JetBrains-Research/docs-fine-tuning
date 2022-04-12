@@ -9,9 +9,19 @@ from text_models.abstract_model import AbstractModel
 
 
 class RandomEmbeddingModel(AbstractModel):
-    def __init__(self, train_corpus=None, vector_size=300, min_count=1, random_seed=42, w2v=False, save_to_path="./",
-                 models_suffixes=None):
-        super().__init__(vector_size=vector_size, seed=random_seed, save_to_path=save_to_path, models_suffixes=models_suffixes)
+    def __init__(
+        self,
+        train_corpus=None,
+        vector_size=300,
+        min_count=1,
+        random_seed=42,
+        w2v=False,
+        save_to_path="./",
+        models_suffixes=None,
+    ):
+        super().__init__(
+            vector_size=vector_size, seed=random_seed, save_to_path=save_to_path, models_suffixes=models_suffixes
+        )
         self.min_count = min_count
 
         freq_dict = FreqDist()

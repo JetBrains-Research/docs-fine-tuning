@@ -121,6 +121,7 @@ def load_config(path=None):
         cnf["models_suffixes"] = config.models_suffixes
     return config
 
+
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):

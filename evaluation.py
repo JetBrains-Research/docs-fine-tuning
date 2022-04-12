@@ -10,14 +10,6 @@ from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, Rando
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--topn",
-        dest="topn",
-        action="store",
-        type=int,
-        default=5,
-        help="The number of predicted duplicate bug-reports for one report",
-    )
     parser.add_argument("--w2v", dest="w2v", action="store_true", help="Use word2vec model for classification")
     parser.add_argument(
         "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
@@ -78,9 +70,9 @@ def main():
         os.path.join(config.models_directory, model_type.name + config.models_suffixes.finetuned)
     )
 
-    print(f"Success Rate 'from scratch' = {evaluator.evaluate(model_trained_from_scratch, args.topn)}")
-    print(f"Success Rate 'pretrained' = {evaluator.evaluate(model_pretrained, args.topn)}")
-    print(f"Success Rate 'fine-tuned' = {evaluator.evaluate(model_finetuned, args.topn)}")
+    evaluator.evaluate_all(model_trained_from_scratch, model_pretrained, model_finetuned, config.topns)
+    if config.save_results:
+        evaluator.save_results(config.results_path, model_type.name, graph=config.save_graph)
 
 
 if __name__ == "__main__":
