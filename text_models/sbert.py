@@ -27,7 +27,7 @@ class SbertModelDataset(Dataset):
     def __getitem__(self, index):
         i = 0
         cur_bound = 0
-        while index < cur_bound:
+        while index > cur_bound:
             i += 1
             cur_bound += i + 1
         j = index - i * (i + 1) // 2

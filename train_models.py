@@ -2,7 +2,6 @@ import argparse
 
 import pandas as pd
 
-from data_processing.util import CONFIG_PATH
 from data_processing.util import get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel
 
