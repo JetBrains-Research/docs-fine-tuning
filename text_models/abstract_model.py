@@ -12,11 +12,12 @@ config = OmegaConf.load(util.CONFIG_PATH)
 class AbstractModel(ABC):
     name = "abstract"
 
-    def __init__(self, vector_size=300, epochs=5, pretrained_model=None):
+    def __init__(self, vector_size=300, epochs=5, pretrained_model=None, seed=42):
         self.vector_size = vector_size
         self.epochs = epochs
         self.model = None
         self.pretrained_model = pretrained_model
+        np.random.seed(seed)
 
     def train_from_scratch(self, corpus):
         raise NotImplementedError()

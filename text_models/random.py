@@ -10,9 +10,8 @@ from text_models.abstract_model import AbstractModel
 
 class RandomEmbeddingModel(AbstractModel):
     def __init__(self, train_corpus=None, vector_size=300, min_count=1, random_seed=42, w2v=False):
-        super().__init__(vector_size=vector_size)
+        super().__init__(vector_size=vector_size, seed=random_seed)
         self.min_count = min_count
-        np.random.seed(random_seed)
 
         freq_dict = FreqDist()
         for docs in train_corpus:

@@ -48,19 +48,24 @@ class SBertModel(AbstractModel):
         vector_size=256,
         epochs=2,
         batch_size=16,
+        warmup_steps=0.1,
+        max_len=512,
+        forget_const=10,
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         n_examples=None,
         pretrained_model="all-mpnet-base-v2",
+        seed=42
     ):
-        super().__init__(vector_size, epochs, pretrained_model)
+        super().__init__(vector_size, epochs, pretrained_model, seed)
         self.tmp_file = tmp_file
         self.batch_size = batch_size
 
         if corpus is not None and disc_ids is not None:
             self.train_sts_dataloader = self.__get_train_dataloader_from_reports(corpus, disc_ids, n_examples)
-            self.warmup_steps = int(len(self.train_sts_dataloader) * self.epochs * 0.1)  # 10% of train data
+            self.warmup_steps = int(len(self.train_sts_dataloader) * self.epochs * warmup_steps)
 
-        self.max_len = 512
+        self.max_len = max_len
+        self.forget_const = forget_const
 
     name = "sbert"
 
@@ -130,12 +135,11 @@ class SBertModel(AbstractModel):
         train_data = []
         corpus = list(map(lambda x: " ".join(x), docs_corpus))
         lngth = len(docs_corpus) - 1
-        forget_const = 10
         for i in range(lngth):
             train_data.append(InputExample(texts=[corpus[i], corpus[i + 1]], label=1.0))
-            if i + forget_const < lngth:
+            if i + self.forget_const < lngth:
                 train_data.append(
-                    InputExample(texts=[corpus[i], corpus[i + np.random.randint(forget_const, lngth - i)]], label=0.0)
+                    InputExample(texts=[corpus[i], corpus[i + np.random.randint(self.forget_const, lngth - i)]], label=0.0)
                 )
 
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)

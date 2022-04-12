@@ -5,8 +5,8 @@ from text_models.abstract_model import AbstractModel
 
 
 class FastTextModel(AbstractModel):
-    def __init__(self, vector_size=300, epochs=5, min_count=1, pretrained_model=None):
-        super().__init__(vector_size, epochs, pretrained_model)
+    def __init__(self, vector_size=300, epochs=5, min_count=1, pretrained_model=None, seed=42):
+        super().__init__(vector_size, epochs, pretrained_model, seed)
         self.min_count = min_count
 
     name = "ft"

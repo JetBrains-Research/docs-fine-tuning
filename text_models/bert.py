@@ -59,17 +59,22 @@ class BertModelMLM(AbstractModel):
         vector_size=384,
         epochs=5,
         batch_size=16,
+        mask_probability=0.15,
+        max_len=512,
         pretrained_model="bert-base-uncased",
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
+        device="cpu",
+        seed=42
     ):
-        super().__init__(vector_size, epochs, pretrained_model)
+        super().__init__(vector_size, epochs, pretrained_model, seed)
         self.tokenizer = None
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.device = torch.device(device)
         self.tmp_file = tmp_file
         self.batch_size = batch_size
+        self.mask_probability = mask_probability
 
         self.vocab_size = None
-        self.max_len = 512
+        self.max_len = max_len
 
     name = "bert"
 
@@ -80,7 +85,7 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             train_sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLMDataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1)
+        dataset = BertModelMLMDataset(inputs, mask_id=4, cls_id=0, sep_id=2, pad_id=1, mask_probability=self.mask_probability)
         self.__train(dataset)
 
     def train_pretrained(self, corpus):
@@ -91,7 +96,7 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLMDataset(inputs)
+        dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability)
         self.__train(dataset)
 
     def train_finetuned(self, base_corpus, extra_corpus):
@@ -99,7 +104,7 @@ class BertModelMLM(AbstractModel):
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
         )
-        dataset = BertModelMLMDataset(inputs)
+        dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability)
         self.__train(dataset)
 
     @staticmethod
@@ -194,7 +199,7 @@ class BertModelMLM(AbstractModel):
         bertModel = BertModelMLM()
         model = AutoModel.from_pretrained(path)
         tokenizer = AutoTokenizer.from_pretrained(path)
-        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu") # TODO
 
         bertModel.model = model
         bertModel.device = device
