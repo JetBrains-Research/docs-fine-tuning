@@ -1,3 +1,5 @@
+from abc import ABC
+
 import numpy as np
 import pandas as pd
 
@@ -5,7 +7,7 @@ from text_models import AbstractModel
 from data_processing.util import get_corpus
 
 
-class AbstractApproach:
+class AbstractApproach(ABC):
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
         self.train = train
         self.test = test

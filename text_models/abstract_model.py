@@ -1,4 +1,6 @@
 import os
+from abc import ABC
+
 import numpy as np
 from omegaconf import OmegaConf
 
@@ -7,7 +9,7 @@ import data_processing.util as util
 config = OmegaConf.load(util.CONFIG_PATH)
 
 
-class AbstractModel:
+class AbstractModel(ABC):
     name = "abstract"
 
     def __init__(self, vector_size=300, epochs=5, pretrained_model=None):
