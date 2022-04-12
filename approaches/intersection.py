@@ -1,12 +1,9 @@
-from abc import ABC
-
 import numpy as np
 import pandas as pd
-
 from nltk import FreqDist
 
-from text_models import AbstractModel
 from approaches import AbstractApproach
+from text_models import AbstractModel
 
 
 class IntersectionApproach(AbstractApproach):
@@ -30,14 +27,14 @@ class IntersectionApproach(AbstractApproach):
     def get_duplicated_ids(self, query_num, topn, **kwargs):
         counts = []
         for report in self.train_corpus:
-            count = len(list(set(report) & set(self.test_corpus[query_num])))
+            count = len(set(report) & set(self.test_corpus[query_num]))
             counts.append(count)
         return np.argsort(counts)[::-1][:topn]
 
     def update_history(self, query_num: int):
         self.train_corpus.append(self.test_corpus[query_num])
 
-    class UtilModel(AbstractModel, ABC):
+    class UtilModel(AbstractModel):
         def __init__(self):
             super(IntersectionApproach.UtilModel, self).__init__(0, 0)
 
