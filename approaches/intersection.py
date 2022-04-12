@@ -14,7 +14,7 @@ class IntersectionApproach(AbstractApproach):
         super(IntersectionApproach, self).__init__(train, test)
         self.min_count = min_count
 
-    def additional_preparation(self):
+    def setup_approach(self):
         freq_dict = FreqDist()
         for report in self.train_corpus:
             freq_dict.update(report)
@@ -27,7 +27,7 @@ class IntersectionApproach(AbstractApproach):
             list(filter(lambda x: freq_dict[x] >= self.min_count, report)) for report in self.train_corpus
         ]
 
-    def get_dupl_ids(self, query_num, topn, **kwargs):
+    def get_duplicated_ids(self, query_num, topn, **kwargs):
         counts = []
         for report in self.train_corpus:
             count = len(list(set(report) & set(self.test_corpus[query_num])))

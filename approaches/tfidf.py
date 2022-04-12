@@ -17,7 +17,7 @@ class TfIdfApproach(AbstractApproach):
         self.train_tfidf_vectors = None
         self.test_tfidf_vectors = None
 
-    def additional_preparation(self):
+    def setup_approach(self):
         self.tf_idf = TfidfVectorizer(use_idf=True)
         train_corpus_tf_idf = [" ".join(doc) for doc in self.train_corpus]
         self.tf_idf.fit(train_corpus_tf_idf)
@@ -25,7 +25,7 @@ class TfIdfApproach(AbstractApproach):
         self.train_tfidf_vectors = self.tf_idf.transform(train_corpus_tf_idf)
         self.test_tfidf_vectors = self.tf_idf.transform([" ".join(doc) for doc in self.test_corpus])
 
-    def get_dupl_ids(self, query_num, topn):
+    def get_duplicated_ids(self, query_num, topn):
         sims_emb = cosine_similarity(self.embeddings, self.test_embs[query_num].reshape(1, -1)).squeeze()
         sims_tfidf = cosine_similarity(self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]).squeeze()
         sims = self.w * sims_tfidf + (1 - self.w) * sims_emb

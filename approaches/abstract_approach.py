@@ -21,13 +21,13 @@ class AbstractApproach(ABC):
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
 
-        self.additional_preparation()
+        self.setup_approach()
 
         test_size = 0
         TP = 0
         for ind in range(len(self.test_corpus)):
             if self.test.iloc[ind]["id"] != self.test.iloc[ind]["disc_id"]:  # not in master_ids
-                dupl_ids = self.get_dupl_ids(ind, topn)
+                dupl_ids = self.get_duplicated_ids(ind, topn)
                 TP += np.any(self.train.iloc[dupl_ids]["disc_id"] == self.test.iloc[ind]["disc_id"])
                 test_size += 1
 
@@ -39,10 +39,10 @@ class AbstractApproach(ABC):
 
         return TP / test_size
 
-    def additional_preparation(self):
+    def setup_approach(self):
         raise NotImplementedError()
 
-    def get_dupl_ids(self, query_num: int, topn: int):
+    def get_duplicated_ids(self, query_num: int, topn: int):
         raise NotImplementedError()
 
     def update_history(self, query_num: int):
