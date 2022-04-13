@@ -8,7 +8,7 @@ test_size: 0.1
 models_directory: text_models/saved
 docs_directory: data/docs
 
-topns: [5]
+topns: [5, 10, 15, 20, 25]
 save_results: true
 save_graph: true
 results_path: ./results
@@ -26,7 +26,7 @@ models:
     random_seed: 42
     save_to_path: text_models/saved
 
-  w2v:
+  word2vec:
     epochs: 100
     vector_size: 300
     min_count: 1
@@ -59,10 +59,10 @@ models:
     vector_size: 300
     epochs: 2
     batch_size: 16
-    warmup_steps: 0.1
+    warmup_steps: 0.1 # share of train data
     max_len: 512
     tmp_file: null
-    n_examples: 5000
+    n_examples: 5000 # number of bug reports pairs for train
     forget_const: 10
     pretrained_model: all-MiniLM-L6-v2
     seed: 42
@@ -73,5 +73,9 @@ approaches:
     min_count: 1
 
   tf_idf:
-    weight: 0.7
+    weight: 0.7 # weight of tf-idf vectors similarity score in final score
 
+
+evaluation:
+  text_model: fasttext # see available text models in the corresponding section
+  approach: simple # see available approaches in the corresponding section

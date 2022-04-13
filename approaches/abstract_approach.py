@@ -34,14 +34,13 @@ class AbstractApproach(ABC):
         finetuned_model: AbstractModel,
         topns: List[int],
     ):
-        res_dict = {"topn": topns, "TASK": [], "PT+TASK": [], "PT+DOC+TASK": []}
-        for topn in topns:
-            from_scratch = self.evaluate(from_scratch_model, topn)
-            pretrained = self.evaluate(pretrained_model, topn)
-            finetuned = self.evaluate(finetuned_model, topn)
-            res_dict["TASK"].append(from_scratch)
-            res_dict["PT+TASK"].append(pretrained)
-            res_dict["PT+DOC+TASK"].append(finetuned)
+        res_dict = {
+            "topn": topns,
+            "TASK": self.evaluate(from_scratch_model, topns),
+            "PT+TASK": self.evaluate(pretrained_model, topns),
+            "PT+DOC+TASK": self.evaluate(finetuned_model, topns),
+        }
+
         self.results = pd.DataFrame.from_dict(res_dict)
         print(self.results)
 
@@ -54,25 +53,26 @@ class AbstractApproach(ABC):
                 kind="line",
                 marker="o",
                 figsize=(7, 5),
-                title="Random",
+                title=model_name,
                 ylabel="success rate",
                 grid=True,
             )
             plt.savefig(os.path.join(save_to_path, model_name + ".png"))
 
-    def evaluate(self, model: AbstractModel, topn=5):
+    def evaluate(self, model: AbstractModel, topns: List[int]) -> np.ndarray:
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
 
         self.setup_approach()
 
         self.test_size = 0
-        self.TP = 0
+        self.TP = np.zeros(len(topns))
 
         def __eval_sample(query_report):
             if query_report.id != query_report.disc_id:  # not in master ids
-                dupl_ids = self.get_duplicated_ids(query_report.id_num, topn)
-                self.TP += np.any(self.train.iloc[dupl_ids]["disc_id"] == query_report.disc_id)
+                dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topns))
+                for i, topn in enumerate(topns):
+                    self.TP[i] += np.any(self.train.iloc[dupl_ids[:topn]]["disc_id"] == query_report.disc_id)
                 self.test_size += 1
             self.train = self.train.append(query_report, ignore_index=True)
             self.update_history(query_report.id_num)
@@ -87,7 +87,7 @@ class AbstractApproach(ABC):
     def setup_approach(self):
         raise NotImplementedError()
 
-    def get_duplicated_ids(self, query_num: int, topn: int):
+    def get_duplicated_ids(self, query_num: int, topn: int) -> np.ndarray:
         raise NotImplementedError()
 
     def update_history(self, query_num: int):

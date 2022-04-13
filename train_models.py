@@ -40,7 +40,7 @@ def main():
     docs_corpus = get_docs_text(args.docs)
 
     if args.w2v:
-        model = W2VModel(**config.models.w2v)
+        model = W2VModel(**config.models.word2vec)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.fasttext:
         model = FastTextModel(**config.models.fasttext)

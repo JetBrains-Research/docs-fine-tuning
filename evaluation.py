@@ -1,4 +1,3 @@
-import argparse
 import os
 
 import pandas as pd
@@ -8,57 +7,42 @@ from data_processing.util import get_corpus, load_config
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--w2v", dest="w2v", action="store_true", help="Use word2vec model for classification")
-    parser.add_argument(
-        "--fasttext", dest="fasttext", action="store_true", help="Use fasttext model for classification"
-    )
-    parser.add_argument("--bert", dest="bert", action="store_true", help="Use BERT model for classification")
-    parser.add_argument("--sbert", dest="sbert", action="store_true", help="Use SBERT model for classification")
-    parser.add_argument("--random", dest="random", action="store_true", help="Use random embeddings for classification")
-    parser.add_argument(
-        "--intersection",
-        dest="intersection",
-        action="store_true",
-        help="Use word intersections for success rate evaluation",
-    )
-    parser.add_argument("--tfidf", dest="tfidf", action="store_true", help="Use tf-idf matrix in evaluation")
-    return parser.parse_args()
-
-
 def main():
-    args = parse_arguments()
     config = load_config()
+    cnf_eval = config.evaluation
 
     train = pd.read_csv(config.datasets.train)
     test = pd.read_csv(config.datasets.test)
 
-    if args.tfidf:
+    if cnf_eval.approach == "tf_idf":
         evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.weight)
-    elif args.intersection:
+    elif cnf_eval.approach == "intersection":
         evaluator = IntersectionApproach(train, test, config.approaches.intersection.min_count)
-    else:
+    elif cnf_eval.approach == "simple":
         evaluator = SimpleApproach(train, test)
+    else:
+        raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
-    if args.intersection:
-        print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), args.topn)}")
+    if cnf_eval.approach == "intersection":
+        print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), config.topns)}")
         return
-    if args.random:
+
+    if cnf_eval.text_model == "random":
         cnf_random = config.models.random
         model = RandomEmbeddingModel(get_corpus(train), min_count=cnf_random.min_count, w2v=cnf_random.rand_by_w2v)
-        print(f"Success Rate 'random' = {evaluator.evaluate(model, args.topn)}")
+        print(f"Success Rate 'random' = {evaluator.evaluate(model, config.topns)}")
         return
-    if args.w2v:
+
+    if cnf_eval.text_model == "word2vec":
         model_type = W2VModel
-    elif args.fasttext:
+    elif cnf_eval.text_model == "fasttext":
         model_type = FastTextModel
-    elif args.bert:
+    elif cnf_eval.text_model == "bert":
         model_type = BertModelMLM
-    elif args.sbert:
+    elif cnf_eval.text_model == "sbert":
         model_type = SBertModel
     else:
-        raise ValueError("Please select a model")
+        raise ValueError(f"Text model ${cnf_eval.text_model} is not supported")
 
     model_trained_from_scratch = model_type.load(
         os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
