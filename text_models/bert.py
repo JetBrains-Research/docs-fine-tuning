@@ -1,57 +1,18 @@
-import os.path
-import os
 import tempfile
 
 import numpy as np
 import torch
-
-from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
-from transformers import TrainingArguments, Trainer
-from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizerFast
-from tokenizers import BertWordPieceTokenizer
-
-from tqdm import tqdm
-
 from gensim.test.utils import get_tmpfile
+from tokenizers import BertWordPieceTokenizer
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
+from transformers import BertModel, BertConfig, BertForMaskedLM, BertTokenizerFast
+from transformers import TrainingArguments, Trainer
 
 from data_processing.util import get_corpus_properties
-from text_models.abstract_model import AbstractModel
-
-
-class BertModelDataset(Dataset):
-    def __init__(self, encodings):
-        self.encodings = encodings
-
-    def __getitem__(self, idx):
-        return {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-
-    def __len__(self):
-        return len(self.encodings.input_ids)
-
-
-class BertModelMLMDataset(BertModelDataset):
-    def __init__(self, encodings, mask_id=103, cls_id=102, sep_id=101, pad_id=0, mask_probability=0.15):
-        super(BertModelMLMDataset, self).__init__(encodings)
-
-        self.encodings["labels"] = self.encodings.input_ids.detach().clone()
-        self.mask_proba = mask_probability
-        self.mask_id = mask_id
-        self.cls_id = cls_id
-        self.sep_id = sep_id
-        self.pad_id = pad_id
-
-    def __getitem__(self, idx):
-        inputs = self.encodings.input_ids[idx]
-
-        rand = torch.rand(inputs.shape)
-        mask_arr = (
-            (rand < self.mask_proba) * (inputs != self.cls_id) * (inputs != self.sep_id) * (inputs != self.pad_id)
-        )
-        inputs[mask_arr] = self.mask_id
-
-        self.encodings.input_ids[idx] = inputs
-        return super().__getitem__(idx)
+from text_models import AbstractModel
+from text_models.datasets import BertModelDataset, BertModelMLMDataset
 
 
 class BertModelMLM(AbstractModel):

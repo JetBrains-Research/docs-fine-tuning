@@ -28,8 +28,7 @@ def main():
         return
 
     if cnf_eval.text_model == "random":
-        cnf_random = config.models.random
-        model = RandomEmbeddingModel(get_corpus(train), min_count=cnf_random.min_count, w2v=cnf_random.rand_by_w2v)
+        model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
         print(f"Success Rate 'random' = {evaluator.evaluate(model, config.topns)}")
         return
 

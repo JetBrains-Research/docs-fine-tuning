@@ -15,7 +15,7 @@ class RandomEmbeddingModel(AbstractModel):
         vector_size=300,
         min_count=1,
         random_seed=42,
-        w2v=False,
+        rand_by_w2v=False,
         save_to_path="./",
         models_suffixes=None,
     ):
@@ -29,14 +29,14 @@ class RandomEmbeddingModel(AbstractModel):
             freq_dict.update(FreqDist(docs))
 
         dumb_w2v = None
-        if w2v:
+        if rand_by_w2v:
             dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=random_seed, min_count=self.min_count)
             dumb_w2v.build_vocab(train_corpus)
 
         self.model = {}
         for word, freq in freq_dict.items():
             if freq >= self.min_count:
-                self.model[word] = dumb_w2v.wv[word] if w2v else np.random.rand(self.vector_size)
+                self.model[word] = dumb_w2v.wv[word] if rand_by_w2v else np.random.rand(self.vector_size)
 
     name = "random"
 
