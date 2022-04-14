@@ -1,44 +1,14 @@
 import argparse
 import pandas as pd
+from omegaconf import OmegaConf
 
 from util import remove_noise, split_sentences
-from util import tokenize_and_normalize
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--full",
-        dest="full",
-        action="store",
-        help="The path to the full dataset to be preprocessed",
-    )
-    parser.add_argument(
-        "--train",
-        dest="train",
-        action="store",
-        help="The path to the file where the user wants " "to save the train portion of preprocessed " "dataset",
-    )
-    parser.add_argument(
-        "--test",
-        dest="test",
-        action="store",
-        help="The path to the file where the user wants " "to save the test portion of preprocessed " "dataset",
-    )
-    parser.add_argument(
-        "--test_size",
-        dest="test_size",
-        action="store",
-        type=float,
-        default=0.2,
-        help="The share of the test sample relative to the entire dataset",
-    )
-    return parser.parse_args()
+from util import tokenize_and_normalize, CONFIG_PATH
 
 
 def main():
-    args = parse_arguments()
-    data = pd.read_csv(args.full)
+    config = OmegaConf.load(CONFIG_PATH)
+    data = pd.read_csv(config.datasets.full)
 
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
@@ -49,16 +19,16 @@ def main():
     data = data.reset_index(drop=True)
 
     data_size = len(data.index)
-    train_size = int((1 - args.test_size) * data_size)
+    train_size = int((1 - config.test_size) * data_size)
 
     test = data.iloc[train_size:]
     test = test.reset_index(drop=True)
-    test.to_csv(args.test, index=False)
+    test.to_csv(config.datasets.test, index=False)
     print(f"Test size = {len(test.index)}")
 
     train = data.iloc[:train_size]
     train = train.reset_index(drop=True)
-    train.to_csv(args.train, index=False)
+    train.to_csv(config.datasets.train, index=False)
     print(f"Train size = {len(train.index)}")
 
 

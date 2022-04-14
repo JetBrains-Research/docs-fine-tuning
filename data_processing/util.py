@@ -1,6 +1,5 @@
 import re
 import ast
-
 import nltk
 import numpy as np
 
@@ -11,6 +10,9 @@ from nltk.corpus import stopwords
 from nltk import FreqDist
 
 from json import JSONEncoder
+from omegaconf import OmegaConf
+
+CONFIG_PATH = "config.yml"
 
 
 def get_corpus(data, sentences=False):
@@ -45,10 +47,13 @@ def get_doc_sentences(text):
 
 def remove_noise(text):
     text = re.sub(r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE)
-    text = re.sub("\w*\d\w*", "", text)
-    text = re.sub("\w*\f\w*", "", text)
-    text = re.sub("\(.*?\)", "", text)
-    text = re.sub("\[.*]\)", "", text)
+    text = re.sub("\w*\d\w*", " ", text)
+    text = re.sub("\w*\f\w*", " ", text)
+    text = re.sub("\(.*?\)", " ", text)
+    text = re.sub("\[.*]\)", " ", text)
+    # remove non latin characters
+    text = text.encode("ascii", "ignore")
+    text = text.decode()
     text = text.lower()
 
     text = re.sub("[‘’“”…]", " ", text)
@@ -65,7 +70,6 @@ def lemmatize(text):
 def tokenize_and_normalize(sentences):
     result = []
     STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
-    # sentences = split_sentences(text)
     for sentence in sentences:
         tokens = []
         for token in simple_preprocess(sentence, min_len=3):
@@ -108,6 +112,14 @@ def get_corpus_properties(corpus):
 def split_sentences(text):
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
+
+
+def load_config(path=None):
+    cnf_path = CONFIG_PATH if path is None else path
+    config = OmegaConf.load(cnf_path)
+    for cnf in config.models.values():
+        cnf["models_suffixes"] = config.models_suffixes
+    return config
 
 
 class NumpyArrayEncoder(JSONEncoder):
