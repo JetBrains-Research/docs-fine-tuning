@@ -3,6 +3,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from sentence_transformers.readers import InputExample
 
+
 class SbertModelDataset(Dataset):
     def __init__(self, corpus, disc_ids, n_examples, shuffle=False):
         if shuffle:
@@ -15,7 +16,6 @@ class SbertModelDataset(Dataset):
         self.n_examples = n_examples
 
     def __getitem__(self, index):
-
         def index_to_pair():
             """
             Convert index in array of distinct bug_report pairs into a pair of indexes in bug_report triangle matrix

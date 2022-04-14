@@ -3,6 +3,7 @@ import numpy as np
 
 from text_models.datasets import BertModelDataset
 
+
 class BertModelMLMDataset(BertModelDataset):
     def __init__(self, encodings, mask_id=103, cls_id=102, sep_id=101, pad_id=0, mask_probability=0.15):
         super(BertModelMLMDataset, self).__init__(encodings)
