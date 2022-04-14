@@ -1,5 +1,5 @@
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
@@ -45,6 +45,9 @@ class AbstractApproach(ABC):
         print(self.results)
 
     def save_results(self, save_to_path, model_name, graph=False):
+        if self.results is None:
+            raise ValueError("No results to save")
+
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
         if graph:
             self.results.plot(
@@ -68,7 +71,7 @@ class AbstractApproach(ABC):
         self.test_size = 0
         self.TP = np.zeros(len(topns))
 
-        def __eval_sample(query_report):
+        def eval_sample(query_report):
             if query_report.id != query_report.disc_id:  # not in master ids
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topns))
                 for i, topn in enumerate(topns):
@@ -77,18 +80,21 @@ class AbstractApproach(ABC):
             self.train = self.train.append(query_report, ignore_index=True)
             self.update_history(query_report.id_num)
 
-        self.test.apply(__eval_sample, axis=1)
+        self.test.apply(eval_sample, axis=1)
 
         self.embeddings = None
         self.test_embs = None
 
         return self.TP / self.test_size
 
+    @abstractmethod
     def setup_approach(self):
         raise NotImplementedError()
 
+    @abstractmethod
     def get_duplicated_ids(self, query_num: int, topn: int) -> np.ndarray:
         raise NotImplementedError()
 
+    @abstractmethod
     def update_history(self, query_num: int):
         raise NotImplementedError()

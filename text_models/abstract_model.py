@@ -1,5 +1,5 @@
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -25,12 +25,15 @@ class AbstractModel(ABC):
         self.models_suffixes = models_suffixes
         np.random.seed(seed)
 
+    @abstractmethod
     def train_from_scratch(self, corpus):
         raise NotImplementedError()
 
+    @abstractmethod
     def train_pretrained(self, corpus):
         raise NotImplementedError()
 
+    @abstractmethod
     def train_finetuned(self, base_corpus, extra_corpus):
         self.train_pretrained(base_corpus + extra_corpus)
 
