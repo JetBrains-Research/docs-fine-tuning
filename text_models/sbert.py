@@ -1,16 +1,14 @@
 import tempfile
-import numpy as np
 
+import numpy as np
+from gensim.test.utils import get_tmpfile
+from sentence_transformers import SentenceTransformer, losses, models
+from sentence_transformers.readers import InputExample
 from torch import nn
 from torch.utils.data import DataLoader
 
-from sentence_transformers import SentenceTransformer, losses, models
-from sentence_transformers.readers import InputExample
-
-from gensim.test.utils import get_tmpfile
-
 from text_models import AbstractModel, BertModelMLM
-from text_models.datasets import SbertModelDataset
+from text_models.datasets import CosineSimilarityDataset
 
 
 class SBertModel(AbstractModel):
@@ -103,7 +101,7 @@ class SBertModel(AbstractModel):
 
     def __get_train_dataloader_from_reports(self, corpus, disc_ids, n_examples):
         corpus = list(map(lambda x: " ".join(x), corpus))
-        train_data = SbertModelDataset(corpus, disc_ids, n_examples, shuffle=True)
+        train_data = CosineSimilarityDataset(corpus, disc_ids, n_examples, shuffle=True)
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
 
     def __get_train_dataloader_from_docs(self, docs_corpus):

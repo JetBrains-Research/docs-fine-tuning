@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from sentence_transformers.readers import InputExample
 
 
-class SbertModelDataset(Dataset):
+class CosineSimilarityDataset(Dataset):
     def __init__(self, corpus, disc_ids, n_examples, shuffle=False):
         if shuffle:
             data = list(zip(corpus, disc_ids))
