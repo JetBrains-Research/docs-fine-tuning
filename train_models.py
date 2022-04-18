@@ -3,7 +3,8 @@ import argparse
 import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
-from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel
+from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, BertSiameseModel
+from text_models.bert_tasks import AbstractTask, MaskedLMTask, STSTask
 
 
 # for python <=3.7 support
@@ -28,7 +29,26 @@ def parse_arguments():
     parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
     parser.add_argument("--bert", dest="bert", action="store_true", help="Train and save BERT model for MLM task.")
     parser.add_argument("--sbert", dest="sbert", action="store_true", help="Train and save SBERT model for STS tasks.")
+    parser.add_argument(
+        "--siamese",
+        dest="siamese",
+        action="store_true",
+        help="Train and save SBERT model using siamese training approach",
+    )
+
+    parser.add_argument("--mlm", dest="mlm", action="store_true")
+    parser.add_argument("--sts", dest="sts", action="store_true")
+
     return parser.parse_args()
+
+
+def get_task(args, cnf_tasks) -> AbstractTask:
+    if args.mlm:
+        return MaskedLMTask(**cnf_tasks.mlm)
+    if args.sts:
+        return STSTask(**cnf_tasks.sts)
+
+    raise ValueError("Unsupported task")
 
 
 def main():
@@ -48,9 +68,14 @@ def main():
     if args.bert:
         model = BertModelMLM(**config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus)
+
+    disc_ids = train["disc_id"].tolist()
     if args.sbert:
-        disc_ids = train["disc_id"].tolist()
         model = SBertModel(train_corpus, disc_ids, **config.models.sbert)
+        model.train_and_save_all(train_corpus, docs_corpus)
+    if args.siamese:
+        finetuning_strategy = get_task(args, config.bert_tasks)
+        model = BertSiameseModel(train_corpus, disc_ids, finetuning_strategy, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus)
 
 

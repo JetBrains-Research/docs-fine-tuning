@@ -66,7 +66,34 @@ models:
     forget_const: 10
     pretrained_model: all-MiniLM-L6-v2
     seed: 42
+    save_to_path:
+    
+  siamese:
+    vector_size: 300
+    epochs: 2
+    batch_size: 16
+    n_examples: 200
+    warmup_steps: 0.1
+    task_loss: cossim  # or 'triplet'
+    pretrained_model: bert-base-uncased
+    tmp_file: null
+    device: cpu # or 'cuda'
+    seed: 42
     save_to_path: text_models/saved
+
+bert_tasks:
+  mlm:
+    epochs: 2
+    batch_size: 16
+    max_len: 512
+    mask_probability: 0.15
+
+  sts:
+    epochs: 2
+    batch_size: 16
+    max_len: 512
+    forget_const: 10
+
 
 approaches:
   intersection:
@@ -77,5 +104,5 @@ approaches:
 
 
 evaluation:
-  text_model: random # see available text models in the corresponding section
+  text_model: siamese # see available text models in the corresponding section
   approach: simple # see available approaches in the corresponding section

@@ -2,8 +2,9 @@ import numpy as np
 from torch.utils.data import Dataset
 from sentence_transformers.readers import InputExample
 
+
 class TripletDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples, shuffle=True):
+    def __init__(self, corpus, disc_ids, n_examples=None, shuffle=True):
         self.corpus = corpus
 
         duplicate_clusters = dict()
@@ -27,7 +28,8 @@ class TripletDataset(Dataset):
         if shuffle:
             np.random.shuffle(self.triplets)
 
-        self.triplets = self.triplets[:n_examples]
+        if n_examples is not None:
+            self.triplets = self.triplets[:n_examples]
 
     def __get_negative_example(self, dupl_series, corpus_size) -> int:
         neg = np.random.randint(corpus_size)
