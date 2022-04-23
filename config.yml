@@ -76,6 +76,7 @@ models:
     warmup_steps: 0.1
     task_loss: cossim  # or 'triplet'
     pretrained_model: bert-base-uncased
+    val_size: 0.1
     tmp_file: null
     device: cpu # or 'cuda'
     seed: 42
