@@ -1,17 +1,17 @@
 datasets:
-  full: data/csv/IDEA2020.csv
-  train: data/csv/train_IDEA.csv
-  test: data/csv/test_IDEA.csv
+  full: data/csv/KT2020.csv
+  train: data/csv/train_KT.csv
+  test: data/csv/test_KT.csv
 
 test_size: 0.1
 
 models_directory: text_models/saved
 docs_directory: data/docs
 
-topns: [5, 10, 15, 20, 25]
+topns: [1, 5, 10, 15, 20, 25]
 save_results: true
 save_graph: true
-results_path: ./results
+results_path: ./results/kotlin
 
 models_suffixes:
   from_scratch: .model
@@ -72,10 +72,11 @@ models:
     vector_size: 300
     epochs: 2
     batch_size: 16
-    n_examples: 200
-    warmup_steps: 0.1
+    n_examples: 2000
+    warmup_rate: 0.1 # percent of training data
     task_loss: cossim  # or 'triplet'
     pretrained_model: bert-base-uncased
+    evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
     device: cpu # or 'cuda'
@@ -88,6 +89,7 @@ bert_tasks:
     batch_size: 16
     max_len: 512
     mask_probability: 0.15
+    save_steps: 5000
 
   sts:
     epochs: 2
@@ -105,5 +107,5 @@ approaches:
 
 
 evaluation:
-  text_model: siamese # see available text models in the corresponding section
+  text_model: fasttext # see available text models in the corresponding section
   approach: simple # see available approaches in the corresponding section

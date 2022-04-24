@@ -23,7 +23,8 @@ class BertSiameseModel(AbstractModel):
         epochs=5,
         batch_size=16,
         n_examples=None,
-        warmup_steps=0.1,
+        warmup_rate=0.1,
+        evaluation_steps=500,
         val_size=0.1,
         task_loss="cossim",  # triplet
         pretrained_model="bert-base-uncased",
@@ -37,9 +38,10 @@ class BertSiameseModel(AbstractModel):
         self.device = device
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
-        self.warmup_steps = np.ceil(n_examples * self.epochs * warmup_steps)
+        self.warmup_steps = np.ceil(n_examples * self.epochs * warmup_rate)
         self.loss = task_loss
         self.finetuning_strategy = finetuning_strategy
+        self.evaluation_steps = evaluation_steps
 
         self.task_dataset = None
         self.evaluator = None
@@ -102,9 +104,9 @@ class BertSiameseModel(AbstractModel):
             epochs=self.epochs,
             warmup_steps=self.warmup_steps,
             evaluator=self.evaluator,
-            evaluation_steps=500,
+            evaluation_steps=self.evaluation_steps,
             output_path=self.save_to_path,
-            checkpoint_path=self.save_to_path
+            checkpoint_path=self.save_to_path,
         )
 
     def __get_dataset(self, corpus, disc_ids, n_examples):

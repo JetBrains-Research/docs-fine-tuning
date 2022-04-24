@@ -12,7 +12,12 @@ class CosineSimilarityDataset(Dataset):
 
         self.disc_ids = list(disc_ids)
         self.corpus = list(corpus)
+
+        corpus_len = len(self.corpus)
+        max_examples_num = corpus_len * (corpus_len - 1) / 2
         self.n_examples = n_examples
+        if n_examples is None or max_examples_num < n_examples:
+            self.n_examples = max_examples_num
 
     def __getitem__(self, index):
         def index_to_pair():

@@ -9,9 +9,10 @@ from text_models.datasets import BertModelMLMDataset
 
 
 class MaskedLMTask(AbstractTask):
-    def __init__(self, epochs=2, batch_size=16, max_len=512, mask_probability=0.15):
+    def __init__(self, epochs=2, batch_size=16, max_len=512, mask_probability=0.15, save_steps=5000):
         super().__init__(epochs, batch_size, max_len, name="mlm")
         self.mask_probability = mask_probability
+        self.save_steps = save_steps
 
     def create_model_from_scratch(self, train_sentences, tmp_file):
         vocab_size, _ = get_corpus_properties([sentence.split(" ") for sentence in train_sentences])
@@ -38,7 +39,10 @@ class MaskedLMTask(AbstractTask):
         )
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability)
         args = TrainingArguments(
-            output_dir=save_to_path, per_device_train_batch_size=self.batch_size, num_train_epochs=self.epochs
+            output_dir=save_to_path,
+            per_device_train_batch_size=self.batch_size,
+            num_train_epochs=self.epochs,
+            save_steps=self.save_steps,
         )
         trainer = Trainer(model=model, args=args, train_dataset=dataset)
         trainer.train()
