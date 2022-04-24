@@ -1,8 +1,8 @@
 import json
-import numpy as np
 
-from nltk import FreqDist
+import numpy as np
 from gensim.models.word2vec import Word2Vec
+from nltk import FreqDist
 
 from data_processing.util import NumpyArrayEncoder
 from text_models.abstract_model import AbstractModel

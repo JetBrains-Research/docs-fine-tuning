@@ -33,7 +33,6 @@ class AbstractModel(ABC):
     def train_pretrained(self, corpus):
         raise NotImplementedError()
 
-    @abstractmethod
     def train_finetuned(self, base_corpus, extra_corpus):
         self.train_pretrained(base_corpus + extra_corpus)
 

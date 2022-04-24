@@ -1,13 +1,13 @@
 import os
 from abc import ABC, abstractmethod
+from typing import List
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from text_models import AbstractModel
 from data_processing.util import get_corpus
-from typing import List
-import matplotlib.pyplot as plt
+from text_models import AbstractModel
 
 
 class AbstractApproach(ABC):

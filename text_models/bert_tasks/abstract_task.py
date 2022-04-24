@@ -1,8 +1,8 @@
 import tempfile
 from abc import ABC, abstractmethod
-from sentence_transformers import models
 from typing import List
 
+from sentence_transformers import models
 from tokenizers.implementations import BertWordPieceTokenizer
 from transformers import BertTokenizerFast
 

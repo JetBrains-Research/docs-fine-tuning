@@ -1,6 +1,6 @@
-import numpy as np
 from typing import List
 
+import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel

@@ -1,7 +1,7 @@
 import os.path
 
-from transformers import TrainingArguments, Trainer, BertConfig, BertForMaskedLM, AutoModelForMaskedLM, AutoTokenizer
 from sentence_transformers import models
+from transformers import TrainingArguments, Trainer, BertConfig, BertForMaskedLM, AutoModelForMaskedLM, AutoTokenizer
 
 from data_processing.util import get_corpus_properties
 from text_models.bert_tasks import AbstractTask

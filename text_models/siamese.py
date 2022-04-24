@@ -9,8 +9,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from text_models import AbstractModel
-from text_models.datasets import CosineSimilarityDataset, TripletDataset
 from text_models.bert_tasks import AbstractTask
+from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
 class BertSiameseModel(AbstractModel):

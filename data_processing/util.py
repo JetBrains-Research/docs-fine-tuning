@@ -1,15 +1,14 @@
-import re
 import ast
+import re
+from json import JSONEncoder
+from pathlib import Path
+
 import nltk
 import numpy as np
-
-from pathlib import Path
 from gensim.utils import simple_preprocess
+from nltk import FreqDist
 from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
-from nltk import FreqDist
-
-from json import JSONEncoder
 from omegaconf import OmegaConf
 
 CONFIG_PATH = "config.yml"

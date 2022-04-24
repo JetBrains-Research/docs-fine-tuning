@@ -1,6 +1,6 @@
+import faiss
 import numpy as np
 import pandas as pd
-import faiss
 
 from approaches import AbstractApproach
 

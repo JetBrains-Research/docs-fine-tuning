@@ -1,12 +1,12 @@
 import argparse
 import os.path
-
 from pathlib import Path
-from tika import parser
-from omegaconf import OmegaConf
 
-from util import remove_noise, tokenize_and_normalize, split_sentences
+from omegaconf import OmegaConf
+from tika import parser
+
 from util import CONFIG_PATH
+from util import remove_noise, tokenize_and_normalize, split_sentences
 
 
 def parse_arguments():

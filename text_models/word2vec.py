@@ -1,9 +1,7 @@
-import numpy as np
-
 import gensim.downloader as api
-
-from gensim.test.utils import get_tmpfile
+import numpy as np
 from gensim.models.word2vec import Word2Vec
+from gensim.test.utils import get_tmpfile
 
 from text_models.abstract_model import AbstractModel
 

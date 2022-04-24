@@ -1,7 +1,7 @@
 datasets:
   full: data/csv/IDEA2020.csv
-  train: data/csv/train2020.csv
-  test: data/csv/test2020.csv
+  train: data/csv/train_IDEA.csv
+  test: data/csv/test_IDEA.csv
 
 test_size: 0.1
 

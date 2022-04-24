@@ -1,6 +1,6 @@
 import numpy as np
-from torch.utils.data import Dataset
 from sentence_transformers.readers import InputExample
+from torch.utils.data import Dataset
 
 
 class TripletDataset(Dataset):
