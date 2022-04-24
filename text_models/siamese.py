@@ -103,6 +103,8 @@ class BertSiameseModel(AbstractModel):
             warmup_steps=self.warmup_steps,
             evaluator=self.evaluator,
             evaluation_steps=500,
+            output_path=self.save_to_path,
+            checkpoint_path=self.save_to_path
         )
 
     def __get_dataset(self, corpus, disc_ids, n_examples):
@@ -151,6 +153,3 @@ class BertSiameseModel(AbstractModel):
         model = BertSiameseModel()
         model.model = sbert_model
         return model
-
-    def save(self, path):
-        self.model.save(path)

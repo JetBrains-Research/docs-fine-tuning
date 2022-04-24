@@ -75,6 +75,7 @@ def main():
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.siamese:
         finetuning_strategy = get_task(args, config.bert_tasks)
+        BertSiameseModel.name += "_" + finetuning_strategy.name
         model = BertSiameseModel(train_corpus, disc_ids, finetuning_strategy, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus)
 

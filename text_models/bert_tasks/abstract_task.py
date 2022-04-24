@@ -8,10 +8,11 @@ from transformers import BertTokenizerFast
 
 
 class AbstractTask(ABC):
-    def __init__(self, epochs=2, batch_size=16, max_len=512):
+    def __init__(self, epochs=2, batch_size=16, max_len=512, name="abstract"):
         self.epochs = epochs
         self.batch_size = batch_size
         self.max_len = max_len
+        self.name = name
 
     @abstractmethod
     def create_model_from_scratch(self, train_sentences: List[str], tmp_file: str):

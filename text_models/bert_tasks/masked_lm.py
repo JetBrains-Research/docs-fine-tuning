@@ -10,7 +10,7 @@ from text_models.datasets import BertModelMLMDataset
 
 class MaskedLMTask(AbstractTask):
     def __init__(self, epochs=2, batch_size=16, max_len=512, mask_probability=0.15):
-        super().__init__(epochs, batch_size, max_len)
+        super().__init__(epochs, batch_size, max_len, name="mlm")
         self.mask_probability = mask_probability
 
     def create_model_from_scratch(self, train_sentences, tmp_file):
