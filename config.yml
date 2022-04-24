@@ -97,6 +97,11 @@ bert_tasks:
     max_len: 512
     forget_const: 10
 
+  tsdae:
+    epochs: 2
+    batch_size: 16
+    max_len: 512
+
 
 approaches:
   intersection:

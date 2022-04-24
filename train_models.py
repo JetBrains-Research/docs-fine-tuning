@@ -4,7 +4,7 @@ import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, BertSiameseModel
-from text_models.bert_tasks import AbstractTask, MaskedLMTask, STSTask
+from text_models.bert_tasks import AbstractTask, MaskedLMTask, STSTask, TSDenoisingAutoEncoderTask
 
 
 # for python <=3.7 support
@@ -38,6 +38,7 @@ def parse_arguments():
 
     parser.add_argument("--mlm", dest="mlm", action="store_true")
     parser.add_argument("--sts", dest="sts", action="store_true")
+    parser.add_argument("--tsdae", dest="tsdae", action="store_true")
 
     return parser.parse_args()
 
@@ -47,6 +48,8 @@ def get_task(args, cnf_tasks) -> AbstractTask:
         return MaskedLMTask(**cnf_tasks.mlm)
     if args.sts:
         return STSTask(**cnf_tasks.sts)
+    if args.tsdae:
+        return TSDenoisingAutoEncoderTask(**cnf_tasks.sts)
 
     raise ValueError("Unsupported task")
 

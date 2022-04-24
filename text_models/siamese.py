@@ -107,6 +107,7 @@ class BertSiameseModel(AbstractModel):
             evaluation_steps=self.evaluation_steps,
             output_path=self.save_to_path,
             checkpoint_path=self.save_to_path,
+            show_progress_bar=True
         )
 
     def __get_dataset(self, corpus, disc_ids, n_examples):

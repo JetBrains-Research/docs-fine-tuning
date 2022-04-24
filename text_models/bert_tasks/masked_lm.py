@@ -43,6 +43,8 @@ class MaskedLMTask(AbstractTask):
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             save_steps=self.save_steps,
+            save_total_limit=3,
+            disable_tqdm=False
         )
         trainer = Trainer(model=model, args=args, train_dataset=dataset)
         trainer.train()
