@@ -1,10 +1,11 @@
 import numpy as np
 from sentence_transformers.readers import InputExample
 from torch.utils.data import Dataset
+from typing import Union
 
 
 class TripletDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples=None, shuffle=True):
+    def __init__(self, corpus, disc_ids, n_examples : Union[str, int] = "all", shuffle=True):
         self.corpus = corpus
 
         duplicate_clusters = dict()
@@ -28,7 +29,7 @@ class TripletDataset(Dataset):
         if shuffle:
             np.random.shuffle(self.triplets)
 
-        if n_examples is not None:
+        if n_examples != "all":
             self.triplets = self.triplets[:n_examples]
 
     def __get_negative_example(self, dupl_series, corpus_size) -> int:

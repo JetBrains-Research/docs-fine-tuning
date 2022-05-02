@@ -70,11 +70,11 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 2
+    epochs: 1
     batch_size: 16
-    n_examples: 2000
+    n_examples: 75
     warmup_rate: 0.1 # percent of training data
-    task_loss: cossim  # or 'triplet'
+    task_loss: triplet  # 'triplet' or 'cossim'
     pretrained_model: bert-base-uncased
     evaluation_steps: 500
     val_size: 0.1
@@ -90,17 +90,28 @@ bert_tasks:
     max_len: 512
     mask_probability: 0.15
     save_steps: 5000
+    n_examples: 100
+
+  nsp:
+    epochs: 1
+    batch_size: 16
+    max_len: 512
+    n_examples: 100
+    forget_const: 10
+    save_steps: 2000
 
   sts:
     epochs: 2
     batch_size: 16
     max_len: 512
     forget_const: 10
+    n_examples: 100
 
   tsdae:
     epochs: 2
     batch_size: 16
     max_len: 512
+    n_examples: 100
 
 
 approaches:

@@ -1,10 +1,11 @@
 import numpy as np
 from sentence_transformers.readers import InputExample
 from torch.utils.data import Dataset
+from typing import Union
 
 
 class CosineSimilarityDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples, shuffle=False):
+    def __init__(self, corpus, disc_ids, n_examples : Union[str, int] = "all", shuffle=False):
         if shuffle:
             data = list(zip(corpus, disc_ids))
             np.random.shuffle(data)
@@ -16,7 +17,7 @@ class CosineSimilarityDataset(Dataset):
         corpus_len = len(self.corpus)
         max_examples_num = corpus_len * (corpus_len - 1) / 2
         self.n_examples = n_examples
-        if n_examples is None or max_examples_num < n_examples:
+        if n_examples == "all" or max_examples_num < n_examples:
             self.n_examples = max_examples_num
 
     def __getitem__(self, index):
