@@ -18,7 +18,10 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
-        train_dataset = DenoisingAutoEncoderDataset(docs_corpus[: self.n_examples])
+        if self.n_examples == "all":
+            self.n_examples = len(docs_corpus)
+
+        train_dataset = DenoisingAutoEncoderDataset(docs_corpus[:self.n_examples])
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
 
         train_loss = losses.DenoisingAutoEncoderLoss(
