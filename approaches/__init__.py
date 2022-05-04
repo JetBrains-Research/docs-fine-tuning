@@ -2,3 +2,4 @@ from approaches.abstract_approach import AbstractApproach
 from approaches.intersection import IntersectionApproach
 from approaches.simple import SimpleApproach
 from approaches.tfidf import TfIdfApproach
+from approaches.finetuning_tasks_test import FinetuningTasksTest

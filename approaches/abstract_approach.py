@@ -48,6 +48,8 @@ class AbstractApproach(ABC):
         if self.results is None:
             raise ValueError("No results to save")
 
+        os.makedirs(save_to_path, exist_ok=True)
+
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
         if graph:
             self.results.plot(

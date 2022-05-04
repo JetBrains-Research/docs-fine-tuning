@@ -1,11 +1,12 @@
+from typing import Union
+
 import numpy as np
 from sentence_transformers.readers import InputExample
 from torch.utils.data import Dataset
-from typing import Union
 
 
 class TripletDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples : Union[str, int] = "all", shuffle=True):
+    def __init__(self, corpus, disc_ids, n_examples: Union[str, int] = "all", shuffle=True):
         self.corpus = corpus
 
         duplicate_clusters = dict()

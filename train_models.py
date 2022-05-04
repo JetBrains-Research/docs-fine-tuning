@@ -4,7 +4,6 @@ import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, BertSiameseModel
-from text_models.bert_tasks import AbstractTask, MaskedLMTask, STSTask, TSDenoisingAutoEncoderTask, NextSentencePredictionTask
 
 
 # for python <=3.7 support
@@ -36,25 +35,7 @@ def parse_arguments():
         help="Train and save SBERT model using siamese training approach",
     )
 
-    parser.add_argument("--mlm", dest="mlm", action="store_true")
-    parser.add_argument("--sts", dest="sts", action="store_true")
-    parser.add_argument("--tsdae", dest="tsdae", action="store_true")
-    parser.add_argument("--nsp", dest="nsp", action="store_true")
-
     return parser.parse_args()
-
-
-def get_task(args, cnf_tasks) -> AbstractTask:
-    if args.mlm:
-        return MaskedLMTask(**cnf_tasks.mlm)
-    if args.sts:
-        return STSTask(**cnf_tasks.sts)
-    if args.tsdae:
-        return TSDenoisingAutoEncoderTask(**cnf_tasks.sts)
-    if args.nsp:
-        return NextSentencePredictionTask(**cnf_tasks.nsp)
-
-    raise ValueError("Unsupported task")
 
 
 def main():
@@ -80,9 +61,7 @@ def main():
         model = SBertModel(train_corpus, disc_ids, **config.models.sbert)
         model.train_and_save_all(train_corpus, docs_corpus)
     if args.siamese:
-        finetuning_strategy = get_task(args, config.bert_tasks)
-        BertSiameseModel.name += "_" + finetuning_strategy.name
-        model = BertSiameseModel(train_corpus, disc_ids, finetuning_strategy, **config.models.siamese)
+        model = BertSiameseModel(train_corpus, disc_ids, config.bert_tasks, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus)
 
 

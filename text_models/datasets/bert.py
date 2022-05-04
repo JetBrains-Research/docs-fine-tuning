@@ -1,11 +1,11 @@
+from typing import Union
+
 import torch
 from torch.utils.data import Dataset
 
-from typing import Union
-
 
 class BertModelDataset(Dataset):
-    def __init__(self, encodings, n_examples : Union[str, int] = "all"):
+    def __init__(self, encodings, n_examples: Union[str, int] = "all"):
         self.encodings = encodings
 
         self.n_examples = n_examples

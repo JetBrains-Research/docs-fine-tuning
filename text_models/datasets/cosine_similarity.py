@@ -1,11 +1,12 @@
+from typing import Union
+
 import numpy as np
 from sentence_transformers.readers import InputExample
 from torch.utils.data import Dataset
-from typing import Union
 
 
 class CosineSimilarityDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples : Union[str, int] = "all", shuffle=False):
+    def __init__(self, corpus, disc_ids, n_examples: Union[str, int] = "all", shuffle=False):
         if shuffle:
             data = list(zip(corpus, disc_ids))
             np.random.shuffle(data)

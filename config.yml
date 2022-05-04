@@ -8,15 +8,30 @@ test_size: 0.1
 models_directory: text_models/saved
 docs_directory: data/docs
 
-topns: [1, 5, 10, 15, 20, 25]
-save_results: true
-save_graph: true
-results_path: ./results/kotlin
-
 models_suffixes:
   from_scratch: .model
   pretrained: _pretrained.model
   finetuned: _finetuned.model
+
+
+evaluation:
+  text_model: siamese # see available text models in the corresponding section
+  approach: simple # see available approaches in the corresponding section
+  topns: [1, 5, 10, 15, 20, 25]
+  save_results: true
+  save_graph: true
+  results_path: ./results/kotlin
+
+  is_tasks_test: true # available only if siamese text model will be used
+
+
+approaches:
+  intersection:
+    min_count: 1
+
+  tf_idf:
+    weight: 0.7 # weight of tf-idf vectors similarity score in final score
+
 
 models:
   random:
@@ -70,58 +85,44 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 1
+    epochs: 2
     batch_size: 16
-    n_examples: 75
+    n_examples: all
     warmup_rate: 0.1 # percent of training data
+    max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
+    finetuning_strategies: ['mlm', 'nsp', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
-    device: cpu # or 'cuda'
+    device: cuda # 'cpu' or 'cuda'
     seed: 42
     save_to_path: text_models/saved
+
 
 bert_tasks:
   mlm:
     epochs: 2
     batch_size: 16
-    max_len: 512
+    n_examples: all
     mask_probability: 0.15
     save_steps: 5000
-    n_examples: 100
 
   nsp:
-    epochs: 1
+    epochs: 2
     batch_size: 16
-    max_len: 512
-    n_examples: 100
+    n_examples: all
     forget_const: 10
     save_steps: 2000
 
   sts:
     epochs: 2
     batch_size: 16
-    max_len: 512
+    n_examples: all
     forget_const: 10
-    n_examples: 100
 
   tsdae:
     epochs: 2
     batch_size: 16
-    max_len: 512
-    n_examples: 100
-
-
-approaches:
-  intersection:
-    min_count: 1
-
-  tf_idf:
-    weight: 0.7 # weight of tf-idf vectors similarity score in final score
-
-
-evaluation:
-  text_model: fasttext # see available text models in the corresponding section
-  approach: simple # see available approaches in the corresponding section
+    n_examples: all
