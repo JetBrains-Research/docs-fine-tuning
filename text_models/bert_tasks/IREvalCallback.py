@@ -54,11 +54,12 @@ class IREvalCallback(TrainerCallback):
                 with torch.no_grad():
                     model_output = self.model(input_ids, attention_mask=attention_mask)
 
-                sentence_embeddings = self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
+                sentence_embeddings = (
+                    self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
+                )
                 result += sentence_embeddings
 
             return torch.stack(result) if convert_to_tensor else result
-
 
         @staticmethod
         def __mean_pooling(model_output, attention_mask):

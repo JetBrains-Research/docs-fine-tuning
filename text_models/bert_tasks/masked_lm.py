@@ -27,7 +27,7 @@ class MaskedLMTask(AbstractTask):
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             save_steps=self.save_steps,
-            eval_steps=self.eval_steps, # TODO
+            eval_steps=self.eval_steps,  # TODO
             save_total_limit=3,
             disable_tqdm=False,
         )
