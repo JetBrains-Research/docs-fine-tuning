@@ -11,16 +11,17 @@ from text_models.datasets import BertModelDataset
 
 
 class IREvalCallback(TrainerCallback):
-    def __init__(self, evaluator: evaluation.InformationRetrievalEvaluator, model, tokenizer, max_len, device):
+    def __init__(self, evaluator: evaluation.InformationRetrievalEvaluator, model, tokenizer, task, max_len, device):
         self.evaluator = evaluator
-        self.eval_model = IREvalCallback.EvalModel(model, tokenizer, max_len, device)
+        self.eval_model = IREvalCallback.EvalModel(model, tokenizer, task, max_len, device)
 
     class EvalModel:
-        def __init__(self, model, tokenizer, max_len, device):
+        def __init__(self, model, tokenizer, task, max_len, device):
             self.model = model
             self.tokenizer = tokenizer
             self.max_len = max_len
             self.device = torch.device(device)
+            self.task = task
 
         def encode(
             self,
@@ -53,10 +54,11 @@ class IREvalCallback(TrainerCallback):
                 with torch.no_grad():
                     model_output = self.model(input_ids, attention_mask=attention_mask)
 
-                sentence_embeddings = self.__mean_pooling(model_output, attention_mask)
+                sentence_embeddings = self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
                 result += sentence_embeddings
 
             return torch.stack(result) if convert_to_tensor else result
+
 
         @staticmethod
         def __mean_pooling(model_output, attention_mask):
@@ -67,6 +69,7 @@ class IREvalCallback(TrainerCallback):
             )
 
     def on_save(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        # TODO: do evaluation while evaluation
         print("Start evaluation")
         self.evaluator(
             self.eval_model,

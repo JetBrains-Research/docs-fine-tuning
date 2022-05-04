@@ -27,12 +27,12 @@ class MaskedLMTask(AbstractTask):
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             save_steps=self.save_steps,
-            eval_steps=self.eval_steps,
+            eval_steps=self.eval_steps, # TODO
             save_total_limit=3,
             disable_tqdm=False,
         )
         trainer = Trainer(model=model, args=args, train_dataset=dataset)
-        trainer.add_callback(IREvalCallback(evaluator, model, tokenizer, max_len, device))
+        trainer.add_callback(IREvalCallback(evaluator, model, tokenizer, self.name, max_len, device))
         trainer.train()
 
         save_path = os.path.join(save_to_path, "mlm_pt_doc.model")

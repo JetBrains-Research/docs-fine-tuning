@@ -56,4 +56,4 @@ class STSTask(AbstractTask):
                     )
                 )
 
-        return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
+        return DataLoader(train_data[: self.n_examples], shuffle=True, batch_size=self.batch_size)

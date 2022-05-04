@@ -28,7 +28,7 @@ class NextSentenceDataset(Dataset):
         self.inputs["labels"] = torch.LongTensor([label]).T
 
         self.n_examples = n_examples
-        if n_examples == "all" or n_examples > len(self.inputs):
+        if n_examples == "all" or n_examples > len(self.inputs.input_ids):
             self.n_examples = len(self.inputs.input_ids)
 
     def __getitem__(self, index):

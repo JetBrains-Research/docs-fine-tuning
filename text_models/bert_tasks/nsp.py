@@ -5,7 +5,7 @@ from sentence_transformers import models, evaluation
 from transformers import AutoModelForNextSentencePrediction, AutoTokenizer
 from transformers import TrainingArguments, Trainer
 
-from text_models.bert_tasks import AbstractTask
+from text_models.bert_tasks import AbstractTask, IREvalCallback
 from text_models.datasets import NextSentenceDataset
 
 
@@ -33,13 +33,12 @@ class NextSentencePredictionTask(AbstractTask):
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             save_steps=self.save_steps,
-            # eval_steps=self.eval_steps, TODO
+            eval_steps=self.eval_steps, # TODO
             save_total_limit=3,
             disable_tqdm=False,
         )
         trainer = Trainer(model=model, args=args, train_dataset=dataset)
-        # TODO: check evaluation opportunity
-        # trainer.add_callback(IREvalCallback(evaluator, model, tokenizer, max_len, device))
+        trainer.add_callback(IREvalCallback(evaluator, model.bert, tokenizer, self.name, max_len, device))
         trainer.train()
 
         save_path = os.path.join(save_to_path, "nsp_pt_doc.model")
