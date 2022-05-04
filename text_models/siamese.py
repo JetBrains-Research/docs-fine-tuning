@@ -150,8 +150,7 @@ class BertSiameseModel(AbstractModel):
         queries = {qid: query for qid, query in enumerate(val_corpus)}
         corpus = {cid: doc for cid, doc in enumerate(train_corpus)}
         relevant_docs = {
-            qid: {cid for cid in corpus.keys() for qid in queries.keys() if train_disc_ids[cid] == val_disc_ids[qid]}
-            for qid in queries.keys()
+            qid: {cid for cid in corpus.keys() if train_disc_ids[cid] == val_disc_ids[qid]} for qid in queries.keys()
         }
 
         return InformationRetrievalEvaluator(
