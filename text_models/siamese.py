@@ -72,7 +72,7 @@ class BertSiameseModel(AbstractModel):
             self.n_examples = n_examples
             if n_examples == "all":
                 self.n_examples = len(self.task_dataset)
-            self.warmup_steps = np.ceil(n_examples * self.epochs * warmup_rate)
+            self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
 
         if cnf_tasks is not None:
             self.finetuning_strategies = [tasks[name](**cnf_tasks[name]) for name in finetuning_strategies]
@@ -107,6 +107,7 @@ class BertSiameseModel(AbstractModel):
             word_embedding_model = finetuning_task.finetune_on_docs(
                 self.pretrained_model,
                 [" ".join(doc) for doc in extra_corpus],
+                self.evaluator,
                 self.max_len,
                 self.device,
                 save_to_dir,
@@ -137,6 +138,7 @@ class BertSiameseModel(AbstractModel):
             output_path=os.path.join(save_to_dir, "output"),
             checkpoint_path=os.path.join(save_to_dir, "checkpoints"),
             show_progress_bar=True,
+            checkpoint_save_total_limit=3,
         )
 
     def __get_dataset(self, corpus, disc_ids, n_examples):

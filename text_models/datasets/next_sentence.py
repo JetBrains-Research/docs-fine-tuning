@@ -29,7 +29,7 @@ class NextSentenceDataset(Dataset):
 
         self.n_examples = n_examples
         if n_examples == "all" or n_examples > len(self.inputs):
-            self.n_examples = len(self.inputs)
+            self.n_examples = len(self.inputs.input_ids)
 
     def __getitem__(self, index):
         return {key: tensor[index] for key, tensor in self.inputs.items()}

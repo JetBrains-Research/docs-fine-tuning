@@ -105,13 +105,15 @@ bert_tasks:
   mlm:
     epochs: 2
     batch_size: 16
+    eval_steps: 200
     n_examples: all
     mask_probability: 0.15
-    save_steps: 5000
+    save_steps: 1000
 
   nsp:
     epochs: 2
     batch_size: 16
+    eval_steps: 200
     n_examples: all
     forget_const: 10
     save_steps: 2000
@@ -119,10 +121,12 @@ bert_tasks:
   sts:
     epochs: 2
     batch_size: 16
+    eval_steps: 200
     n_examples: all
     forget_const: 10
 
   tsdae:
     epochs: 2
     batch_size: 16
+    eval_steps: 200
     n_examples: all
