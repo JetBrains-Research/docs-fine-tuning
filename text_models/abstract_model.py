@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from text_models import BertSiameseModel
-
 
 class AbstractModel(ABC):
     name = "abstract"
@@ -68,5 +66,5 @@ class AbstractModel(ABC):
 
         self.train_finetuned(base_corpus, extra_corpus)
         print(f"Train fine-tuned {self.name} SUCCESS")
-        if self.name != BertSiameseModel.name:
+        if self.name != "BERT_SIAMESE":
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))
