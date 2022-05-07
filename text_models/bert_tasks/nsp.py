@@ -2,10 +2,11 @@ import os
 from typing import List
 
 from sentence_transformers import models, evaluation
-from transformers import AutoModelForNextSentencePrediction, AutoTokenizer
-from transformers import TrainingArguments, Trainer
+from transformers import AutoModelForNextSentencePrediction, AutoTokenizer, IntervalStrategy
+from transformers import TrainingArguments
 
-from text_models.bert_tasks import AbstractTask, IREvalCallback
+from text_models.bert_tasks import AbstractTask, IREvalTrainer
+from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
 from text_models.datasets import NextSentenceDataset
 
 
@@ -29,16 +30,17 @@ class NextSentencePredictionTask(AbstractTask):
 
         dataset = NextSentenceDataset(docs_corpus, tokenizer, self.n_examples, max_len, self.forget_const)
         args = TrainingArguments(
-            output_dir=os.path.join(save_to_path, "checkpoints"),
+            output_dir=os.path.join(save_to_path, "checkpoints_docs"),
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             save_steps=self.save_steps,
-            eval_steps=self.eval_steps,  # TODO
+            eval_steps=self.eval_steps,
+            evaluation_strategy=IntervalStrategy.STEPS,
             save_total_limit=3,
             disable_tqdm=False,
         )
-        trainer = Trainer(model=model, args=args, train_dataset=dataset)
-        trainer.add_callback(IREvalCallback(evaluator, model.bert, tokenizer, self.name, max_len, device))
+        trainer = IREvalTrainer(model=model, args=args, train_dataset=dataset)
+        trainer.set_env_vars(evaluator, model.bert, tokenizer, self.name, max_len, device)
         trainer.train()
 
         save_path = os.path.join(save_to_path, "nsp_pt_doc.model")

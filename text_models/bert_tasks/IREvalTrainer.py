@@ -1,20 +1,15 @@
-from typing import List, Union
+from typing import List, Union, Optional, Dict
 
 import numpy as np
 import torch
-from sentence_transformers import evaluation
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from transformers import TrainerCallback, TrainingArguments, TrainerState, TrainerControl
+from transformers import Trainer
 
 from text_models.datasets import BertModelDataset
 
 
-class IREvalCallback(TrainerCallback):
-    def __init__(self, evaluator: evaluation.InformationRetrievalEvaluator, model, tokenizer, task, max_len, device):
-        self.evaluator = evaluator
-        self.eval_model = IREvalCallback.EvalModel(model, tokenizer, task, max_len, device)
-
+class IREvalTrainer(Trainer):
     class EvalModel:
         def __init__(self, model, tokenizer, task, max_len, device):
             self.model = model
@@ -34,6 +29,8 @@ class IREvalCallback(TrainerCallback):
             device: str = None,
             normalize_embeddings: bool = False,
         ) -> Union[List[torch.Tensor], np.ndarray, torch.Tensor]:
+            self.model.eval()
+
             if device is not None:
                 self.device = torch.device(device)
 
@@ -69,13 +66,20 @@ class IREvalCallback(TrainerCallback):
                 input_mask_expanded.sum(1), min=1e-9
             )
 
-    def on_save(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        # TODO: do evaluation while evaluation
+    def set_env_vars(self, evaluator, model, tokenizer, task, max_len, device):
+        self.evaluator = evaluator
+        self.eval_model = IREvalTrainer.EvalModel(model, tokenizer, task, max_len, device)
+
+    def evaluate(
+        self,
+        eval_dataset: Optional[Dataset] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "eval",
+    ) -> Dict[str, float]:
         print("Start evaluation")
-        self.evaluator(
+        return self.evaluator(
             self.eval_model,
-            output_path=args.output_dir,
-            epoch=state.epoch if state.epoch is not None else -1,
-            steps=state.global_step,
+            output_path=self.args.output_dir,
+            epoch=self.state.epoch if self.state.epoch is not None else -1,
+            steps=self.state.global_step,
         )
-        print("End evaluation")

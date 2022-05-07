@@ -11,6 +11,7 @@ from tokenizers.implementations import BertWordPieceTokenizer
 from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertTokenizerFast, BertConfig, BertModel
+from sentence_transformers.util import cos_sim
 
 from data_processing.util import get_corpus_properties
 from text_models import AbstractModel
@@ -162,7 +163,9 @@ class BertSiameseModel(AbstractModel):
             corpus_chunk_size=500,
             batch_size=self.batch_size,
             precision_recall_at_k=[1, 5, 10, 15, 20],
+            accuracy_at_k=[1, 5, 10, 15, 20],
             main_score_function="cos_sim",
+            score_functions={"cos_sim": cos_sim},
         )
 
     def create_model_from_scratch(self, train_sentences: List[str], tmp_file: str):
