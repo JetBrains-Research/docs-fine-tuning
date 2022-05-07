@@ -16,7 +16,7 @@ class CosineSimilarityDataset(Dataset):
         self.corpus = list(corpus)
 
         corpus_len = len(self.corpus)
-        max_examples_num = corpus_len * (corpus_len - 1) / 2
+        max_examples_num = int(corpus_len * (corpus_len - 1) / 2)
         self.n_examples = n_examples
         if n_examples == "all" or max_examples_num < n_examples:
             self.n_examples = max_examples_num
@@ -32,7 +32,7 @@ class CosineSimilarityDataset(Dataset):
             while index > cur_bound:
                 i += 1
                 cur_bound += i + 1
-            j = index - i * (i + 1) // 2
+            j = int(index - i * (i + 1) / 2)
             return i + 1, j
 
         i, j = index_to_pair()

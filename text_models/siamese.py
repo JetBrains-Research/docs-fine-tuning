@@ -161,7 +161,7 @@ class BertSiameseModel(AbstractModel):
             relevant_docs,
             corpus_chunk_size=500,
             batch_size=self.batch_size,
-            precision_recall_at_k=[1, 5, 10, 15],
+            precision_recall_at_k=[1, 5, 10, 15, 20],
             main_score_function="cos_sim",
         )
 
