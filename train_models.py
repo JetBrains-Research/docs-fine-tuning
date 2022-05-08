@@ -44,7 +44,7 @@ def main():
 
     train = pd.read_csv(config.datasets.train)
     train_corpus = get_corpus(train)
-    docs_corpus = get_docs_text(args.docs)
+    docs_corpus = get_docs_text(args.docs, sections=args.siamese)
 
     if args.w2v:
         model = W2VModel(**config.models.word2vec)

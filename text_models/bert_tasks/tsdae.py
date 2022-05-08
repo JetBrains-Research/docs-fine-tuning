@@ -15,20 +15,22 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[str],
+        docs_corpus: List[List[List[str]]],
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
+        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+
         word_embedding_model = models.Transformer(pretrained_model)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
         if self.n_examples == "all":
-            self.n_examples = len(docs_corpus)
+            self.n_examples = len(corpus)
 
-        train_dataset = DenoisingAutoEncoderDataset(docs_corpus[: self.n_examples])
+        train_dataset = DenoisingAutoEncoderDataset(corpus[: self.n_examples])
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
 
         train_loss = losses.DenoisingAutoEncoderLoss(

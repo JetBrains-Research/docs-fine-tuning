@@ -76,7 +76,6 @@ class IREvalTrainer(Trainer):
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
     ) -> Dict[str, float]:
-        print("Start evaluation")
         return self.evaluator(
             self.eval_model,
             output_path=self.args.output_dir,

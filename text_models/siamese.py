@@ -107,7 +107,7 @@ class BertSiameseModel(AbstractModel):
             )
             word_embedding_model = finetuning_task.finetune_on_docs(
                 self.pretrained_model,
-                [" ".join(doc) for doc in extra_corpus],
+                extra_corpus,
                 self.evaluator,
                 self.max_len,
                 self.device,

@@ -19,16 +19,18 @@ class NextSentencePredictionTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[str],
+        docs_corpus: List[List[List[str]]],
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
+        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+
         model = AutoModelForNextSentencePrediction.from_pretrained(pretrained_model)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        dataset = NextSentenceDataset(docs_corpus, tokenizer, self.n_examples, max_len, self.forget_const)
+        dataset = NextSentenceDataset(corpus, tokenizer, self.n_examples, max_len, self.forget_const)
         args = TrainingArguments(
             output_dir=os.path.join(save_to_path, "checkpoints_docs"),
             per_device_train_batch_size=self.batch_size,

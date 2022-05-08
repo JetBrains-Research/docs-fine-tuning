@@ -17,14 +17,16 @@ class STSTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[str],
+        docs_corpus: List[List[List[str]]],
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,
         save_to_path: str,
     ):
+        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+
         word_embedding_model = models.Transformer(pretrained_model)
-        train_dataloader = self.__get_train_dataloader_from_docs(docs_corpus)
+        train_dataloader = self.__get_train_dataloader_from_docs(corpus)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
 
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)

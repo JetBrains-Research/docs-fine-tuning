@@ -96,7 +96,7 @@ models:
     evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
-    device: cuda # 'cpu' or 'cuda'
+    device: cpu # 'cpu' or 'cuda'
     seed: 42
     save_to_path: text_models/saved
 

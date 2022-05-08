@@ -7,6 +7,8 @@ from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
 
+from data_processing.util import flatten
+
 
 class MaskedLMTask(AbstractTask):
     def __init__(
@@ -17,11 +19,12 @@ class MaskedLMTask(AbstractTask):
         self.save_steps = save_steps
 
     def finetune_on_docs(self, pretrained_model, docs_corpus, evaluator, max_len, device, save_to_path):
+        corpus = AbstractTask.sections_to_sentences(docs_corpus)
 
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        inputs = tokenizer(docs_corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
+        inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
         args = TrainingArguments(
             output_dir=os.path.join(save_to_path, "checkpoints_docs"),

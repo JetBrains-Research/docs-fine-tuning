@@ -56,13 +56,13 @@ class AbstractModel(ABC):
         self.model.save(path)
 
     def train_and_save_all(self, base_corpus, extra_corpus):
-        self.train_from_scratch(base_corpus)
+        #self.train_from_scratch(base_corpus)
         print(f"Train from scratch {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
+        #self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
-        self.train_pretrained(base_corpus)
+        #self.train_pretrained(base_corpus)
         print(f"Train pretrained {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
+        #self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
         self.train_finetuned(base_corpus, extra_corpus)
         print(f"Train fine-tuned {self.name} SUCCESS")
