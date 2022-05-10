@@ -32,11 +32,15 @@ def get_docs_text(docs_names, sections=False):
         result = result + get_doc_sections(text)
     return result if sections else flatten(result)
 
+
 def get_doc_sections(text):
     sections = text.split(sep="]], [[")
-    sections = [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
+    sections = (
+        [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
+    )
     sections = [get_doc_sentences(section) for section in sections]
     return sections
+
 
 def get_doc_sentences(text):
     text = text.split(sep="], [")

@@ -18,7 +18,7 @@ class AbstractTask(ABC):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[List[List[str]]], # list of list(sections) of list(sentences) of tokens(words)
+        docs_corpus: List[List[List[str]]],  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,
