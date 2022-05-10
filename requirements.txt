@@ -12,6 +12,5 @@ sentence-transformers~=2.2.0
 tqdm~=4.59.0
 tokenizers~=0.10.3
 scipy~=1.8.0
-pyyaml~=6.0
 omegaconf~=2.1.1
 matplotlib~=3.3.4
