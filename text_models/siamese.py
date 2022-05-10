@@ -7,11 +7,11 @@ from gensim.test.utils import get_tmpfile
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import models, losses
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
+from sentence_transformers.util import cos_sim
 from tokenizers.implementations import BertWordPieceTokenizer
 from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertTokenizerFast, BertConfig, BertModel
-from sentence_transformers.util import cos_sim
 
 from data_processing.util import get_corpus_properties
 from text_models import AbstractModel

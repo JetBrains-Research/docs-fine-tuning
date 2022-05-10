@@ -3,10 +3,11 @@ from typing import Union
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+
+from text_models.datasets import BertModelDataset
 
 
-class NextSentenceDataset(Dataset):
+class NextSentenceDataset(BertModelDataset):
     def __init__(self, corpus: List[str], tokenizer, n_examples: Union[str, int] = "all", max_len=512, forget_const=10):
         sentence_a = []
         sentence_b = []
@@ -22,17 +23,9 @@ class NextSentenceDataset(Dataset):
                 sentence_b.append(corpus[i + np.random.randint(forget_const, lngth - i)])
                 label.append(0)
 
-        self.inputs = tokenizer(
+        inputs = tokenizer(
             sentence_a, sentence_b, return_tensors="pt", max_length=max_len, truncation=True, padding="max_length"
         )
-        self.inputs["labels"] = torch.LongTensor([label]).T
+        inputs["labels"] = torch.LongTensor([label]).T
 
-        self.n_examples = n_examples
-        if n_examples == "all" or n_examples > len(self.inputs.input_ids):
-            self.n_examples = len(self.inputs.input_ids)
-
-    def __getitem__(self, index):
-        return {key: tensor[index] for key, tensor in self.inputs.items()}
-
-    def __len__(self):
-        return self.n_examples
+        super().__init__(inputs, n_examples)

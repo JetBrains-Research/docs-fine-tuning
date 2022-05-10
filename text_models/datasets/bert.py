@@ -1,6 +1,5 @@
 from typing import Union
 
-import torch
 from torch.utils.data import Dataset
 
 
@@ -13,7 +12,7 @@ class BertModelDataset(Dataset):
             self.n_examples = len(self.encodings.input_ids)
 
     def __getitem__(self, idx):
-        return {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        return {key: val[idx] for key, val in self.encodings.items()}
 
     def __len__(self):
         return self.n_examples

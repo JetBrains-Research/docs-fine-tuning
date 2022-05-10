@@ -7,8 +7,6 @@ from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
 
-from data_processing.util import flatten
-
 
 class MaskedLMTask(AbstractTask):
     def __init__(
