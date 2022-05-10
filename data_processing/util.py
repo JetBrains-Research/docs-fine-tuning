@@ -2,6 +2,7 @@ import ast
 import re
 from json import JSONEncoder
 from pathlib import Path
+from typing import List
 
 import nltk
 import numpy as np
@@ -89,6 +90,13 @@ def tokenize_and_normalize(sentences):
     if len(result) == 0:
         return np.nan
     return result
+
+
+def preprocess(text: str) -> List[str]:
+    text = remove_noise(text)
+    sentences = split_sentences(text)
+    tokenized = tokenize_and_normalize(sentences)
+    return tokenized
 
 
 def parse_list(doc_name):

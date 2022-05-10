@@ -1,8 +1,7 @@
 import pandas as pd
 from omegaconf import OmegaConf
 
-from util import remove_noise, split_sentences
-from util import tokenize_and_normalize, CONFIG_PATH
+from util import preprocess, CONFIG_PATH
 
 
 def main():
@@ -11,9 +10,7 @@ def main():
 
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
-    data["description"] = data["description"].apply(remove_noise)
-    data["description"] = data["description"].apply(split_sentences)
-    data["description"] = data["description"].apply(tokenize_and_normalize)
+    data["description"] = data["description"].apply(preprocess)
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
 

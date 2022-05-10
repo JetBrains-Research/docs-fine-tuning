@@ -14,3 +14,5 @@ tokenizers~=0.10.3
 scipy~=1.8.0
 omegaconf~=2.1.1
 matplotlib~=3.3.4
+beautifulsoup4==4.9.3
+markdown==3.3.6
