@@ -1,7 +1,7 @@
 datasets:
   full: data/csv/KT2020.csv
-  train: data/csv/train_KT_2.csv
-  test: data/csv/test_KT_2.csv
+  train: data/csv/train_KT.csv
+  test: data/csv/test_KT.csv
 
 test_size: 0.1
 
@@ -74,7 +74,7 @@ models:
   sbert:
     vector_size: 300
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     warmup_steps: 0.1 # share of train data
     max_len: 512
     tmp_file: null
@@ -87,17 +87,17 @@ models:
   siamese:
     vector_size: 300
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     n_examples: all
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'nsp', 'tsdae'] # see available strategies in 'bert_tasks' section
+    finetuning_strategies: ['same_section', 'nsp'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
-    device: cpu # 'cpu' or 'cuda'
+    device: cuda # 'cpu' or 'cuda'
     seed: 42
     save_to_path: text_models/saved
 
@@ -105,7 +105,7 @@ models:
 bert_tasks:
   mlm:
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     eval_steps: 100
     n_examples: all
     mask_probability: 0.15
@@ -113,21 +113,28 @@ bert_tasks:
 
   nsp:
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     eval_steps: 200
     n_examples: all
     forget_const: 10
     save_steps: 100
 
+  same_section:
+    epochs: 2
+    batch_size: 8
+    eval_steps: 200
+    n_examples: all
+    save_steps: 100
+
   sts:
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     eval_steps: 200
     n_examples: all
     forget_const: 10
 
   tsdae:
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     eval_steps: 200
     n_examples: all
