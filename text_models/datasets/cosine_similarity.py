@@ -7,38 +7,47 @@ from torch.utils.data import Dataset
 
 class CosineSimilarityDataset(Dataset):
     def __init__(self, corpus, disc_ids, n_examples: Union[str, int] = "all", shuffle=False):
+        self.disc_ids = disc_ids
+        self.corpus = corpus
+
+        self.total_examples = self.__collect_examples()
         if shuffle:
-            data = list(zip(corpus, disc_ids))
-            np.random.shuffle(data)
-            corpus, disc_ids = list(zip(*data))
+            np.random.shuffle(self.total_examples)
 
-        self.disc_ids = list(disc_ids)
-        self.corpus = list(corpus)
-
-        corpus_len = len(self.corpus)
-        max_examples_num = int(corpus_len * (corpus_len - 1) / 2)
         self.n_examples = n_examples
-        if n_examples == "all" or max_examples_num < n_examples:
-            self.n_examples = max_examples_num
+        if n_examples == "all" or len(self.total_examples) < n_examples:
+            self.n_examples = len(self.total_examples)
+        else:
+            self.total_examples = self.total_examples[:n_examples]
 
     def __getitem__(self, index):
-        def index_to_pair():
-            """
-            Convert index in array of distinct bug_report pairs into a pair of indexes in bug_report triangle matrix
-            :return: a pair of indexes in bug_report triangle matrix
-            """
-            i = 0
-            cur_bound = 0
-            while index > cur_bound:
-                i += 1
-                cur_bound += i + 1
-            j = int(index - i * (i + 1) / 2)
-            return i + 1, j
-
-        i, j = index_to_pair()
-
+        i, j = self.total_examples[index]
         label = 1.0 if self.disc_ids[i] == self.disc_ids[j] else 0.0
         return InputExample(texts=[self.corpus[i], self.corpus[j]], label=label)
 
     def __len__(self):
         return self.n_examples
+
+    def __collect_examples(self):
+        pos_examples = [
+            (i, j)
+            for i in range(len(self.corpus))
+            for j in range(i + 1, len(self.corpus))
+            if self.disc_ids[i] == self.disc_ids[j]
+        ]
+        np.random.shuffle(pos_examples)
+
+        def neg_generator():
+            seen = set()
+            x, y = 0, 0
+
+            while True:
+                while self.disc_ids[x] == self.disc_ids[y] or (x, y) in seen:
+                    x, y = np.random.randint(len(self.disc_ids), size=2)
+                yield (x, y)
+                seen.add((x, y))
+
+        neg_gen = neg_generator()
+        neg_examples = [next(neg_gen) for _ in range(len(pos_examples))]
+
+        return pos_examples + neg_examples
