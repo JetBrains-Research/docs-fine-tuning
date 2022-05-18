@@ -54,7 +54,6 @@ class AbstractApproach(ABC):
         if graph:
             self.results.plot(
                 x="topn",
-                y=["TASK", "PT+TASK", "PT+DOC+TASK"],
                 kind="line",
                 marker="o",
                 figsize=(7, 5),

@@ -30,6 +30,8 @@ class FinetuningTasksTest(AbstractApproach):
     ):
         self.approach.evaluate_all(from_scratch_model, pretrained_model, finetuned_model, topns)
         self.results_list = [self.approach.results]
+        self.all_results = self.approach.results.copy()
+        self.all_results.rename(columns={"PT+DOC+TASK": f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
 
         for i in range(1, len(self.tasks)):
             task_name = self.tasks[i]
@@ -37,14 +39,19 @@ class FinetuningTasksTest(AbstractApproach):
                 os.path.join(self.models_directory, BertSiameseModel.name + "_" + task_name + self.model_suffix)
             )
             res_copy = self.approach.results.copy()
-            res_copy["PT+DOC+TASK"] = self.approach.evaluate(model_finetuned, topns)
-            print(res_copy)
+            task_result = self.approach.evaluate(model_finetuned, topns)
+            res_copy["PT+DOC+TASK"] = task_result
+            self.all_results[f"PT+DOC({self.tasks[i]})+TASK"] = task_result
             self.results_list.append(res_copy)
+
+        print(self.all_results)
 
     def save_results(self, save_to_path, model_name, graph=False):
         for i, result in enumerate(self.results_list):
             self.results = result
-            super(FinetuningTasksTest, self).save_results(os.path.join(save_to_path, self.tasks[i]), model_name, graph)
+            super(FinetuningTasksTest, self).save_results(save_to_path, model_name + "_" + self.tasks[i], graph)
+        self.results = self.all_results
+        super(FinetuningTasksTest, self).save_results(save_to_path, model_name, graph)
 
     def setup_approach(self):
         self.approach.setup_approach()

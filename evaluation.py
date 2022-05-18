@@ -1,5 +1,9 @@
 import os
 
+import warnings
+
+warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
+
 import pandas as pd
 
 from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, FinetuningTasksTest
