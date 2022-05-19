@@ -17,11 +17,11 @@ class NextSentenceDataset(BertModelDataset):
             if np.random.rand() >= 0.5:
                 sentence_a.append(corpus[i])
                 sentence_b.append(corpus[i + 1])
-                label.append(1)
+                label.append(0)
             else:
                 sentence_a.append(corpus[i])
                 sentence_b.append(corpus[i + np.random.randint(forget_const, lngth - i)])
-                label.append(0)
+                label.append(1)
 
         inputs = tokenizer(
             sentence_a, sentence_b, return_tensors="pt", max_length=max_len, truncation=True, padding="max_length"

@@ -93,7 +93,7 @@ models:
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
-    finetuning_strategies: ['same_section', 'nsp'] # see available strategies in 'bert_tasks' section
+    finetuning_strategies: ['sase', 'nsp', 'mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 500
     val_size: 0.1
@@ -122,7 +122,7 @@ bert_tasks:
     save_steps: 100
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
-  same_section:
+  sase:
     epochs: 2
     batch_size: 8
     eval_steps: 200

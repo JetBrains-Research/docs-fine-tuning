@@ -14,7 +14,6 @@ class SameSectionDataset(BertModelDataset):
         def randint_except(low, high, excluding):
             return np.random.choice(np.arange(low, excluding).tolist() + np.arange(excluding + 1, high).tolist())
 
-        section_num = len(sections)
         labels = []
         for i, section in enumerate(sections):
             section_lngth = len(section)
@@ -22,13 +21,13 @@ class SameSectionDataset(BertModelDataset):
                 if np.random.rand() >= 0.5:
                     sentences_a.append(section[j])
                     sentences_b.append(section[j + 1])
-                    labels.append(1)
+                    labels.append(0)
                 else:
                     sentences_a.append(section[j])
-                    random_section = sections[randint_except(0, section_num, i)]
+                    random_section = sections[randint_except(0, len(sections), i)]
                     neg_example = random_section[np.random.randint(0, len(random_section))]
                     sentences_b.append(neg_example)
-                    labels.append(0)
+                    labels.append(1)
 
         inputs = tokenizer(
             sentences_a, sentences_b, return_tensors="pt", max_length=max_len, truncation=True, padding="max_length"
