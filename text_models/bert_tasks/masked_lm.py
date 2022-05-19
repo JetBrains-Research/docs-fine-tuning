@@ -10,9 +10,16 @@ from text_models.datasets import BertModelMLMDataset
 
 class MaskedLMTask(AbstractTask):
     def __init__(
-        self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", mask_probability=0.15, save_steps=5000
+        self,
+        epochs=2,
+        batch_size=16,
+        eval_steps=200,
+        n_examples="all",
+        save_best_model=False,
+        mask_probability=0.15,
+        save_steps=5000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, name="mlm")
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, name="mlm")
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 
@@ -24,22 +31,31 @@ class MaskedLMTask(AbstractTask):
 
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
+
+        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
+        output_path = os.path.join(save_to_path, "output_docs")
+
         args = TrainingArguments(
-            output_dir=os.path.join(save_to_path, "checkpoints_docs"),
+            output_dir=checkpoints_path,
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
+            save_strategy=IntervalStrategy.STEPS,
             save_steps=self.save_steps,
-            eval_steps=self.eval_steps,
-            evaluation_strategy=IntervalStrategy.STEPS,
             save_total_limit=3,
+            evaluation_strategy=IntervalStrategy.STEPS,
+            eval_steps=self.eval_steps,
+            load_best_model_at_end=self.save_best_model,
+            metric_for_best_model=f"MAP@{max(evaluator.map_at_k)}",
+            greater_is_better=True,
             disable_tqdm=False,
         )
+
         trainer = IREvalTrainer(model=model, args=args, train_dataset=dataset)
         trainer.set_env_vars(evaluator, model, tokenizer, self.name, max_len, device)
         trainer.train()
 
-        save_path = os.path.join(save_to_path, "mlm_pt_doc.model")
-        model.save_pretrained(save_path)
-        tokenizer.save_pretrained(save_path)
+        # if self.save_best_model == True we will use best model
+        model.save_pretrained(output_path)
+        tokenizer.save_pretrained(output_path)
 
-        return models.Transformer(save_path)
+        return models.Transformer(output_path)

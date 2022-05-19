@@ -82,13 +82,14 @@ models:
     forget_const: 10
     pretrained_model: all-MiniLM-L6-v2
     seed: 42
-    save_to_path:
+    save_to_path: text_models/saved
     
   siamese:
     vector_size: 300
     epochs: 2
     batch_size: 8
     n_examples: all
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
@@ -110,6 +111,7 @@ bert_tasks:
     n_examples: all
     mask_probability: 0.15
     save_steps: 100
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   nsp:
     epochs: 2
@@ -118,6 +120,7 @@ bert_tasks:
     n_examples: all
     forget_const: 10
     save_steps: 100
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   same_section:
     epochs: 2
@@ -125,6 +128,7 @@ bert_tasks:
     eval_steps: 200
     n_examples: all
     save_steps: 100
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sts:
     epochs: 2
@@ -132,9 +136,11 @@ bert_tasks:
     eval_steps: 200
     n_examples: all
     forget_const: 10
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   tsdae:
     epochs: 2
     batch_size: 8
     eval_steps: 200
     n_examples: all
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.

@@ -76,9 +76,10 @@ class IREvalTrainer(Trainer):
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
     ) -> Dict[str, float]:
-        return self.evaluator(
+        map = self.evaluator(
             self.eval_model,
             output_path=self.args.output_dir,
             epoch=self.state.epoch if self.state.epoch is not None else -1,
             steps=self.state.global_step,
         )
+        return {f"eval_MAP@{max(self.evaluator.map_at_k)}": map}

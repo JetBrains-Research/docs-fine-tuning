@@ -38,6 +38,7 @@ class BertSiameseModel(AbstractModel):
         pretrained_model="bert-base-uncased",
         tmp_file=get_tmpfile("pretrained_vectors.txt"),
         device="cpu",
+        save_best_model=False,
         seed=42,
         save_to_path="./",
         models_suffixes=None,
@@ -49,6 +50,7 @@ class BertSiameseModel(AbstractModel):
         self.max_len = max_len
         self.loss = task_loss
         self.evaluation_steps = evaluation_steps
+        self.save_best_model = save_best_model
 
         self.task_dataset = None
         self.evaluator = None
@@ -136,10 +138,11 @@ class BertSiameseModel(AbstractModel):
             warmup_steps=self.warmup_steps,
             evaluator=self.evaluator,
             evaluation_steps=self.evaluation_steps,
-            output_path=os.path.join(save_to_dir, "output"),
+            output_path=save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output"),
             checkpoint_path=os.path.join(save_to_dir, "checkpoints"),
             show_progress_bar=True,
             checkpoint_save_total_limit=3,
+            save_best_model=self.save_best_model,
         )
 
     def __get_dataset(self, corpus, disc_ids, n_examples):
@@ -164,6 +167,7 @@ class BertSiameseModel(AbstractModel):
             batch_size=self.batch_size,
             precision_recall_at_k=[1, 5, 10, 15, 20],
             accuracy_at_k=[1, 5, 10, 15, 20],
+            map_at_k=[5, 10],
             main_score_function="cos_sim",
             score_functions={"cos_sim": cos_sim},
         )

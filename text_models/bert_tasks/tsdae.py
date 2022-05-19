@@ -9,8 +9,8 @@ from text_models.bert_tasks import AbstractTask
 
 
 class TSDenoisingAutoEncoderTask(AbstractTask):
-    def __init__(self, epochs=2, batch_size=16, eval_steps=200, n_examples="all"):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, name="tsdae")
+    def __init__(self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", save_best_model=False):
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, name="tsdae")
 
     def finetune_on_docs(
         self,
@@ -37,6 +37,8 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True
         )
 
+        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
+        output_path = os.path.join(save_to_path, "output_docs")
         model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
@@ -46,9 +48,13 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             show_progress_bar=True,
             evaluator=evaluator,
             evaluation_steps=self.eval_steps,
-            checkpoint_path=os.path.join(save_to_path, "checkpoints_docs"),
-            output_path=os.path.join(save_to_path, "output_docs"),
+            checkpoint_path=checkpoints_path,
+            output_path=output_path,
             checkpoint_save_total_limit=3,
+            save_best_model=self.save_best_model,
         )
+
+        if self.save_best_model:
+            model = SentenceTransformer(output_path)
 
         return model._first_module()

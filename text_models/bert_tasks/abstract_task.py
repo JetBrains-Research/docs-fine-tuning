@@ -7,12 +7,15 @@ from data_processing.util import flatten
 
 
 class AbstractTask(ABC):
-    def __init__(self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", name="abstract"):
+    def __init__(
+        self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", save_best_model=False, name="abstract"
+    ):
         self.epochs = epochs
         self.batch_size = batch_size
         self.name = name
         self.n_examples = n_examples
         self.eval_steps = eval_steps
+        self.save_best_model = save_best_model
 
     @abstractmethod
     def finetune_on_docs(

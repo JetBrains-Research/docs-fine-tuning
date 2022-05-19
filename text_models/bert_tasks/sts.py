@@ -9,8 +9,17 @@ from text_models.bert_tasks import AbstractTask
 
 
 class STSTask(AbstractTask):
-    def __init__(self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", warmup_steps=0.1, forget_const=10):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, name="sts")
+    def __init__(
+        self,
+        epochs=2,
+        batch_size=16,
+        eval_steps=200,
+        n_examples="all",
+        save_best_model=False,
+        warmup_steps=0.1,
+        forget_const=10,
+    ):
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, name="sts")
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
@@ -33,16 +42,23 @@ class STSTask(AbstractTask):
         train_loss = losses.CosineSimilarityLoss(model)
 
         warmup = len(train_dataloader) * self.epochs * self.warmup_steps
+        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
+        output_path = os.path.join(save_to_path, "output_docs")
         model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
             warmup_steps=warmup,
             evaluator=evaluator,
             evaluation_steps=self.eval_steps,
-            checkpoint_path=os.path.join(save_to_path, "checkpoints_docs"),
-            output_path=os.path.join(save_to_path, "output_docs"),
+            checkpoint_path=checkpoints_path,
+            output_path=output_path,
             checkpoint_save_total_limit=3,
+            save_best_model=self.save_best_model,
         )
+
+        if self.save_best_model:
+            model = SentenceTransformer(output_path)
+
         return model._first_module()
 
     def __get_train_dataloader_from_docs(self, docs_corpus):
