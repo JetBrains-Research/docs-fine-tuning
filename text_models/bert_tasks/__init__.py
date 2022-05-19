@@ -10,5 +10,5 @@ tasks = {
     "sts": STSTask,
     "nsp": NextSentencePredictionTask,
     "tsdae": TSDenoisingAutoEncoderTask,
-    "same_section": SameSectionTask,
+    "sase": SameSectionTask,
 }
