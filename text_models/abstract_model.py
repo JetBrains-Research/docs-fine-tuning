@@ -1,11 +1,17 @@
 import os
 from abc import ABC, abstractmethod
+from typing import List
 
 import numpy as np
 
 
 class AbstractModel(ABC):
     name = "abstract"
+
+    from_scratch = "TASK"
+    pretrained = "PT+TASK"
+    finetuned = "PT+DOC+TASK"
+    doc_task = "DOC+TASK"
 
     def __init__(
         self, vector_size=300, epochs=5, pretrained_model=None, seed=42, save_to_path="./", models_suffixes=None
@@ -59,19 +65,24 @@ class AbstractModel(ABC):
     def save(self, path):
         self.model.save(path)
 
-    def train_and_save_all(self, base_corpus, extra_corpus):
-        self.train_from_scratch(base_corpus)
-        print(f"Train from scratch(TASK) {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
+    def train_and_save_all(self, base_corpus, extra_corpus, model_types_to_train: List[str]):
 
-        self.train_pretrained(base_corpus)
-        print(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
+        if AbstractModel.from_scratch in model_types_to_train:
+            self.train_from_scratch(base_corpus)
+            print(f"Train from scratch(TASK) {self.name} SUCCESS")
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
-        self.train_from_scratch_finetuned(base_corpus, extra_corpus)
-        print(f"Train DOC+TASK {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.doc_task))
+        if AbstractModel.pretrained in model_types_to_train:
+            self.train_pretrained(base_corpus)
+            print(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
-        self.train_finetuned(base_corpus, extra_corpus)
-        print(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
-        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))
+        if AbstractModel.doc_task in model_types_to_train:
+            self.train_from_scratch_finetuned(base_corpus, extra_corpus)
+            print(f"Train DOC+TASK {self.name} SUCCESS")
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.doc_task))
+
+        if AbstractModel.finetuned in model_types_to_train:
+            self.train_finetuned(base_corpus, extra_corpus)
+            print(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))

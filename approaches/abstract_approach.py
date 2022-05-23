@@ -31,18 +31,26 @@ class AbstractApproach(ABC):
         self,
         from_scratch_model: AbstractModel,
         pretrained_model: AbstractModel,
+        doc_task_model: AbstractModel,
         finetuned_model: AbstractModel,
         topns: List[int],
+        silence: bool = False,
     ):
-        res_dict = {
-            "topn": topns,
-            "TASK": self.evaluate(from_scratch_model, topns),
-            "PT+TASK": self.evaluate(pretrained_model, topns),
-            "PT+DOC+TASK": self.evaluate(finetuned_model, topns),
+        res_dict = {"topn": topns}
+        models_dict = {
+            AbstractModel.from_scratch: from_scratch_model,
+            AbstractModel.pretrained: pretrained_model,
+            AbstractModel.doc_task: doc_task_model,
+            AbstractModel.finetuned: finetuned_model,
         }
+        for name, model in models_dict:
+            if model is not None:
+                res_dict[name] = self.evaluate(model, topns)
 
         self.results = pd.DataFrame.from_dict(res_dict)
-        print(self.results)
+
+        if not silence:
+            print(self.results)
 
     def save_results(self, save_to_path, model_name, graph=False):
         if self.results is None:
@@ -64,6 +72,9 @@ class AbstractApproach(ABC):
             plt.savefig(os.path.join(save_to_path, model_name + ".png"))
 
     def evaluate(self, model: AbstractModel, topns: List[int]) -> np.ndarray:
+        if model is None:
+            return np.zeros(len(topns))
+
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
 

@@ -8,7 +8,15 @@ import pandas as pd
 
 from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, FinetuningTasksTest
 from data_processing.util import get_corpus, load_config
-from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, RandomEmbeddingModel, BertSiameseModel
+from text_models import (
+    W2VModel,
+    FastTextModel,
+    BertModelMLM,
+    SBertModel,
+    RandomEmbeddingModel,
+    BertSiameseModel,
+    AbstractModel,
+)
 
 
 def main():
@@ -57,19 +65,35 @@ def main():
     else:
         raise ValueError(f"Text model ${cnf_eval.text_model} is not supported")
 
-    model_trained_from_scratch = model_type.load(
-        os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
-    )
-    model_pretrained = model_type.load(
-        os.path.join(config.models_directory, model_type.name + config.models_suffixes.pretrained)
-    )
+    model_trained_from_scratch = None
+    model_pretrained = None
+    model_doc_task = None
+    model_finetuned = None
+
+    if AbstractModel.from_scratch in config.model_types:
+        model_trained_from_scratch = model_type.load(
+            os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
+        )
+
+    if AbstractModel.pretrained in config.model_types:
+        model_pretrained = model_type.load(
+            os.path.join(config.models_directory, model_type.name + config.models_suffixes.pretrained)
+        )
 
     task_name = "" if cnf_eval.text_model != "siamese" else "_" + config.models.siamese.finetuning_strategies[0]
-    model_finetuned = model_type.load(
-        os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.finetuned)
-    )
+    if AbstractModel.doc_task in config.model_types:
+        model_doc_task = model_type.load(
+            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.pretrained)
+        )
 
-    evaluator.evaluate_all(model_trained_from_scratch, model_pretrained, model_finetuned, cnf_eval.topns)
+    if AbstractModel.finetuned in config.model_types:
+        model_finetuned = model_type.load(
+            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.finetuned)
+        )
+
+    evaluator.evaluate_all(
+        model_trained_from_scratch, model_pretrained, model_doc_task, model_finetuned, cnf_eval.topns
+    )
     if cnf_eval.save_results:
         evaluator.save_results(cnf_eval.results_path, model_type.name, graph=cnf_eval.save_graph)
 

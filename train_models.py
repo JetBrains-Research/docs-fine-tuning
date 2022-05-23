@@ -48,21 +48,21 @@ def main():
 
     if args.w2v:
         model = W2VModel(**config.models.word2vec)
-        model.train_and_save_all(train_corpus, docs_corpus)
+        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
     if args.fasttext:
         model = FastTextModel(**config.models.fasttext)
-        model.train_and_save_all(train_corpus, docs_corpus)
+        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
     if args.bert:
         model = BertModelMLM(**config.models.bert)
-        model.train_and_save_all(train_corpus, docs_corpus)
+        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
     disc_ids = train["disc_id"].tolist()
     if args.sbert:
         model = SBertModel(train_corpus, disc_ids, **config.models.sbert)
-        model.train_and_save_all(train_corpus, docs_corpus)
+        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
     if args.siamese:
         model = BertSiameseModel(train_corpus, disc_ids, config.bert_tasks, **config.models.siamese)
-        model.train_and_save_all(train_corpus, docs_corpus)
+        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
 
 if __name__ == "__main__":
