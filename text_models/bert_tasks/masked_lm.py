@@ -1,7 +1,7 @@
 import os.path
 
 from sentence_transformers import models
-from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy
+from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
 
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
@@ -26,7 +26,8 @@ class MaskedLMTask(AbstractTask):
     def finetune_on_docs(self, pretrained_model, docs_corpus, evaluator, max_len, device, save_to_path):
         corpus = AbstractTask.sections_to_sentences(docs_corpus)
 
-        model = AutoModelForMaskedLM.from_pretrained(pretrained_model)
+        config = AutoConfig.from_pretrained(pretrained_model)
+        model = AutoModelForMaskedLM.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")

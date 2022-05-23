@@ -10,9 +10,10 @@ docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md'] # supported formats
 
 models_suffixes:
-  from_scratch: .model
-  pretrained: _pretrained.model
-  finetuned: _finetuned.model
+  from_scratch: _task.model
+  pretrained: _pt_task.model
+  finetuned: _pt_doc_task.model
+  doc_task: _doc_task.model
 
 
 evaluation:
@@ -98,7 +99,7 @@ models:
     evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
-    device: cuda # 'cpu' or 'cuda'
+    device: cpu # 'cpu' or 'cuda'
     seed: 42
     save_to_path: text_models/saved
 
@@ -119,7 +120,7 @@ bert_tasks:
     eval_steps: 200
     n_examples: all
     forget_const: 10
-    save_steps: 100
+    save_steps: 200
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sase:
@@ -127,7 +128,7 @@ bert_tasks:
     batch_size: 8
     eval_steps: 200
     n_examples: all
-    save_steps: 100
+    save_steps: 200
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sts:

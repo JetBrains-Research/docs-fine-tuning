@@ -3,7 +3,13 @@ from abc import abstractmethod
 from typing import List
 
 from sentence_transformers import evaluation, models
-from transformers import AutoModelForNextSentencePrediction, AutoTokenizer, TrainingArguments, IntervalStrategy
+from transformers import (
+    AutoModelForNextSentencePrediction,
+    AutoTokenizer,
+    TrainingArguments,
+    IntervalStrategy,
+    AutoConfig,
+)
 
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
@@ -35,7 +41,8 @@ class SentencesClassificationTask(AbstractTask):
         save_to_path: str,
     ) -> models.Transformer:
 
-        model = AutoModelForNextSentencePrediction.from_pretrained(pretrained_model)
+        config = AutoConfig.from_pretrained(pretrained_model)
+        model = AutoModelForNextSentencePrediction.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)

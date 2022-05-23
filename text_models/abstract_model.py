@@ -61,14 +61,17 @@ class AbstractModel(ABC):
 
     def train_and_save_all(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus)
-        print(f"Train from scratch {self.name} SUCCESS")
+        print(f"Train from scratch(TASK) {self.name} SUCCESS")
         self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
         self.train_pretrained(base_corpus)
-        print(f"Train pretrained {self.name} SUCCESS")
+        print(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
         self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
+        self.train_from_scratch_finetuned(base_corpus, extra_corpus)
+        print(f"Train DOC+TASK {self.name} SUCCESS")
+        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.doc_task))
+
         self.train_finetuned(base_corpus, extra_corpus)
-        print(f"Train fine-tuned {self.name} SUCCESS")
-        if self.name != "BERT_SIAMESE":
-            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))
+        print(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
+        self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))

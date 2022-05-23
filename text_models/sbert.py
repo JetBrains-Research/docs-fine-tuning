@@ -16,21 +16,21 @@ from text_models.datasets import CosineSimilarityDataset
 @deprecated("Will be removed in the future. Use BertSiameseModel with STS task instead")
 class SBertModel(AbstractModel):
     def __init__(
-            self,
-            corpus=None,
-            disc_ids=None,
-            vector_size=256,
-            epochs=2,
-            batch_size=16,
-            warmup_steps=0.1,
-            max_len=512,
-            forget_const=10,
-            tmp_file=get_tmpfile("pretrained_vectors.txt"),
-            n_examples=None,
-            pretrained_model="all-mpnet-base-v2",
-            seed=42,
-            save_to_path="./",
-            models_suffixes=None,
+        self,
+        corpus=None,
+        disc_ids=None,
+        vector_size=256,
+        epochs=2,
+        batch_size=16,
+        warmup_steps=0.1,
+        max_len=512,
+        forget_const=10,
+        tmp_file=get_tmpfile("pretrained_vectors.txt"),
+        n_examples=None,
+        pretrained_model="all-mpnet-base-v2",
+        seed=42,
+        save_to_path="./",
+        models_suffixes=None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")

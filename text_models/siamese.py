@@ -1,5 +1,6 @@
 import os.path
 import tempfile
+import warnings
 from typing import List
 
 import numpy as np
@@ -11,11 +12,12 @@ from sentence_transformers.util import cos_sim
 from tokenizers.implementations import BertWordPieceTokenizer
 from torch import nn
 from torch.utils.data import DataLoader
-from transformers import BertTokenizerFast, BertConfig, BertModel
+from transformers import BertTokenizerFast, BertConfig, BertModel, BertForNextSentencePrediction
 
-from data_processing.util import get_corpus_properties
+from data_processing.util import get_corpus_properties, sections_to_sentences, flatten
 from text_models import AbstractModel
 from text_models.bert_tasks import tasks
+from text_models.bert_tasks import AbstractTask
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
@@ -101,22 +103,32 @@ class BertSiameseModel(AbstractModel):
             word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained)
         )
 
+    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+        for finetuning_task in self.finetuning_strategies:
+
+            if finetuning_task.name != "mlm":
+                warnings.warn(f"'{finetuning_task.name}' task do not support DOC+TASK training")
+                continue
+
+            print(f"Start pretraining with {finetuning_task.name} task")
+            sentences = [" ".join(doc) for doc in base_corpus] + sections_to_sentences(extra_corpus)
+            dumb_model, tokenizer = self.create_model_from_scratch(sentences, get_tmpfile("doc_task_tmp.txt"))
+
+            dumb_model_name = tempfile.mkdtemp()
+            tokenizer.save_pretrained(dumb_model_name)
+            dumb_model.save_pretrained(dumb_model_name)
+
+            self.__train_finetuned_on_task(
+                extra_corpus, finetuning_task, dumb_model_name, self.models_suffixes.doc_task
+            )
+            print(f"Train with {finetuning_task.name} complete")
+
     def train_finetuned(self, base_corpus, extra_corpus):
         for finetuning_task in self.finetuning_strategies:
             print(f"Start fine-tuning with {finetuning_task.name} task")
-            save_to_dir = os.path.join(
-                self.save_to_path, self.name + "_" + finetuning_task.name + self.models_suffixes.finetuned
+            self.__train_finetuned_on_task(
+                extra_corpus, finetuning_task, self.pretrained_model, self.models_suffixes.finetuned
             )
-            word_embedding_model = finetuning_task.finetune_on_docs(
-                self.pretrained_model,
-                extra_corpus,
-                self.evaluator,
-                self.max_len,
-                self.device,
-                save_to_dir,
-            )
-            self.__train_siamese(word_embedding_model, save_to_dir)
-            self.save(save_to_dir)
             print(f"Train with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model, save_to_dir):
@@ -144,6 +156,26 @@ class BertSiameseModel(AbstractModel):
             checkpoint_save_total_limit=3,
             save_best_model=self.save_best_model,
         )
+
+    def __train_finetuned_on_task(
+        self,
+        extra_corpus: List[List[List[str]]],
+        finetuning_task: AbstractTask,
+        pretrained_model: str,
+        save_to_path_suffix: str,
+    ):
+        save_to_dir = os.path.join(self.save_to_path, self.name + "_" + finetuning_task.name + save_to_path_suffix)
+        word_embedding_model = finetuning_task.finetune_on_docs(
+            pretrained_model,
+            extra_corpus,
+            self.evaluator,
+            self.max_len,
+            self.device,
+            save_to_dir,
+        )
+        self.__train_siamese(word_embedding_model, save_to_dir)
+        if not self.save_best_model:
+            self.save(save_to_dir)
 
     def __get_dataset(self, corpus, disc_ids, n_examples):
         if self.loss == "cossim":
@@ -178,7 +210,7 @@ class BertSiameseModel(AbstractModel):
         tokenizer = self._create_and_train_tokenizer(train_sentences, vocab_size, tmp_file)
 
         bert_config = BertConfig(
-            vocab_size=vocab_size,
+            vocab_size=tokenizer.vocab_size,
             max_position_embeddings=self.max_len + 2,
             hidden_size=768,
             num_attention_heads=12,
@@ -220,6 +252,23 @@ class BertSiameseModel(AbstractModel):
         tokenizer.save_model(save_to_path)
 
         return BertTokenizerFast.from_pretrained(save_to_path, max_len=self.max_len + 2)
+
+    def train_and_save_all(self, base_corpus, extra_corpus):
+        # self.train_from_scratch(base_corpus)
+        print(f"Train from scratch {self.name} SUCCESS")
+        if not self.save_best_model:
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
+
+        # self.train_pretrained(base_corpus)
+        print(f"Train pretrained {self.name} SUCCESS")
+        if not self.save_best_model:
+            self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
+
+        self.train_from_scratch_finetuned(base_corpus, extra_corpus)
+        print(f"Train DOC+TASK {self.name} SUCCESS")
+
+        self.train_finetuned(base_corpus, extra_corpus)
+        print(f"Train fine-tuned {self.name} SUCCESS")
 
     def get_embeddings(self, corpus):
         return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)

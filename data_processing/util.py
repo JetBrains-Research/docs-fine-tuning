@@ -99,6 +99,10 @@ def preprocess(text: str) -> List[str]:
     return tokenized
 
 
+def sections_to_sentences(docs_corpus):
+    return [" ".join(doc) for doc in flatten(docs_corpus)]
+
+
 def parse_list(doc_name):
     return ast.literal_eval(Path(doc_name).read_text())
 
