@@ -67,6 +67,9 @@ class BertModelMLM(AbstractModel):
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability)
         self.__train(dataset)
 
+    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+        raise NotImplementedError()
+
     def train_finetuned(self, base_corpus, extra_corpus):
         sentences = [" ".join(sentence) for sentence in extra_corpus]
         inputs = self.tokenizer(

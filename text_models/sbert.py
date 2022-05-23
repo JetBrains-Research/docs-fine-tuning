@@ -70,6 +70,9 @@ class SBertModel(AbstractModel):
         self.model = SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model])
         self.__train_sts(self.train_sts_dataloader)
 
+    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+        raise NotImplementedError()
+
     def train_pretrained(self, corpus):
         self.model = SentenceTransformer(self.pretrained_model)
         self.__train_sts(self.train_sts_dataloader)
