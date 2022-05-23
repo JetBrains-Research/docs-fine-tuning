@@ -16,3 +16,4 @@ omegaconf~=2.1.1
 matplotlib~=3.3.4
 beautifulsoup4==4.9.3
 markdown==3.3.6
+deprecated==1.2.13

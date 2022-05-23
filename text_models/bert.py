@@ -1,5 +1,7 @@
 import tempfile
 
+from deprecated import deprecated
+
 import numpy as np
 import torch
 from gensim.test.utils import get_tmpfile
@@ -15,6 +17,7 @@ from text_models import AbstractModel
 from text_models.datasets import BertModelDataset, BertModelMLMDataset
 
 
+@deprecated("Will be removed in the future. Use BertSiameseModel with MLM task instead")
 class BertModelMLM(AbstractModel):
     def __init__(
         self,
