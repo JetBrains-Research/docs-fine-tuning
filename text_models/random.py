@@ -62,5 +62,8 @@ class RandomEmbeddingModel(AbstractModel):
     def train_pretrained(self, corpus):
         pass
 
+    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+        pass
+
     def train_finetuned(self, base_corpus, extra_corpus):
         pass

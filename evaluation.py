@@ -49,7 +49,7 @@ def main():
 
     if cnf_eval.text_model == "random":
         model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
-        print(f"Success Rate 'random' = {evaluator.evaluate(model, config.topns)}")
+        print(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
         return
 
     if cnf_eval.text_model == "word2vec":
