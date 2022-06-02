@@ -16,6 +16,8 @@ from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
 
 
 class SentencesClassificationTask(AbstractTask):
+    name = "abstract_sentence_classification"
+
     def __init__(
         self,
         epochs=2,
@@ -24,10 +26,13 @@ class SentencesClassificationTask(AbstractTask):
         n_examples="all",
         save_best_model=False,
         save_steps=2000,
-        name="abstract_sentence_classification",
     ):
         super(SentencesClassificationTask, self).__init__(
-            epochs, batch_size, eval_steps, n_examples, save_best_model, name
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            save_best_model,
         )
         self.save_steps = save_steps
 

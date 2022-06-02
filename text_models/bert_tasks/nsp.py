@@ -5,6 +5,8 @@ from data_processing.util import sections_to_sentences
 
 
 class NextSentencePredictionTask(SentencesClassificationTask):
+    name = "nsp"
+
     def __init__(
         self,
         epochs=2,
@@ -16,7 +18,12 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         save_steps=2000,
     ):
         super(NextSentencePredictionTask, self).__init__(
-            epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps, name="nsp"
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            save_best_model,
+            save_steps,
         )
         self.forget_const = forget_const
 

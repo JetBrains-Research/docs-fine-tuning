@@ -82,4 +82,4 @@ class IREvalTrainer(Trainer):
             epoch=self.state.epoch if self.state.epoch is not None else -1,
             steps=self.state.global_step,
         )
-        return {f"eval_MAP@{max(self.evaluator.map_at_k)}": map}
+        return {f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}": map}

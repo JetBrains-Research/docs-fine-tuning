@@ -10,6 +10,8 @@ from text_models.datasets import BertModelMLMDataset
 
 
 class MaskedLMTask(AbstractTask):
+    name = "mlm"
+
     def __init__(
         self,
         epochs=2,
@@ -20,7 +22,7 @@ class MaskedLMTask(AbstractTask):
         mask_probability=0.15,
         save_steps=5000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, name="mlm")
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 

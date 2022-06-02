@@ -5,12 +5,18 @@ from sentence_transformers import models, evaluation
 
 
 class AbstractTask(ABC):
+    name = "abstract"
+
     def __init__(
-        self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", save_best_model=False, name="abstract"
+        self,
+        epochs=2,
+        batch_size=16,
+        eval_steps=200,
+        n_examples="all",
+        save_best_model=False,
     ):
         self.epochs = epochs
         self.batch_size = batch_size
-        self.name = name
         self.n_examples = n_examples
         self.eval_steps = eval_steps
         self.save_best_model = save_best_model

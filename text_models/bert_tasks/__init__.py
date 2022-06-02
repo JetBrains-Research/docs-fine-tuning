@@ -6,9 +6,9 @@ from text_models.bert_tasks.sts import STSTask
 from text_models.bert_tasks.tsdae import TSDenoisingAutoEncoderTask
 
 tasks = {
-    "mlm": MaskedLMTask,
-    "sts": STSTask,
-    "nsp": NextSentencePredictionTask,
-    "tsdae": TSDenoisingAutoEncoderTask,
-    "sase": SameSectionTask,
+    MaskedLMTask.name: MaskedLMTask,
+    STSTask.name: STSTask,
+    NextSentencePredictionTask.name: NextSentencePredictionTask,
+    TSDenoisingAutoEncoderTask.name: TSDenoisingAutoEncoderTask,
+    SameSectionTask.name: SameSectionTask,
 }

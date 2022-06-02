@@ -10,6 +10,8 @@ from text_models.bert_tasks import AbstractTask
 
 
 class STSTask(AbstractTask):
+    name = "sts"
+
     def __init__(
         self,
         epochs=2,
@@ -20,7 +22,7 @@ class STSTask(AbstractTask):
         warmup_steps=0.1,
         forget_const=10,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, name="sts")
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
