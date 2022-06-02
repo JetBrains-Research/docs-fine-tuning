@@ -5,13 +5,15 @@ from typing import List
 import numpy as np
 
 
+class TrainTypes:
+    TASK = "TASK"
+    PT_TASK = "PT+TASK"
+    DOC_TASK = "DOC+TASK"
+    PT_DOC_TASK = "PT+DOC+TASK"
+
+
 class AbstractModel(ABC):
     name = "abstract"
-
-    from_scratch = "TASK"
-    pretrained = "PT+TASK"
-    finetuned = "PT+DOC+TASK"
-    doc_task = "DOC+TASK"
 
     def __init__(
         self, vector_size=300, epochs=5, pretrained_model=None, seed=42, save_to_path="./", models_suffixes=None
@@ -67,22 +69,22 @@ class AbstractModel(ABC):
 
     def train_and_save_all(self, base_corpus, extra_corpus, model_types_to_train: List[str]):
 
-        if AbstractModel.from_scratch in model_types_to_train:
+        if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
             print(f"Train from scratch(TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
-        if AbstractModel.pretrained in model_types_to_train:
+        if TrainTypes.PT_TASK in model_types_to_train:
             self.train_pretrained(base_corpus)
             print(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
-        if AbstractModel.doc_task in model_types_to_train:
+        if TrainTypes.DOC_TASK in model_types_to_train:
             self.train_from_scratch_finetuned(base_corpus, extra_corpus)
             print(f"Train DOC+TASK {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.doc_task))
 
-        if AbstractModel.finetuned in model_types_to_train:
+        if TrainTypes.PT_DOC_TASK in model_types_to_train:
             self.train_finetuned(base_corpus, extra_corpus)
             print(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.finetuned))

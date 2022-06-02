@@ -1,9 +1,5 @@
 import os
-
 import warnings
-
-warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
-
 import pandas as pd
 
 from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, FinetuningTasksTest
@@ -16,7 +12,10 @@ from text_models import (
     RandomEmbeddingModel,
     BertSiameseModel,
     AbstractModel,
+    TrainTypes,
 )
+
+warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
 
 
 def main():
@@ -70,23 +69,23 @@ def main():
     model_doc_task = None
     model_finetuned = None
 
-    if AbstractModel.from_scratch in config.model_types:
+    if TrainTypes.TASK in config.model_types:
         model_trained_from_scratch = model_type.load(
             os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
         )
 
-    if AbstractModel.pretrained in config.model_types:
+    if TrainTypes.PT_TASK in config.model_types:
         model_pretrained = model_type.load(
             os.path.join(config.models_directory, model_type.name + config.models_suffixes.pretrained)
         )
 
     task_name = "" if cnf_eval.text_model != "siamese" else "_" + config.models.siamese.finetuning_strategies[0]
-    if AbstractModel.doc_task in config.model_types:
+    if TrainTypes.DOC_TASK in config.model_types:
         model_doc_task = model_type.load(
             os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.pretrained)
         )
 
-    if AbstractModel.finetuned in config.model_types:
+    if TrainTypes.PT_DOC_TASK in config.model_types:
         model_finetuned = model_type.load(
             os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.finetuned)
         )

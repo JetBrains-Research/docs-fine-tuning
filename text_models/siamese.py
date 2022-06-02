@@ -12,7 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, AutoTokenizer
 
-from text_models import AbstractModel
+from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
@@ -209,23 +209,23 @@ class BertSiameseModel(AbstractModel):
 
     def train_and_save_all(self, base_corpus, extra_corpus, model_types_to_train):
 
-        if AbstractModel.from_scratch in model_types_to_train:
+        if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
             print(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
-        if AbstractModel.pretrained in model_types_to_train:
+        if TrainTypes.PT_TASK in model_types_to_train:
             self.train_pretrained(base_corpus)
             print(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
-        if AbstractModel.doc_task in model_types_to_train:
+        if TrainTypes.DOC_TASK in model_types_to_train:
             self.train_from_scratch_finetuned(base_corpus, extra_corpus)
             print(f"Train DOC+TASK {self.name} SUCCESS")
 
-        if AbstractModel.finetuned in model_types_to_train:
+        if TrainTypes.PT_DOC_TASK in model_types_to_train:
             self.train_finetuned(base_corpus, extra_corpus)
             print(f"Train fine-tuned {self.name} SUCCESS")
 

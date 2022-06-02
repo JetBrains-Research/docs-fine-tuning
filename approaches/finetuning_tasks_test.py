@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 
 from approaches import AbstractApproach
-from text_models import AbstractModel, BertSiameseModel
+from text_models import AbstractModel, TrainTypes, BertSiameseModel
 
 
 class FinetuningTasksTest(AbstractApproach):
@@ -42,7 +42,7 @@ class FinetuningTasksTest(AbstractApproach):
             return
 
         self.all_results = self.approach.results.copy()
-        self.all_results.rename(columns={AbstractModel.finetuned: f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
+        self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
 
         for i in range(1, len(self.tasks)):
             task_name = self.tasks[i]
@@ -53,7 +53,7 @@ class FinetuningTasksTest(AbstractApproach):
                     os.path.join(self.models_directory, BertSiameseModel.name + "_" + task_name + self.model_suffix)
                 )
                 task_result = self.approach.evaluate(model_finetuned, topns)
-                res_copy[AbstractModel.finetuned] = task_result
+                res_copy[TrainTypes.PT_DOC_TASK] = task_result
                 self.all_results[f"PT+DOC({self.tasks[i]})+TASK"] = task_result
                 self.results_list.append(res_copy)
 
@@ -62,7 +62,7 @@ class FinetuningTasksTest(AbstractApproach):
                     os.path.join(self.models_directory, BertSiameseModel.name + "_" + task_name + self.model_suffix)
                 )
                 task_doc_test_res = self.approach.evaluate(model_doc_task, topns)
-                res_copy[AbstractModel.doc_task] = task_doc_test_res
+                res_copy[TrainTypes.DOC_TASK] = task_doc_test_res
                 self.all_results[f"DOC({self.tasks[i]})+TASK"] = task_doc_test_res
                 self.results_list.append(res_copy)
 

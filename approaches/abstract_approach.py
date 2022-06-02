@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from data_processing.util import get_corpus
-from text_models import AbstractModel
+from text_models import AbstractModel, TrainTypes
 
 
 class AbstractApproach(ABC):
@@ -38,10 +38,10 @@ class AbstractApproach(ABC):
     ):
         res_dict = {"topn": topns}
         models_dict = {
-            AbstractModel.from_scratch: from_scratch_model,
-            AbstractModel.pretrained: pretrained_model,
-            AbstractModel.doc_task: doc_task_model,
-            AbstractModel.finetuned: finetuned_model,
+            TrainTypes.TASK: from_scratch_model,
+            TrainTypes.PT_TASK: pretrained_model,
+            TrainTypes.DOC_TASK: doc_task_model,
+            TrainTypes.PT_DOC_TASK: finetuned_model,
         }
         for name, model in models_dict:
             if model is not None:
