@@ -1,11 +1,10 @@
 import pandas as pd
-from omegaconf import OmegaConf
 
-from util import preprocess, CONFIG_PATH
+from util import preprocess, load_config
 
 
 def main():
-    config = OmegaConf.load(CONFIG_PATH)
+    config = load_config()
     data = pd.read_csv(config.datasets.full)
 
     data = data.dropna(axis=0, subset=["description"])

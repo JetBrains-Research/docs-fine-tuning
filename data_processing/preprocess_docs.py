@@ -1,10 +1,8 @@
 import argparse
 import os.path
 
-from omegaconf import OmegaConf
-
 from docs_preprocessor import DocsPreprocessor
-from util import CONFIG_PATH
+from util import load_config
 
 
 def parse_arguments():
@@ -24,7 +22,7 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    config = OmegaConf.load(CONFIG_PATH)
+    config = load_config()
 
     for docs_path in args.docs:
         preprocessor = DocsPreprocessor(docs_path, config.docs_formats)
