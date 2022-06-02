@@ -41,7 +41,6 @@ class AbstractModel(ABC):
     def train_pretrained(self, corpus):
         raise NotImplementedError()
 
-    @abstractmethod
     def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
         self.train_from_scratch(base_corpus + extra_corpus)
 

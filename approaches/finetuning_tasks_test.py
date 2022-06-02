@@ -31,7 +31,7 @@ class FinetuningTasksTest(AbstractApproach):
         doc_task_model: AbstractModel,
         finetuned_model: AbstractModel,
         topns: List[int],
-        silence: bool = False,
+        verbose: bool = True,
     ):
         self.approach.evaluate_all(
             from_scratch_model, pretrained_model, doc_task_model, finetuned_model, topns, verbose=False
@@ -68,16 +68,17 @@ class FinetuningTasksTest(AbstractApproach):
                 self.all_results[f"DOC({self.tasks[i]})+TASK"] = task_doc_test_res
                 self.results_list.append(res_copy)
 
-        print(self.all_results)
+        if verbose:
+            print(self.all_results)
 
     def save_results(self, save_to_path, model_name, plot=False):
         for i, result in enumerate(self.results_list):
             self.results = result
-            super(FinetuningTasksTest, self).save_results(save_to_path, model_name + "_" + self.tasks[i], plot)
+            super().save_results(save_to_path, model_name + "_" + self.tasks[i], plot)
 
         if self.all_results is not None:
             self.results = self.all_results
-            super(FinetuningTasksTest, self).save_results(save_to_path, model_name, plot)
+            super().save_results(save_to_path, model_name, plot)
 
     def setup_approach(self):
         self.approach.setup_approach()

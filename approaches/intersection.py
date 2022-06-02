@@ -8,7 +8,7 @@ from text_models import AbstractModel
 
 class IntersectionApproach(AbstractApproach):
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame, min_count: int):
-        super(IntersectionApproach, self).__init__(train, test)
+        super().__init__(train, test)
         self.min_count = min_count
 
     def setup_approach(self):

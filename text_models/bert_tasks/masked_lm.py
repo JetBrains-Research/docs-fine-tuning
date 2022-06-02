@@ -5,7 +5,7 @@ from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer,
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
+from text_models.bert_tasks.eval_trainer import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
 
 

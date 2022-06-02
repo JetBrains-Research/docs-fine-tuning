@@ -25,7 +25,7 @@ class AbstractApproach(ABC):
         self.test_embs = None
         self.results = None
         self.test_size = None
-        self.TP = None
+        self.true_positive = None
 
     def evaluate_all(
         self,
@@ -43,7 +43,7 @@ class AbstractApproach(ABC):
             TrainTypes.DOC_TASK: doc_task_model,
             TrainTypes.PT_DOC_TASK: finetuned_model,
         }
-        for name, model in models_dict:
+        for name, model in models_dict.items():
             if model is not None:
                 res_dict[name] = self.evaluate(model, topns)
 
@@ -81,13 +81,13 @@ class AbstractApproach(ABC):
         self.setup_approach()
 
         self.test_size = 0
-        self.TP = np.zeros(len(topns))
+        self.true_positive = np.zeros(len(topns))
 
         def eval_sample(query_report):
             if query_report.id != query_report.disc_id:  # not in master ids
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topns))
                 for i, topn in enumerate(topns):
-                    self.TP[i] += np.any(self.train.iloc[dupl_ids[:topn]]["disc_id"] == query_report.disc_id)
+                    self.true_positive[i] += np.any(self.train.iloc[dupl_ids[:topn]]["disc_id"] == query_report.disc_id)
                 self.test_size += 1
             self.train = self.train.append(query_report, ignore_index=True)
             self.update_history(query_report.id_num)
@@ -97,7 +97,7 @@ class AbstractApproach(ABC):
         self.embeddings = None
         self.test_embs = None
 
-        return self.TP / self.test_size
+        return self.true_positive / self.test_size
 
     @abstractmethod
     def setup_approach(self):

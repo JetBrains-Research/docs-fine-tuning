@@ -11,7 +11,6 @@ from text_models import (
     SBertModel,
     RandomEmbeddingModel,
     BertSiameseModel,
-    AbstractModel,
     TrainTypes,
 )
 
@@ -26,7 +25,7 @@ def main():
     test = pd.read_csv(config.datasets.test)
 
     if cnf_eval.approach == "tf_idf":
-        evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.weight)
+        evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.alpha)
     elif cnf_eval.approach == "intersection":
         evaluator = IntersectionApproach(train, test, config.approaches.intersection.min_count)
     elif cnf_eval.approach == "simple":

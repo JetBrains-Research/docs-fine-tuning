@@ -3,7 +3,7 @@ import os.path
 
 from omegaconf import OmegaConf
 
-from DocsPreprocessor import DocsPreprocessor
+from docs_preprocessor import DocsPreprocessor
 from util import CONFIG_PATH
 
 
@@ -26,7 +26,7 @@ def main():
     args = parse_arguments()
     config = OmegaConf.load(CONFIG_PATH)
 
-    for i, docs_path in enumerate(args.docs):
+    for docs_path in args.docs:
         preprocessor = DocsPreprocessor(docs_path, config.docs_formats)
         tokenized = preprocessor.preprocess_files()
 

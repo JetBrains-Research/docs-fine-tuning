@@ -8,7 +8,7 @@ class BertModelMLMDataset(BertModelDataset):
     def __init__(
         self, encodings, mask_id=103, cls_id=102, sep_id=101, pad_id=0, mask_probability=0.15, n_examples="all"
     ):
-        super(BertModelMLMDataset, self).__init__(encodings, n_examples)
+        super().__init__(encodings, n_examples)
 
         self.encodings["labels"] = self.encodings.input_ids.detach().clone()
         self.mask_proba = mask_probability
@@ -19,7 +19,7 @@ class BertModelMLMDataset(BertModelDataset):
         self.masked = np.full(self.__len__(), False)
 
     def __getitem__(self, idx):
-        if self.masked[idx] == False:
+        if not self.masked[idx]:
             inputs = self.encodings.input_ids[idx]
 
             rand = torch.rand(inputs.shape)

@@ -33,4 +33,4 @@ class SameSectionDataset(BertModelDataset):
             sentences_a, sentences_b, return_tensors="pt", max_length=max_len, truncation=True, padding="max_length"
         )
         inputs["labels"] = torch.LongTensor([labels]).T
-        super(SameSectionDataset, self).__init__(inputs, n_examples)
+        super().__init__(inputs, n_examples)

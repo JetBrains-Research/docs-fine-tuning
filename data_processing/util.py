@@ -22,8 +22,8 @@ def get_corpus(data, sentences=False):
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 
-def flatten(t):
-    return [item for sublist in t for item in sublist]
+def flatten(matrix):
+    return [item for sublist in matrix for item in sublist]
 
 
 def get_docs_text(docs_names, sections=False):
@@ -55,11 +55,11 @@ def get_doc_sentences(text):
 
 
 def remove_noise(text):
-    text = re.sub(r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE)
-    text = re.sub("\w*\d\w*", " ", text)
-    text = re.sub("\w*\f\w*", " ", text)
-    text = re.sub("\(.*?\)", " ", text)
-    text = re.sub("\[.*]\)", " ", text)
+    text = re.sub(r"(https|http)?://(\w|\.|/|\?|=|&|%)*\b", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\w*\d\w*", " ", text)
+    text = re.sub(r"\w*\f\w*", " ", text)
+    text = re.sub(r"\(.*?\)", " ", text)
+    text = re.sub(r"\[.*]\)", " ", text)
     # remove non latin characters
     text = text.encode("ascii", "ignore")
     text = text.decode()
@@ -78,11 +78,11 @@ def lemmatize(text):
 
 def tokenize_and_normalize(sentences):
     result = []
-    STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
+    eng_stopwords = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for sentence in sentences:
         tokens = []
         for token in simple_preprocess(sentence, min_len=3):
-            if token not in STOPWORDS:
+            if token not in eng_stopwords:
                 tokens.append(lemmatize(token))
         if len(tokens) >= 3:
             result.append(tokens)
@@ -108,25 +108,25 @@ def parse_list(doc_name):
 
 
 def replace_rarest_words(corpus, min_count):
-    d = FreqDist()
+    freq_dict = FreqDist()
     for docs in corpus:
-        d.update(FreqDist(docs))
+        freq_dict.update(FreqDist(docs))
 
     for doc in corpus:
         for i in range(len(doc)):
-            if d[doc[i]] < min_count:
+            if freq_dict[doc[i]] < min_count:
                 doc[i] = "<UNK>"
     return corpus
 
 
 def get_corpus_properties(corpus):
-    d = FreqDist()
+    freq_dict = FreqDist()
     max_len = 0
     for docs in corpus:
         max_len = max(max_len, len(docs))
-        d.update(FreqDist(docs))
+        freq_dict.update(FreqDist(docs))
 
-    return len(d), max_len
+    return len(freq_dict), max_len
 
 
 def split_sentences(text):
@@ -143,7 +143,7 @@ def load_config(path=None):
 
 
 class NumpyArrayEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return JSONEncoder.default(self, o)

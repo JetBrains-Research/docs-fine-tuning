@@ -12,7 +12,7 @@ from transformers import (
 )
 
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
+from text_models.bert_tasks.eval_trainer import IREvalTrainer
 
 
 class SentencesClassificationTask(AbstractTask):
@@ -27,13 +27,7 @@ class SentencesClassificationTask(AbstractTask):
         save_best_model=False,
         save_steps=2000,
     ):
-        super(SentencesClassificationTask, self).__init__(
-            epochs,
-            batch_size,
-            eval_steps,
-            n_examples,
-            save_best_model,
-        )
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.save_steps = save_steps
 
     def finetune_on_docs(

@@ -12,9 +12,6 @@ from text_models.bert_tasks import AbstractTask
 class TSDenoisingAutoEncoderTask(AbstractTask):
     name = "tsdae"
 
-    def __init__(self, epochs=2, batch_size=16, eval_steps=200, n_examples="all", save_best_model=False):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
-
     def finetune_on_docs(
         self,
         pretrained_model: str,

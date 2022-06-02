@@ -24,7 +24,7 @@ class BertSiameseModel(AbstractModel):
         corpus=None,
         disc_ids=None,
         cnf_tasks=None,
-        finetuning_strategies: List[str] = ["mlm"],
+        finetuning_strategies=None,
         vector_size=384,
         epochs=5,
         batch_size=16,
@@ -43,6 +43,8 @@ class BertSiameseModel(AbstractModel):
         models_suffixes=None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        if finetuning_strategies is None:
+            finetuning_strategies = ["mlm"]
         self.device = device
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
@@ -171,8 +173,8 @@ class BertSiameseModel(AbstractModel):
         raise ValueError("Unsupported loss")
 
     def __get_evaluator(self, train_corpus, train_disc_ids, val_corpus, val_disc_ids):
-        queries = {qid: query for qid, query in enumerate(val_corpus)}
-        corpus = {cid: doc for cid, doc in enumerate(train_corpus)}
+        queries = dict(enumerate(val_corpus))
+        corpus = dict(enumerate(train_corpus))
         relevant_docs = {
             qid: {cid for cid in corpus.keys() if train_disc_ids[cid] == val_disc_ids[qid]} for qid in queries.keys()
         }

@@ -17,14 +17,7 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         forget_const=10,
         save_steps=2000,
     ):
-        super(NextSentencePredictionTask, self).__init__(
-            epochs,
-            batch_size,
-            eval_steps,
-            n_examples,
-            save_best_model,
-            save_steps,
-        )
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps)
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus, tokenizer, max_len):

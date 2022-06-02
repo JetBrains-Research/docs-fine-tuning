@@ -18,26 +18,27 @@ class DocsPreprocessor:
     def preprocess_files(self):
         result = []
         for file_name in self.files:
-            tokenized = self.read_and_preprocess(file_name)
-            if isinstance(tokenized, float) == False and tokenized not in result:
+            tokenized = DocsPreprocessor.read_and_preprocess(file_name)
+            if not isinstance(tokenized, float) and tokenized not in result:
                 result.append(tokenized)
         return result
 
-    def read_and_preprocess(self, file_name):
+    @staticmethod
+    def read_and_preprocess(file_name):
         text = DocsPreprocessor.__read_file(file_name)
         file_extension = os.path.splitext(file_name)[1][1:]
         tokenized = DocsPreprocessor.__preprocess(text, file_extension)
         return tokenized
 
     @staticmethod
-    def __preprocess(text, format):
-        if format == "md":
+    def __preprocess(text, file_format):
+        if file_format == "md":
             is_html = bool(BeautifulSoup(text, "html.parser").find())
             text = re.sub(r"```[^\S\r\n]*[a-z]*\n.*?\n```", "", text, 0, re.DOTALL)
             text = DocsPreprocessor.__strip_html(text)
-            if is_html == False:
+            if is_html is False:
                 text = markdown(text)
-        elif format == "html":
+        elif file_format == "html":
             text = DocsPreprocessor.__strip_html(text)
 
         return preprocess(text)
@@ -48,8 +49,8 @@ class DocsPreprocessor:
             raw = parser.from_file(file_name)
             return raw["content"]
 
-        with open(file_name, "r") as f:
-            text = f.read()
+        with open(file_name, "r") as in_f:
+            text = in_f.read()
         return text
 
     @staticmethod

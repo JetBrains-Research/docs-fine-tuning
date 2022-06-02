@@ -66,7 +66,7 @@ class STSTask(AbstractTask):
 
     def __get_train_dataloader_from_docs(self, docs_corpus):
         train_data = []
-        corpus = list(map(lambda x: " ".join(x), docs_corpus))
+        corpus = [" ".join(doc) for doc in docs_corpus]
         lngth = len(docs_corpus) - 1
         for i in range(lngth):
             train_data.append(InputExample(texts=[corpus[i], corpus[i + 1]], label=1.0))
