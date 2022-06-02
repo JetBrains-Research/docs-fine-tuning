@@ -1,6 +1,5 @@
 import os.path
 import tempfile
-import warnings
 from typing import List
 
 import numpy as np
@@ -9,15 +8,13 @@ from sentence_transformers import SentenceTransformer
 from sentence_transformers import models, losses
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
 from sentence_transformers.util import cos_sim
-from tokenizers.implementations import BertWordPieceTokenizer
 from torch import nn
 from torch.utils.data import DataLoader
-from transformers import BertTokenizerFast, BertConfig, BertModel, BertForNextSentencePrediction
+from transformers import BertConfig, BertModel, AutoTokenizer
 
-from data_processing.util import get_corpus_properties, sections_to_sentences, flatten
 from text_models import AbstractModel
-from text_models.bert_tasks import tasks
 from text_models.bert_tasks import AbstractTask
+from text_models.bert_tasks import tasks
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
@@ -85,12 +82,7 @@ class BertSiameseModel(AbstractModel):
     name = "BERT_SIAMESE"
 
     def train_from_scratch(self, corpus):
-        train_sentences = [" ".join(doc) for doc in corpus]
-        dumb_model, tokenizer = self.create_model_from_scratch(train_sentences, self.tmp_file)
-
-        dumb_model_name = tempfile.mkdtemp()
-        tokenizer.save_pretrained(dumb_model_name)
-        dumb_model.save_pretrained(dumb_model_name)
+        dumb_model_name = self.__create_and_save_model_from_scratch()
 
         word_embedding_model = models.Transformer(dumb_model_name)
         self.__train_siamese(
@@ -105,23 +97,12 @@ class BertSiameseModel(AbstractModel):
 
     def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
         for finetuning_task in self.finetuning_strategies:
-
-            if finetuning_task.name != "mlm":
-                warnings.warn(f"'{finetuning_task.name}' task do not support DOC+TASK training")
-                continue
-
             print(f"Start pretraining with {finetuning_task.name} task")
-            sentences = [" ".join(doc) for doc in base_corpus] + sections_to_sentences(extra_corpus)
-            dumb_model, tokenizer = self.create_model_from_scratch(sentences, get_tmpfile("doc_task_tmp.txt"))
-
-            dumb_model_name = tempfile.mkdtemp()
-            tokenizer.save_pretrained(dumb_model_name)
-            dumb_model.save_pretrained(dumb_model_name)
-
+            dumb_model_name = self.__create_and_save_model_from_scratch()
             self.__train_finetuned_on_task(
                 extra_corpus, finetuning_task, dumb_model_name, self.models_suffixes.doc_task
             )
-            print(f"Train with {finetuning_task.name} complete")
+            print(f"Train DOC+TASK with {finetuning_task.name} complete")
 
     def train_finetuned(self, base_corpus, extra_corpus):
         for finetuning_task in self.finetuning_strategies:
@@ -132,8 +113,13 @@ class BertSiameseModel(AbstractModel):
             print(f"Train with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model, save_to_dir):
-
-        self.model = self._create_sentence_transformer(word_embedding_model)
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        dense_model = models.Dense(
+            in_features=pooling_model.get_sentence_embedding_dimension(),
+            out_features=self.vector_size,
+            activation_function=nn.Tanh(),
+        )
+        self.model = SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model], device=self.device)
 
         train_dataloader = DataLoader(self.task_dataset, shuffle=True, batch_size=self.batch_size)
         train_loss = (
@@ -204,54 +190,23 @@ class BertSiameseModel(AbstractModel):
             score_functions={"cos_sim": cos_sim},
         )
 
-    def create_model_from_scratch(self, train_sentences: List[str], tmp_file: str):
-        vocab_size, _ = get_corpus_properties([sentence.split(" ") for sentence in train_sentences])
-
-        tokenizer = self._create_and_train_tokenizer(train_sentences, vocab_size, tmp_file)
-
+    def __create_and_save_model_from_scratch(self) -> str:
+        tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
         bert_config = BertConfig(
             vocab_size=tokenizer.vocab_size,
-            max_position_embeddings=self.max_len + 2,
+            max_position_embeddings=(self.max_len + 2) * 2,
             hidden_size=768,
             num_attention_heads=12,
             num_hidden_layers=6,
-            type_vocab_size=1,
+            type_vocab_size=1, # TODO: set 2 for nsp and sase tasks
         )
         dumb_model = BertModel(bert_config)
 
-        return dumb_model, tokenizer
+        dumb_model_name = tempfile.mkdtemp()
+        tokenizer.save_pretrained(dumb_model_name)
+        dumb_model.save_pretrained(dumb_model_name)
 
-    def _create_sentence_transformer(self, word_embedding_model: models.Transformer) -> SentenceTransformer:
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-        dense_model = models.Dense(
-            in_features=pooling_model.get_sentence_embedding_dimension(),
-            out_features=self.vector_size,
-            activation_function=nn.Tanh(),
-        )
-        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model], device=self.device)
-
-    def _create_and_train_tokenizer(
-        self, train_sentences: List[str], vocab_size: int, tmp_file: str
-    ) -> BertTokenizerFast:
-        with open(tmp_file, "w") as fp:
-            fp.write("\n".join(train_sentences))
-
-        tokenizer = BertWordPieceTokenizer(
-            clean_text=True, handle_chinese_chars=False, strip_accents=False, lowercase=True
-        )
-        tokenizer.train(
-            files=[tmp_file],
-            vocab_size=vocab_size,
-            min_frequency=1,
-            wordpieces_prefix="##",
-            special_tokens=["[CLS]", "[PAD]", "[SEP]", "[UNK]", "[MASK]"],
-        )
-
-        save_to_path = tempfile.mkdtemp()
-
-        tokenizer.save_model(save_to_path)
-
-        return BertTokenizerFast.from_pretrained(save_to_path, max_len=self.max_len + 2)
+        return dumb_model_name
 
     def train_and_save_all(self, base_corpus, extra_corpus, model_types_to_train):
 
