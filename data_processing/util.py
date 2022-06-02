@@ -1,4 +1,5 @@
 import ast
+import os.path
 import re
 from json import JSONEncoder
 from pathlib import Path
@@ -139,7 +140,8 @@ def load_config(path=None):
     config = OmegaConf.load(cnf_path)
     for cnf in config.models.values():
         cnf["models_suffixes"] = config.models_suffixes
-    return config
+    datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[config.dataset]
+    return OmegaConf.merge(config, datasets_config)
 
 
 class NumpyArrayEncoder(JSONEncoder):

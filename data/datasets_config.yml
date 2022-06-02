@@ -1,0 +1,11 @@
+idea:
+  datasets:
+    full: data/csv/IDEA2020.csv
+    train: data/csv/train_IDEA.csv
+    test: data/csv/test_IDEA.csv
+
+kotlin:
+  datasets:
+    full: data/csv/KT2020.csv
+    train: data/csv/train_KT.csv
+    test: data/csv/test_KT.csv

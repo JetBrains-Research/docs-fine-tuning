@@ -1,7 +1,4 @@
-datasets:
-  full: data/csv/KT2020.csv
-  train: data/csv/train_KT.csv
-  test: data/csv/test_KT.csv
+dataset: kotlin # see available datasets in configs/datasets.yml
 
 test_size: 0.1
 
@@ -107,8 +104,8 @@ models:
     evaluator_config:
       batch_size: 8
       precision_recall_at_k: [1, 5, 10, 15, 20]
-      accuracy_at_k: [1, 5, 10, 15, 20]
-      map_at_k: [5, 10]
+      accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
+      map_at_k: [5, 10] # validation metric
 
 
 bert_tasks:
