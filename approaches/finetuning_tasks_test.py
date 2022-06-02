@@ -34,7 +34,7 @@ class FinetuningTasksTest(AbstractApproach):
         silence: bool = False,
     ):
         self.approach.evaluate_all(
-            from_scratch_model, pretrained_model, doc_task_model, finetuned_model, topns, silence=True
+            from_scratch_model, pretrained_model, doc_task_model, finetuned_model, topns, verbose=False
         )
         self.results_list = [self.approach.results]
 
@@ -68,14 +68,14 @@ class FinetuningTasksTest(AbstractApproach):
 
         print(self.all_results)
 
-    def save_results(self, save_to_path, model_name, graph=False):
+    def save_results(self, save_to_path, model_name, plot=False):
         for i, result in enumerate(self.results_list):
             self.results = result
-            super(FinetuningTasksTest, self).save_results(save_to_path, model_name + "_" + self.tasks[i], graph)
+            super(FinetuningTasksTest, self).save_results(save_to_path, model_name + "_" + self.tasks[i], plot)
 
         if self.all_results is not None:
             self.results = self.all_results
-            super(FinetuningTasksTest, self).save_results(save_to_path, model_name, graph)
+            super(FinetuningTasksTest, self).save_results(save_to_path, model_name, plot)
 
     def setup_approach(self):
         self.approach.setup_approach()

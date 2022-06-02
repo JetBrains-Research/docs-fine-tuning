@@ -34,7 +34,7 @@ class AbstractApproach(ABC):
         doc_task_model: AbstractModel,
         finetuned_model: AbstractModel,
         topns: List[int],
-        silence: bool = False,
+        verbose: bool = True,
     ):
         res_dict = {"topn": topns}
         models_dict = {
@@ -49,17 +49,17 @@ class AbstractApproach(ABC):
 
         self.results = pd.DataFrame.from_dict(res_dict)
 
-        if not silence:
+        if verbose:
             print(self.results)
 
-    def save_results(self, save_to_path, model_name, graph=False):
+    def save_results(self, save_to_path, model_name, plot=False):
         if self.results is None:
             raise ValueError("No results to save")
 
         os.makedirs(save_to_path, exist_ok=True)
 
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
-        if graph:
+        if plot:
             self.results.plot(
                 x="topn",
                 kind="line",

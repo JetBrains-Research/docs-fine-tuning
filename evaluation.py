@@ -94,7 +94,7 @@ def main():
         model_trained_from_scratch, model_pretrained, model_doc_task, model_finetuned, cnf_eval.topns
     )
     if cnf_eval.save_results:
-        evaluator.save_results(cnf_eval.results_path, model_type.name, graph=cnf_eval.save_graph)
+        evaluator.save_results(cnf_eval.results_path, model_type.name, plot=cnf_eval.save_graph)
 
 
 if __name__ == "__main__":
