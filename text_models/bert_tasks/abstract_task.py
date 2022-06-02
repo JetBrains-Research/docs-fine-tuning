@@ -3,8 +3,6 @@ from typing import List
 
 from sentence_transformers import models, evaluation
 
-from data_processing.util import flatten
-
 
 class AbstractTask(ABC):
     def __init__(
@@ -28,7 +26,3 @@ class AbstractTask(ABC):
         save_to_path: str,
     ) -> models.Transformer:
         raise NotImplementedError()
-
-    @staticmethod
-    def sections_to_sentences(docs_corpus):
-        return [" ".join(doc) for doc in flatten(docs_corpus)]

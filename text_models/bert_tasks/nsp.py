@@ -1,6 +1,7 @@
-from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import NextSentenceDataset
+
+from data_processing.util import sections_to_sentences
 
 
 class NextSentencePredictionTask(SentencesClassificationTask):
@@ -20,5 +21,5 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus, tokenizer, max_len):
-        corpus = AbstractTask.sections_to_sentences(corpus)
+        corpus = sections_to_sentences(corpus)
         return NextSentenceDataset(corpus, tokenizer, self.n_examples, max_len, self.forget_const)

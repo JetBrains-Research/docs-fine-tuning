@@ -5,6 +5,7 @@ from sentence_transformers import models, losses, SentenceTransformer, evaluatio
 from sentence_transformers.datasets import DenoisingAutoEncoderDataset
 from torch.utils.data import DataLoader
 
+from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
 
 
@@ -21,7 +22,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
-        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+        corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())

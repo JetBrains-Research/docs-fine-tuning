@@ -3,6 +3,7 @@ import os.path
 from sentence_transformers import models
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
 
+from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.IREvalTrainer import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
@@ -24,7 +25,7 @@ class MaskedLMTask(AbstractTask):
         self.save_steps = save_steps
 
     def finetune_on_docs(self, pretrained_model, docs_corpus, evaluator, max_len, device, save_to_path):
-        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+        corpus = sections_to_sentences(docs_corpus)
 
         config = AutoConfig.from_pretrained(pretrained_model)
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model, config=config)

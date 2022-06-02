@@ -5,6 +5,7 @@ import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
 from torch.utils.data import DataLoader
 
+from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
 
 
@@ -32,7 +33,7 @@ class STSTask(AbstractTask):
         device: str,
         save_to_path: str,
     ):
-        corpus = AbstractTask.sections_to_sentences(docs_corpus)
+        corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model)
         train_dataloader = self.__get_train_dataloader_from_docs(corpus)
