@@ -44,6 +44,8 @@ class FinetuningTasksTest(AbstractApproach):
         self.all_results = self.approach.results.copy()
         self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
 
+        # we need to skip first task because we have already processed this task
+        # with the self.approach.evaluate_all() method call above
         for i in range(1, len(self.tasks)):
             task_name = self.tasks[i]
             res_copy = self.approach.results.copy()
