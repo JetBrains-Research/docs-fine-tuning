@@ -34,6 +34,13 @@ class IREvalTrainer(Trainer):
             if device is not None:
                 self.device = torch.device(device)
 
+            if convert_to_tensor:
+                convert_to_numpy = False
+
+            if output_value != "sentence_embedding":
+                convert_to_tensor = False
+                convert_to_numpy = False
+
             encoded_input = self.tokenizer(
                 sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
             )
@@ -54,9 +61,17 @@ class IREvalTrainer(Trainer):
                 sentence_embeddings = (
                     self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
                 )
+                if normalize_embeddings:
+                    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+                if convert_to_numpy:
+                    sentence_embeddings = sentence_embeddings.cpu()
                 result += sentence_embeddings
 
-            return torch.stack(result) if convert_to_tensor else result
+            if convert_to_tensor:
+                return torch.stack(result)
+            if convert_to_numpy:
+                return np.stack(result)
+            return result
 
         @staticmethod
         def __mean_pooling(model_output, attention_mask):
