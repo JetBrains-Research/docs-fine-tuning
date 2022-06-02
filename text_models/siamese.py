@@ -194,11 +194,10 @@ class BertSiameseModel(AbstractModel):
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
         bert_config = BertConfig(
             vocab_size=tokenizer.vocab_size,
-            max_position_embeddings=(self.max_len + 2) * 2,
+            max_position_embeddings=self.max_len + 2,
             hidden_size=768,
             num_attention_heads=12,
             num_hidden_layers=6,
-            type_vocab_size=1, # TODO: set 2 for nsp and sase tasks
         )
         dumb_model = BertModel(bert_config)
 
