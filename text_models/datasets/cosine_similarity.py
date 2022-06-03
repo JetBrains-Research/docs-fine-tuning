@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Tuple
 
 import numpy as np
 from sentence_transformers.readers import InputExample
@@ -6,7 +6,9 @@ from torch.utils.data import Dataset
 
 
 class CosineSimilarityDataset(Dataset):
-    def __init__(self, corpus, disc_ids, n_examples: Union[str, int] = "all", shuffle=False):
+    def __init__(
+        self, corpus: List[str], disc_ids: List[str], n_examples: Union[str, int] = "all", shuffle: bool = False
+    ):
         self.disc_ids = disc_ids
         self.corpus = corpus
 
@@ -28,7 +30,7 @@ class CosineSimilarityDataset(Dataset):
     def __len__(self):
         return self.n_examples
 
-    def __collect_examples(self):
+    def __collect_examples(self) -> List[Tuple[int, int]]:
         pos_examples = [
             (i, j)
             for i in range(len(self.corpus))

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 from sentence_transformers import models, evaluation
 
@@ -9,11 +9,11 @@ class AbstractTask(ABC):
 
     def __init__(
         self,
-        epochs=2,
-        batch_size=16,
-        eval_steps=200,
-        n_examples="all",
-        save_best_model=False,
+        epochs: int = 2,
+        batch_size: int = 16,
+        eval_steps: int = 200,
+        n_examples: Union[str, int] = "all",
+        save_best_model: bool = False,
     ):
         self.epochs = epochs
         self.batch_size = batch_size

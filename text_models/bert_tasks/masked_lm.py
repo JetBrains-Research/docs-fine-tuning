@@ -1,6 +1,7 @@
 import os.path
+from typing import List
 
-from sentence_transformers import models
+from sentence_transformers import models, evaluation
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
 
 from data_processing.util import sections_to_sentences
@@ -14,19 +15,27 @@ class MaskedLMTask(AbstractTask):
 
     def __init__(
         self,
-        epochs=2,
-        batch_size=16,
-        eval_steps=200,
-        n_examples="all",
-        save_best_model=False,
-        mask_probability=0.15,
-        save_steps=5000,
+        epochs: int = 2,
+        batch_size: int = 16,
+        eval_steps: int = 200,
+        n_examples: int = "all",
+        save_best_model: bool = False,
+        mask_probability: float = 0.15,
+        save_steps: int = 5000,
     ):
         super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 
-    def finetune_on_docs(self, pretrained_model, docs_corpus, evaluator, max_len, device, save_to_path):
+    def finetune_on_docs(
+        self,
+        pretrained_model: str,
+        docs_corpus: List[List[List[str]]],  # list of list(sections) of list(sentences) of tokens(words)
+        evaluator: evaluation.InformationRetrievalEvaluator,
+        max_len: int,
+        device: str,
+        save_to_path: str,
+    ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
         config = AutoConfig.from_pretrained(pretrained_model)

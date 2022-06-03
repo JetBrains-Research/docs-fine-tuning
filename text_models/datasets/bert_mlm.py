@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import torch
 
@@ -6,7 +8,14 @@ from text_models.datasets import BertModelDataset
 
 class BertModelMLMDataset(BertModelDataset):
     def __init__(
-        self, encodings, mask_id=103, cls_id=102, sep_id=101, pad_id=0, mask_probability=0.15, n_examples="all"
+        self,
+        encodings,
+        mask_id: int = 103,
+        cls_id: int = 102,
+        sep_id: int = 101,
+        pad_id: int = 0,
+        mask_probability: float = 0.15,
+        n_examples: Union[str, int] = "all",
     ):
         super().__init__(encodings, n_examples)
 

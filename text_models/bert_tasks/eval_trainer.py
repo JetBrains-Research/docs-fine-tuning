@@ -2,16 +2,18 @@ from typing import List, Union, Optional, Dict
 
 import numpy as np
 import torch
+import transformers
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from transformers import Trainer
+from transformers import Trainer, BertModel, PreTrainedTokenizerBase
+from sentence_transformers.evaluation import SentenceEvaluator
 
 from text_models.datasets import BertModelDataset
 
 
 class IREvalTrainer(Trainer):
     class EvalModel:
-        def __init__(self, model, tokenizer, task, max_len, device):
+        def __init__(self, model: BertModel, tokenizer: PreTrainedTokenizerBase, task: str, max_len: int, device: str):
             self.model = model
             self.tokenizer = tokenizer
             self.max_len = max_len
@@ -81,7 +83,15 @@ class IREvalTrainer(Trainer):
                 input_mask_expanded.sum(1), min=1e-9
             )
 
-    def set_env_vars(self, evaluator, model, tokenizer, task, max_len, device):
+    def set_env_vars(
+        self,
+        evaluator: SentenceEvaluator,
+        model: BertModel,
+        tokenizer: PreTrainedTokenizerBase,
+        task: str,
+        max_len: int = 512,
+        device: str = "cpu",
+    ):
         self.evaluator = evaluator
         self.eval_model = IREvalTrainer.EvalModel(model, tokenizer, task, max_len, device)
 

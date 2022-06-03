@@ -20,7 +20,7 @@ evaluation:
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  results_path: ./results/kotlin
+  results_path: ./results
 
   is_tasks_test: true # available only if siamese text model will be used
 

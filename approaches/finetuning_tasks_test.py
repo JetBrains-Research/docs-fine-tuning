@@ -71,7 +71,7 @@ class FinetuningTasksTest(AbstractApproach):
         if verbose:
             print(self.all_results)
 
-    def save_results(self, save_to_path, model_name, plot=False):
+    def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
         for i, result in enumerate(self.results_list):
             self.results = result
             super().save_results(save_to_path, model_name + "_" + self.tasks[i], plot)

@@ -1,14 +1,22 @@
-from typing import List
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 import torch
+
+from transformers import PreTrainedTokenizerBase
 
 from text_models.datasets import BertModelDataset
 
 
 class NextSentenceDataset(BertModelDataset):
-    def __init__(self, corpus: List[str], tokenizer, n_examples: Union[str, int] = "all", max_len=512, forget_const=10):
+    def __init__(
+        self,
+        corpus: List[str],
+        tokenizer: PreTrainedTokenizerBase,
+        n_examples: Union[str, int] = "all",
+        max_len=512,
+        forget_const=10,
+    ):
         sentence_a = []
         sentence_b = []
         label = []

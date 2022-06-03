@@ -1,9 +1,13 @@
+from typing import Union, Dict
+
 import gensim.downloader as api
 import numpy as np
 from gensim.models.word2vec import Word2Vec
 from gensim.test.utils import get_tmpfile
+from omegaconf import DictConfig, ListConfig
 
 from text_models.abstract_model import AbstractModel
+from data_processing.util import Sentences
 
 
 class W2VModel(AbstractModel):
@@ -11,24 +15,24 @@ class W2VModel(AbstractModel):
 
     def __init__(
         self,
-        vector_size=300,
-        epochs=5,
-        min_count=1,
-        pretrained_model="word2vec-google-news-300",
-        tmp_file=get_tmpfile("pretrained_vectors.txt"),
-        seed=42,
-        save_to_path="./",
-        models_suffixes=None,
+        vector_size: int = 300,
+        epochs: int = 5,
+        min_count: int = 1,
+        pretrained_model: str = "word2vec-google-news-300",
+        tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
+        seed: int = 42,
+        save_to_path: str = "./",
+        models_suffixes: Union[Dict[str, str], DictConfig, ListConfig] = None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count
 
-    def train_from_scratch(self, corpus):
+    def train_from_scratch(self, corpus: Sentences):
         self.model = Word2Vec(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
-    def train_pretrained(self, corpus):
+    def train_pretrained(self, corpus: Sentences):
         if self.init_vocab is None:
             raise RuntimeError("Init vocab is None")
 

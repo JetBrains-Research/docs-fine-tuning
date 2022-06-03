@@ -1,9 +1,10 @@
 import os.path
 import tempfile
-from typing import List
+from typing import List, Union, Dict
 
 import numpy as np
 from gensim.test.utils import get_tmpfile
+from omegaconf import DictConfig, ListConfig
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import models, losses
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
@@ -16,32 +17,33 @@ from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
+from data_processing.util import Sentences, Sections
 
 
 class BertSiameseModel(AbstractModel):
     def __init__(
         self,
-        corpus=None,
-        disc_ids=None,
-        cnf_tasks=None,
-        finetuning_strategies=None,
-        vector_size=384,
-        epochs=5,
-        batch_size=16,
-        n_examples="all",
-        max_len=512,
-        warmup_rate=0.1,
-        evaluation_steps=500,
-        evaluator_config=None,
-        val_size=0.1,
-        task_loss="cossim",  # triplet
-        pretrained_model="bert-base-uncased",
-        tmp_file=get_tmpfile("pretrained_vectors.txt"),
-        device="cpu",
-        save_best_model=False,
-        seed=42,
-        save_to_path="./",
-        models_suffixes=None,
+        corpus: Sentences = None,
+        disc_ids: List[str] = None,
+        cnf_tasks: Union[DictConfig, ListConfig] = None,
+        finetuning_strategies: List[str] = None,
+        vector_size: int = 384,
+        epochs: int = 5,
+        batch_size: int = 16,
+        n_examples: Union[str, int] = "all",
+        max_len: int = 512,
+        warmup_rate: float = 0.1,
+        evaluation_steps: int = 500,
+        evaluator_config: Union[DictConfig, ListConfig] = None,
+        val_size: float = 0.1,
+        task_loss: str = "cossim",  # or 'triplet'
+        pretrained_model: str = "bert-base-uncased",
+        tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
+        device: str = "cpu",  # or 'cuda'
+        save_best_model: bool = False,
+        seed: int = 42,
+        save_to_path: str = "./",
+        models_suffixes: Union[Dict[str, str], DictConfig, ListConfig] = None,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
         if finetuning_strategies is None:
@@ -85,7 +87,7 @@ class BertSiameseModel(AbstractModel):
 
     name = "BERT_SIAMESE"
 
-    def train_from_scratch(self, corpus):
+    def train_from_scratch(self, corpus: Sentences):
         dumb_model_name = self.__create_and_save_model_from_scratch()
 
         word_embedding_model = models.Transformer(dumb_model_name)
@@ -93,13 +95,13 @@ class BertSiameseModel(AbstractModel):
             word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch)
         )
 
-    def train_pretrained(self, corpus):
+    def train_pretrained(self, corpus: Sentences):
         word_embedding_model = models.Transformer(self.pretrained_model)
         self.__train_siamese(
             word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained)
         )
 
-    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+    def train_from_scratch_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
         for finetuning_task in self.finetuning_strategies:
             print(f"Start pretraining with {finetuning_task.name} task")
             dumb_model_name = self.__create_and_save_model_from_scratch()
@@ -108,7 +110,7 @@ class BertSiameseModel(AbstractModel):
             )
             print(f"Train DOC+TASK with {finetuning_task.name} complete")
 
-    def train_finetuned(self, base_corpus, extra_corpus):
+    def train_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
         for finetuning_task in self.finetuning_strategies:
             print(f"Start fine-tuning with {finetuning_task.name} task")
             self.__train_finetuned_on_task(
@@ -116,7 +118,7 @@ class BertSiameseModel(AbstractModel):
             )
             print(f"Train with {finetuning_task.name} complete")
 
-    def __train_siamese(self, word_embedding_model, save_to_dir):
+    def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         dense_model = models.Dense(
             in_features=pooling_model.get_sentence_embedding_dimension(),
@@ -174,9 +176,11 @@ class BertSiameseModel(AbstractModel):
             return TripletDataset(corpus, disc_ids, n_examples, shuffle=True)
         raise ValueError("Unsupported loss")
 
-    def __get_evaluator(self, train_corpus, train_disc_ids, val_corpus, val_disc_ids):
-        queries = dict(enumerate(val_corpus))
-        corpus = dict(enumerate(train_corpus))
+    def __get_evaluator(
+        self, train_corpus: List[str], train_disc_ids: List[str], val_corpus: List[str], val_disc_ids: List[str]
+    ) -> InformationRetrievalEvaluator:
+        queries = {qid: query for qid, query in enumerate(val_corpus)}
+        corpus = {cid: doc for cid, doc in enumerate(train_corpus)}
         relevant_docs = {
             qid: {cid for cid in corpus.keys() if train_disc_ids[cid] == val_disc_ids[qid]} for qid in queries.keys()
         }
@@ -201,7 +205,7 @@ class BertSiameseModel(AbstractModel):
 
         return dumb_model_name
 
-    def train_and_save_all(self, base_corpus, extra_corpus, model_types_to_train):
+    def train_and_save_all(self, base_corpus: Sentences, extra_corpus: Sections, model_types_to_train: List[str]):
 
         if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
@@ -223,14 +227,14 @@ class BertSiameseModel(AbstractModel):
             self.train_finetuned(base_corpus, extra_corpus)
             print(f"Train fine-tuned {self.name} SUCCESS")
 
-    def get_embeddings(self, corpus):
+    def get_embeddings(self, corpus: Sentences):
         return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)
 
-    def get_doc_embedding(self, doc):
-        return self.get_embeddings([" ".join(doc)])[0]
+    def get_doc_embedding(self, doc: List[str]):
+        return self.get_embeddings([doc])[0]
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: str):
         sbert_model = SentenceTransformer(path)
         model = BertSiameseModel()
         model.model = sbert_model

@@ -1,16 +1,19 @@
 import os
 from abc import abstractmethod
-from typing import List
+from typing import List, Union
 
 from sentence_transformers import evaluation, models
+from torch.utils.data import Dataset
 from transformers import (
     AutoModelForNextSentencePrediction,
     AutoTokenizer,
     TrainingArguments,
     IntervalStrategy,
     AutoConfig,
+    PreTrainedTokenizerBase,
 )
 
+from data_processing.util import Sections
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.eval_trainer import IREvalTrainer
 
@@ -20,12 +23,12 @@ class SentencesClassificationTask(AbstractTask):
 
     def __init__(
         self,
-        epochs=2,
-        batch_size=16,
-        eval_steps=200,
-        n_examples="all",
-        save_best_model=False,
-        save_steps=2000,
+        epochs: int = 2,
+        batch_size: int = 16,
+        eval_steps: int = 200,
+        n_examples: Union[str, int] = "all",
+        save_best_model: bool = False,
+        save_steps: int = 2000,
     ):
         super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.save_steps = save_steps
@@ -74,5 +77,5 @@ class SentencesClassificationTask(AbstractTask):
         return models.Transformer(output_path)
 
     @abstractmethod
-    def _get_dataset(self, corpus, tokenizer, max_len):
+    def _get_dataset(self, corpus: Sections, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
         raise NotImplementedError()

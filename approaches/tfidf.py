@@ -24,12 +24,12 @@ class TfIdfApproach(AbstractApproach):
         self.train_tfidf_vectors = self.tf_idf.transform(train_corpus_tf_idf)
         self.test_tfidf_vectors = self.tf_idf.transform([" ".join(doc) for doc in self.test_corpus])
 
-    def get_duplicated_ids(self, query_num, topn):
+    def get_duplicated_ids(self, query_num: int, topn: int) -> np.ndarray:
         sims_emb = cosine_similarity(self.embeddings, self.test_embs[query_num].reshape(1, -1)).squeeze()
         sims_tfidf = cosine_similarity(self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]).squeeze()
         sims = self.w * sims_tfidf + (1 - self.w) * sims_emb
         return np.argsort(-sims)[:topn]
 
-    def update_history(self, query_num):
+    def update_history(self, query_num: int):
         self.train_tfidf_vectors = vstack((self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]))
         self.embeddings = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)

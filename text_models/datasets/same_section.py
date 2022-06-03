@@ -3,16 +3,25 @@ from typing import List, Union
 import numpy as np
 import torch
 
+from transformers import PreTrainedTokenizerBase
+
 from text_models.datasets import BertModelDataset
 
 
 class SameSectionDataset(BertModelDataset):
-    def __init__(self, sections: List[List[str]], tokenizer, n_examples: Union[str, int] = "all", max_len: int = 512):
+    def __init__(
+        self,
+        sections: List[List[str]],
+        tokenizer: PreTrainedTokenizerBase,
+        n_examples: Union[str, int] = "all",
+        max_len: int = 512,
+    ):
         sentences_a = []
         sentences_b = []
 
-        def randint_except(low, high, excluding):
-            return np.random.choice(np.arange(low, excluding).tolist() + np.arange(excluding + 1, high).tolist())
+        def randint_except(low: int, high: int, excluding: int):
+            result = np.random.randint(low, high - 1)
+            return result + int(result >= excluding)
 
         labels = []
         for i, section in enumerate(sections):

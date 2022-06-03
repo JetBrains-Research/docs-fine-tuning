@@ -1,11 +1,11 @@
 import os
-from typing import List
+from typing import List, Union
 
 import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
 from torch.utils.data import DataLoader
 
-from data_processing.util import sections_to_sentences
+from data_processing.util import sections_to_sentences, Sentences
 from text_models.bert_tasks import AbstractTask
 
 
@@ -14,13 +14,13 @@ class STSTask(AbstractTask):
 
     def __init__(
         self,
-        epochs=2,
-        batch_size=16,
-        eval_steps=200,
-        n_examples="all",
-        save_best_model=False,
-        warmup_steps=0.1,
-        forget_const=10,
+        epochs: int = 2,
+        batch_size: int = 16,
+        eval_steps: int = 200,
+        n_examples: Union[str, int] = "all",
+        save_best_model: bool = False,
+        warmup_steps: float = 0.1,
+        forget_const: int = 10,
     ):
         super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
         self.forget_const = forget_const
@@ -34,7 +34,7 @@ class STSTask(AbstractTask):
         max_len: int,
         device: str,
         save_to_path: str,
-    ):
+    ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model)
@@ -44,7 +44,7 @@ class STSTask(AbstractTask):
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
         train_loss = losses.CosineSimilarityLoss(model)
 
-        warmup = len(train_dataloader) * self.epochs * self.warmup_steps
+        warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")
         model.fit(
@@ -64,7 +64,7 @@ class STSTask(AbstractTask):
 
         return model._first_module()
 
-    def __get_train_dataloader_from_docs(self, docs_corpus):
+    def __get_train_dataloader_from_docs(self, docs_corpus: Sentences) -> DataLoader:
         train_data = []
         corpus = [" ".join(doc) for doc in docs_corpus]
         lngth = len(docs_corpus) - 1

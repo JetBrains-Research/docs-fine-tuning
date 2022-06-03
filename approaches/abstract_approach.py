@@ -52,7 +52,7 @@ class AbstractApproach(ABC):
         if verbose:
             print(self.results)
 
-    def save_results(self, save_to_path, model_name, plot=False):
+    def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
         if self.results is None:
             raise ValueError("No results to save")
 

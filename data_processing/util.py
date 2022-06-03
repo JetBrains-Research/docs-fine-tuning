@@ -3,20 +3,23 @@ import os.path
 import re
 from json import JSONEncoder
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import nltk
 import numpy as np
+import pandas as pd
 from gensim.utils import simple_preprocess
 from nltk import FreqDist
 from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, DictConfig, ListConfig
 
 CONFIG_PATH = "config.yml"
+Sections = List[List[List[str]]]
+Sentences = List[List[str]]
 
 
-def get_corpus(data, sentences=False):
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Sentences, Sections]:
     corpus = []
     for str_list in data["description"].tolist():
         corpus.append(ast.literal_eval(str_list))
@@ -27,7 +30,7 @@ def flatten(matrix):
     return [item for sublist in matrix for item in sublist]
 
 
-def get_docs_text(docs_names, sections=False):
+def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Sentences, Sections]:
     result = []
     for doc_name in docs_names:
         text = Path(doc_name).read_text()
@@ -35,7 +38,7 @@ def get_docs_text(docs_names, sections=False):
     return result if sections else flatten(result)
 
 
-def get_doc_sections(text):
+def get_doc_sections(text: str) -> Sections:
     sections = text.split(sep="]], [[")
     sections = (
         [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
@@ -44,7 +47,7 @@ def get_doc_sections(text):
     return sections
 
 
-def get_doc_sentences(text):
+def get_doc_sentences(text: str) -> Sentences:
     text = text.split(sep="], [")
     text = [sent.split("', '") for sent in text]
     for sent in text:
@@ -55,7 +58,7 @@ def get_doc_sentences(text):
     return text
 
 
-def remove_noise(text):
+def remove_noise(text: str) -> str:
     text = re.sub(r"(https|http)?://(\w|\.|/|\?|=|&|%)*\b", "", text, flags=re.MULTILINE)
     text = re.sub(r"\w*\d\w*", " ", text)
     text = re.sub(r"\w*\f\w*", " ", text)
@@ -73,11 +76,11 @@ def remove_noise(text):
     return text
 
 
-def lemmatize(text):
-    return WordNetLemmatizer().lemmatize(text, pos="v")
+def lemmatize(word: str) -> str:
+    return WordNetLemmatizer().lemmatize(word, pos="v")
 
 
-def tokenize_and_normalize(sentences):
+def tokenize_and_normalize(sentences: List[str]) -> Sentences:
     result = []
     eng_stopwords = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for sentence in sentences:
@@ -93,34 +96,18 @@ def tokenize_and_normalize(sentences):
     return result
 
 
-def preprocess(text: str) -> List[str]:
+def preprocess(text: str) -> Sentences:
     text = remove_noise(text)
     sentences = split_sentences(text)
     tokenized = tokenize_and_normalize(sentences)
     return tokenized
 
 
-def sections_to_sentences(docs_corpus):
+def sections_to_sentences(docs_corpus: Sections) -> List[str]:
     return [" ".join(doc) for doc in flatten(docs_corpus)]
 
 
-def parse_list(doc_name):
-    return ast.literal_eval(Path(doc_name).read_text())
-
-
-def replace_rarest_words(corpus, min_count):
-    freq_dict = FreqDist()
-    for docs in corpus:
-        freq_dict.update(FreqDist(docs))
-
-    for doc in corpus:
-        for i in range(len(doc)):
-            if freq_dict[doc[i]] < min_count:
-                doc[i] = "<UNK>"
-    return corpus
-
-
-def get_corpus_properties(corpus):
+def get_corpus_properties(corpus: Sentences):
     freq_dict = FreqDist()
     max_len = 0
     for docs in corpus:
@@ -130,14 +117,13 @@ def get_corpus_properties(corpus):
     return len(freq_dict), max_len
 
 
-def split_sentences(text):
+def split_sentences(text: str) -> List[str]:
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
 
 
-def load_config(path=None):
-    cnf_path = CONFIG_PATH if path is None else path
-    config = OmegaConf.load(cnf_path)
+def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:
+    config = OmegaConf.load(path)
     for cnf in config.models.values():
         cnf["models_suffixes"] = config.models_suffixes
     datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[config.dataset]

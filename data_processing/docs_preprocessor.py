@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from markdown import markdown
 from tika import parser
 
-from util import preprocess
+from util import preprocess, Sentences, Sections
 
 
 class DocsPreprocessor:
@@ -15,7 +15,7 @@ class DocsPreprocessor:
         self.extensions = ["." + extension for extension in extensions]
         self.files = self.__collect_files(files_path)
 
-    def preprocess_files(self):
+    def preprocess_files(self) -> Sections:
         result = []
         for file_name in self.files:
             tokenized = DocsPreprocessor.read_and_preprocess(file_name)
@@ -24,14 +24,14 @@ class DocsPreprocessor:
         return result
 
     @staticmethod
-    def read_and_preprocess(file_name):
+    def read_and_preprocess(file_name: str) -> Sentences:
         text = DocsPreprocessor.__read_file(file_name)
         file_extension = os.path.splitext(file_name)[1][1:]
         tokenized = DocsPreprocessor.__preprocess(text, file_extension)
         return tokenized
 
     @staticmethod
-    def __preprocess(text, file_format):
+    def __preprocess(text, file_format: str) -> Sentences:
         if file_format == "md":
             is_html = bool(BeautifulSoup(text, "html.parser").find())
             text = re.sub(r"```[^\S\r\n]*[a-z]*\n.*?\n```", "", text, 0, re.DOTALL)
@@ -54,7 +54,7 @@ class DocsPreprocessor:
         return text
 
     @staticmethod
-    def __strip_html(text):
+    def __strip_html(text: str) -> str:
         soup = BeautifulSoup(text, "html.parser")
         return soup.get_text()
 
@@ -71,5 +71,5 @@ class DocsPreprocessor:
                 result.append(path)
         return result
 
-    def __should_preprocess(self, file_name):
+    def __should_preprocess(self, file_name: str) -> bool:
         return np.any([file_name.endswith(extension) for extension in self.extensions])
