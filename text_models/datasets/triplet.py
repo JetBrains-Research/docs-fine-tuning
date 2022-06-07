@@ -16,7 +16,7 @@ class TripletDataset(Dataset):
             if disc_id in duplicate_clusters.keys():
                 duplicate_clusters[disc_id].append(i)
             else:
-                duplicate_clusters[disc_id] = []
+                duplicate_clusters[disc_id] = [i]
 
         self.triplets = []
         for dupl_series in duplicate_clusters.values():
@@ -26,7 +26,7 @@ class TripletDataset(Dataset):
                 anchor = dupl_series[i]
                 for j in range(i + 1, len(dupl_series)):
                     pos = dupl_series[j]
-                    neg = self.__get_negative_example(duplicate_clusters, len(disc_ids))
+                    neg = self.__get_negative_example(dupl_series, len(disc_ids))
                     self.triplets.append((anchor, pos, neg))
 
         if shuffle:
