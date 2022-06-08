@@ -1,6 +1,6 @@
-dataset: kotlin # see available datasets in configs/datasets.yml
+dataset: mozilla_core # you can configure datasets with configs/datasets.yml
 
-test_size: 0.1
+test_size: 0.2
 
 models_directory: text_models/saved
 docs_directory: data/docs
