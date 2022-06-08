@@ -15,7 +15,7 @@ def parse_arguments():
         help="Paths to docs to be preprocessed",
     )
     arg_parser.add_argument(
-        "--sfx", dest="suffix", action="store", default="-prcsd", help="Preprocessed docs file name prefix"
+        "--sfx", dest="suffix", action="store", default="prcsd", help="Preprocessed docs file name prefix"
     )
     return arg_parser.parse_args()
 
@@ -29,7 +29,7 @@ def main():
         tokenized = preprocessor.preprocess_files()
 
         result_file_name = os.path.join(
-            config.docs_directory, os.path.splitext(os.path.split(docs_path)[1])[0] + args.suffix + ".txt"
+            config.docs_directory, os.path.splitext(os.path.split(docs_path)[1])[0] + "-" + args.suffix + ".txt"
         )
         with open(result_file_name, "w") as doc:
             doc.write(str(tokenized))

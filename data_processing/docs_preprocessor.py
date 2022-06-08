@@ -1,11 +1,15 @@
 import os
 import re
+
+import rst2txt
 from typing import List
 
 import numpy as np
 from bs4 import BeautifulSoup
 from markdown import markdown
 from tika import parser
+from docutils.core import publish_string
+
 
 from util import preprocess, Sentences, Sections
 
@@ -18,6 +22,8 @@ class DocsPreprocessor:
     def preprocess_files(self) -> Sections:
         result = []
         for file_name in self.files:
+            if file_name.endswith("index.rst"):
+                continue
             tokenized = DocsPreprocessor.read_and_preprocess(file_name)
             if not isinstance(tokenized, float) and tokenized not in result:
                 result.append(tokenized)
@@ -40,6 +46,11 @@ class DocsPreprocessor:
                 text = markdown(text)
         elif file_format == "html":
             text = DocsPreprocessor.__strip_html(text)
+        elif file_format == "rst":
+            try:
+                text = str(publish_string(source=text, writer=rst2txt.Writer()))
+            except (RuntimeError, Exception):
+                return np.nan
 
         return preprocess(text)
 
