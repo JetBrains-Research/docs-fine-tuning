@@ -169,7 +169,7 @@ class BertSiameseModel(AbstractModel):
                 save_to_dir,
             )
             if not self.start_train_from_task
-            else finetuning_task.load()
+            else finetuning_task.load(save_to_dir)
         )
         self.__train_siamese(word_embedding_model, save_to_dir)
         if not self.save_best_model:

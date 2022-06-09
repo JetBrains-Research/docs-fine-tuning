@@ -85,19 +85,19 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 2
+    epochs: 10
     batch_size: 8
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
-    finetuning_strategies: ['sase', 'nsp', 'mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    finetuning_strategies: ['mlm', 'tsdae', 'sase'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 500
     val_size: 0.1
     tmp_file: null
-    device: cpu # 'cpu' or 'cuda'
+    device: cuda # 'cpu' or 'cuda'
     start_train_from_task: false
     seed: 42
     save_to_path: text_models/saved
@@ -111,47 +111,42 @@ models:
 
 bert_tasks:
   mlm:
-    epochs: 2
+    epochs: 10
     batch_size: 8
-    eval_steps: 100
+    eval_steps: 250
     n_examples: all
     mask_probability: 0.15
-    save_steps: 100
+    save_steps: 250
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   nsp:
     epochs: 2
     batch_size: 8
-    eval_steps: 200
+    eval_steps: 250
     n_examples: all
     forget_const: 10
-    save_steps: 200
+    save_steps: 250
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   sase:
-    epochs: 2
+    epochs: 10
     batch_size: 8
-    eval_steps: 200
+    eval_steps: 250
     n_examples: all
-    save_steps: 200
+    save_steps: 250
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   sts:
     epochs: 2
     batch_size: 8
-    eval_steps: 200
+    eval_steps: 250
     n_examples: all
     forget_const: 10
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   tsdae:
-    epochs: 2
+    epochs: 10
     batch_size: 8
-    eval_steps: 200
+    eval_steps: 250
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    load_from_path: null # if start_train_from_task is True load pretrained model from that path
