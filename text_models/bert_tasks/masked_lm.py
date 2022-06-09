@@ -1,5 +1,5 @@
 import os.path
-from typing import List
+from typing import List, Union
 
 from sentence_transformers import models, evaluation
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
@@ -22,8 +22,9 @@ class MaskedLMTask(AbstractTask):
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: int = 5000,
+        load_from_path: Union[None, str] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, load_from_path)
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 
@@ -72,3 +73,8 @@ class MaskedLMTask(AbstractTask):
         tokenizer.save_pretrained(output_path)
 
         return models.Transformer(output_path)
+
+    def load(self) -> models.Transformer:
+        if self.load_from_path is None:
+            raise ValueError(f"load from path for {self.name} not specified")
+        return models.Transformer(self.load_from_path)

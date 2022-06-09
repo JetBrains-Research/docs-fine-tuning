@@ -21,8 +21,9 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         save_best_model: bool = False,
         forget_const: int = 10,
         save_steps: int = 2000,
+        load_from_path: Union[None, str] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps, load_from_path)
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Sections, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

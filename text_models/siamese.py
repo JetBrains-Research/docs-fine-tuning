@@ -39,6 +39,7 @@ class BertSiameseModel(AbstractModel):
         task_loss: str = "cossim",  # or 'triplet'
         pretrained_model: str = "bert-base-uncased",
         tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
+        start_train_from_task: bool = False,
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
         seed: int = 42,
@@ -56,6 +57,7 @@ class BertSiameseModel(AbstractModel):
         self.evaluation_steps = evaluation_steps
         self.save_best_model = save_best_model
         self.evaluator_config = evaluator_config
+        self.start_train_from_task = start_train_from_task
 
         self.task_dataset = None
         self.evaluator = None
@@ -157,13 +159,17 @@ class BertSiameseModel(AbstractModel):
         save_to_path_suffix: str,
     ):
         save_to_dir = os.path.join(self.save_to_path, self.name + "_" + finetuning_task.name + save_to_path_suffix)
-        word_embedding_model = finetuning_task.finetune_on_docs(
-            pretrained_model,
-            extra_corpus,
-            self.evaluator,
-            self.max_len,
-            self.device,
-            save_to_dir,
+        word_embedding_model = (
+            finetuning_task.finetune_on_docs(
+                pretrained_model,
+                extra_corpus,
+                self.evaluator,
+                self.max_len,
+                self.device,
+                save_to_dir,
+            )
+            if not self.start_train_from_task
+            else finetuning_task.load()
         )
         self.__train_siamese(word_embedding_model, save_to_dir)
         if not self.save_best_model:

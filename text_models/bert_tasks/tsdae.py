@@ -58,3 +58,9 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             model = SentenceTransformer(output_path)
 
         return model._first_module()
+
+    def load(self) -> models.Transformer:
+        if self.load_from_path is None:
+            raise ValueError(f"load from path for {self.name} not specified")
+        model = SentenceTransformer(self.load_from_path)
+        return model._first_module()

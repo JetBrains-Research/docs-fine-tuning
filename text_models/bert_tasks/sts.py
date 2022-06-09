@@ -21,8 +21,9 @@ class STSTask(AbstractTask):
         save_best_model: bool = False,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
+        load_from_path: Union[None, str] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, load_from_path)
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
@@ -78,3 +79,9 @@ class STSTask(AbstractTask):
                 )
 
         return DataLoader(train_data[: self.n_examples], shuffle=True, batch_size=self.batch_size)
+
+    def load(self) -> models.Transformer:
+        if self.load_from_path is None:
+            raise ValueError(f"load from path for {self.name} not specified")
+        model = SentenceTransformer(self.load_from_path)
+        return model._first_module()

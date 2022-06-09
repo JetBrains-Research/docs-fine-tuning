@@ -29,8 +29,9 @@ class SentencesClassificationTask(AbstractTask):
         n_examples: Union[str, int] = "all",
         save_best_model: bool = False,
         save_steps: int = 2000,
+        load_from_path: Union[None, str] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, load_from_path)
         self.save_steps = save_steps
 
     def finetune_on_docs(
@@ -79,3 +80,8 @@ class SentencesClassificationTask(AbstractTask):
     @abstractmethod
     def _get_dataset(self, corpus: Sections, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
         raise NotImplementedError()
+
+    def load(self) -> models.Transformer:
+        if self.load_from_path is None:
+            raise ValueError(f"load from path for {self.name} not specified")
+        return models.Transformer(self.load_from_path)

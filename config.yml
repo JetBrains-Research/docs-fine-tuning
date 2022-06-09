@@ -98,6 +98,7 @@ models:
     val_size: 0.1
     tmp_file: null
     device: cpu # 'cpu' or 'cuda'
+    start_train_from_task: false
     seed: 42
     save_to_path: text_models/saved
 
@@ -117,6 +118,7 @@ bert_tasks:
     mask_probability: 0.15
     save_steps: 100
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   nsp:
     epochs: 2
@@ -126,6 +128,7 @@ bert_tasks:
     forget_const: 10
     save_steps: 200
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   sase:
     epochs: 2
@@ -134,6 +137,7 @@ bert_tasks:
     n_examples: all
     save_steps: 200
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   sts:
     epochs: 2
@@ -142,6 +146,7 @@ bert_tasks:
     n_examples: all
     forget_const: 10
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    load_from_path: null # if start_train_from_task is True load pretrained model from that path
 
   tsdae:
     epochs: 2
@@ -149,3 +154,4 @@ bert_tasks:
     eval_steps: 200
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    load_from_path: null # if start_train_from_task is True load pretrained model from that path
