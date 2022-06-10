@@ -43,6 +43,7 @@ class FinetuningTasksTest(AbstractApproach):
 
         self.all_results = self.approach.results.copy()
         self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
+        self.all_results.rename(columns={TrainTypes.DOC_TASK: f"DOC({self.tasks[0]})+TASK"}, inplace=True)
 
         # we need to skip first task because we have already processed this task
         # with the self.approach.evaluate_all() method call above
@@ -74,7 +75,7 @@ class FinetuningTasksTest(AbstractApproach):
     def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
         for i, result in enumerate(self.results_list):
             self.results = result
-            super().save_results(save_to_path, model_name + "_" + self.tasks[i], plot)
+            super().save_results(save_to_path, model_name + "_" + self.tasks[int(i / 2)], plot)
 
         if self.all_results is not None:
             self.results = self.all_results

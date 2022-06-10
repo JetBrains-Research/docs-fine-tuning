@@ -52,7 +52,7 @@ def main():
     test = pd.read_csv(config.datasets.test)
 
     if cnf_eval.approach == "tf_idf":
-        evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.alpha)
+        evaluator = TfIdfApproach(train, test, config.approaches.tf_idf.weight)
     elif cnf_eval.approach == "intersection":
         evaluator = IntersectionApproach(train, test, config.approaches.intersection.min_count)
     elif cnf_eval.approach == "simple":
@@ -110,7 +110,7 @@ def main():
     task_name = "" if cnf_eval.text_model != "siamese" else "_" + config.models.siamese.finetuning_strategies[0]
     if TrainTypes.DOC_TASK in config.model_types:
         model_doc_task = model_type.load(
-            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.pretrained)
+            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.doc_task)
         )
 
     if TrainTypes.PT_DOC_TASK in config.model_types:
