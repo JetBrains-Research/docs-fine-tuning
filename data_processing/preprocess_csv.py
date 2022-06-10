@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 
 import pandas as pd
 
@@ -7,9 +9,12 @@ from util import preprocess, load_config
 
 def main():
     config = load_config()
-    logging.basicConfig(filename=config.log_file,
-                        level=logging.INFO,
-                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    os.environ["TMPDIR"] = config.tmpdir
+    tempfile.tempdir = config.tmpdir
+
+    logging.basicConfig(
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
     logger = logging.getLogger(__name__)
 
     data = pd.read_csv(config.datasets.full)

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os.path
+import tempfile
 
 from docs_preprocessor import DocsPreprocessor
 from util import load_config
@@ -24,10 +25,12 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     config = load_config()
+    os.environ["TMPDIR"] = config.tmpdir
+    tempfile.tempdir = config.tmpdir
 
-    logging.basicConfig(filename=config.log_file,
-                        level=logging.INFO,
-                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    logging.basicConfig(
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
     logger = logging.getLogger(__name__)
 
     for docs_path in args.docs:

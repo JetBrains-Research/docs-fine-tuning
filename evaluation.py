@@ -1,5 +1,7 @@
+import argparse
 import logging
 import os
+import tempfile
 import warnings
 import pandas as pd
 
@@ -18,13 +20,32 @@ from text_models import (
 warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--gpu-id",
+        dest="gpu_id",
+        action="store",
+        type=str,
+        default="0",
+        help="GPU id for CUDA_VISIBLE_DEVICES environment param",
+    )
+    return parser.parse_args()
+
+
 def main():
     config = load_config()
+    args = parse_arguments()
     cnf_eval = config.evaluation
 
-    logging.basicConfig(filename=config.log_file,
-                        level=logging.INFO,
-                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    if args.gpu_id is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+    os.environ["TMPDIR"] = config.tmpdir
+    tempfile.tempdir = config.tmpdir
+
+    logging.basicConfig(
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
     logger = logging.getLogger(__name__)
 
     train = pd.read_csv(config.datasets.train)
@@ -48,7 +69,9 @@ def main():
         )
 
     if cnf_eval.approach == "intersection":
-        logger.info(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}")
+        logger.info(
+            f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}"
+        )
         return
 
     if cnf_eval.text_model == "random":

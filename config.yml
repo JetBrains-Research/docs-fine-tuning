@@ -1,7 +1,8 @@
-dataset: mozilla_core # you can configure datasets with configs/datasets.yml
+dataset: idea # you can configure datasets with configs/datasets.yml
 
-test_size: 0.2
+test_size: 0.1
 
+tmpdir: /mnt/disk/fedorov/tmp
 log_file: data/logs/log.txt # set null for stdout
 models_directory: text_models/saved
 docs_directory: data/docs

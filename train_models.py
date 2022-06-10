@@ -1,6 +1,7 @@
 import argparse
 import logging
-
+import os
+import tempfile
 import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
@@ -36,6 +37,15 @@ def parse_arguments():
         help="Train and save SBERT model using siamese training approach",
     )
 
+    parser.add_argument(
+        "--gpu-id",
+        dest="gpu_id",
+        action="store",
+        type=str,
+        default=None,
+        help="GPU id for CUDA_VISIBLE_DEVICES environment param",
+    )
+
     return parser.parse_args()
 
 
@@ -43,11 +53,14 @@ def main():
     args = parse_arguments()
     config = load_config()
 
-    logging.basicConfig(filename=config.log_file,
-                        level=logging.DEBUG,
-                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    if args.gpu_id is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+    os.environ["TMPDIR"] = config.tmpdir
+    tempfile.tempdir = config.tmpdir
 
-    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+        filename=config.log_file, level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
 
     train = pd.read_csv(config.datasets.train)
     train_corpus = get_corpus(train)

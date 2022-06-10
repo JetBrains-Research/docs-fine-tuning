@@ -12,6 +12,7 @@ from text_models.datasets import BertModelDataset
 
 logger = logging.getLogger(__name__)
 
+
 class IREvalTrainer(Trainer):
     class EvalModel:
         def __init__(self, model: BertModel, tokenizer: PreTrainedTokenizerBase, task: str, max_len: int, device: str):
