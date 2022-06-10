@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os.path
 
 from docs_preprocessor import DocsPreprocessor
@@ -24,6 +25,11 @@ def main():
     args = parse_arguments()
     config = load_config()
 
+    logging.basicConfig(filename=config.log_file,
+                        level=logging.INFO,
+                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    logger = logging.getLogger(__name__)
+
     for docs_path in args.docs:
         preprocessor = DocsPreprocessor(docs_path, config.docs_formats)
         tokenized = preprocessor.preprocess_files()
@@ -34,7 +40,7 @@ def main():
         with open(result_file_name, "w") as doc:
             doc.write(str(tokenized))
 
-        print(f"Text artifacts from {docs_path} processed successfully and saved into {result_file_name}")
+        logger.info(f"Text artifacts from {docs_path} processed successfully and saved into {result_file_name}")
 
 
 if __name__ == "__main__":

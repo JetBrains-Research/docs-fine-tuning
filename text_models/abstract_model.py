@@ -1,4 +1,5 @@
 import os
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union
 from omegaconf import DictConfig, ListConfig
@@ -35,6 +36,7 @@ class AbstractModel(ABC):
                 "doc_task": "_doc_task.model",
             }
 
+        self.logger = logging.getLogger(self.name)
         self.vector_size = vector_size
         self.epochs = epochs
         self.model = None
@@ -82,20 +84,20 @@ class AbstractModel(ABC):
 
         if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
-            print(f"Train from scratch(TASK) {self.name} SUCCESS")
+            self.logger.info(f"Train from scratch(TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes["from_scratch"]))
 
         if TrainTypes.PT_TASK in model_types_to_train:
             self.train_pretrained(base_corpus)
-            print(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
+            self.logger.info(f"Train pretrained(PT+TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes["pretrained"]))
 
         if TrainTypes.DOC_TASK in model_types_to_train:
             self.train_from_scratch_finetuned(base_corpus, extra_corpus)
-            print(f"Train DOC+TASK {self.name} SUCCESS")
+            self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes["doc_task"]))
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
             self.train_finetuned(base_corpus, extra_corpus)
-            print(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
+            self.logger.info(f"Train fine-tuned(PT+DOC+TASK) {self.name} SUCCESS")
             self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes["finetuned"]))

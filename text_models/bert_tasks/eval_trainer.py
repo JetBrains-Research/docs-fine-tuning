@@ -1,15 +1,16 @@
+import logging
 from typing import List, Union, Optional, Dict
 
 import numpy as np
 import torch
-import transformers
+from sentence_transformers.evaluation import SentenceEvaluator
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
-from sentence_transformers.evaluation import SentenceEvaluator
 
 from text_models.datasets import BertModelDataset
 
+logger = logging.getLogger(__name__)
 
 class IREvalTrainer(Trainer):
     class EvalModel:
@@ -107,4 +108,5 @@ class IREvalTrainer(Trainer):
             epoch=self.state.epoch if self.state.epoch is not None else -1,
             steps=self.state.global_step,
         )
+        logger.info(f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}: {map_value}")
         return {f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}": map_value}

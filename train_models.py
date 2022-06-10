@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 import pandas as pd
 
@@ -41,6 +42,12 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     config = load_config()
+
+    logging.basicConfig(filename=config.log_file,
+                        level=logging.DEBUG,
+                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+
+    logger = logging.getLogger(__name__)
 
     train = pd.read_csv(config.datasets.train)
     train_corpus = get_corpus(train)

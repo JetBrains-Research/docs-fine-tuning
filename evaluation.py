@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 import pandas as pd
@@ -21,6 +22,11 @@ def main():
     config = load_config()
     cnf_eval = config.evaluation
 
+    logging.basicConfig(filename=config.log_file,
+                        level=logging.INFO,
+                        format='%(asctime)s %(name)s %(levelname)s: %(message)s')
+    logger = logging.getLogger(__name__)
+
     train = pd.read_csv(config.datasets.train)
     test = pd.read_csv(config.datasets.test)
 
@@ -42,12 +48,12 @@ def main():
         )
 
     if cnf_eval.approach == "intersection":
-        print(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}")
+        logger.info(f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}")
         return
 
     if cnf_eval.text_model == "random":
         model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
-        print(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
+        logger.info(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
         return
 
     if cnf_eval.text_model == "word2vec":

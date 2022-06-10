@@ -13,11 +13,11 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, AutoTokenizer
 
+from data_processing.util import Sentences, Sections
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
-from data_processing.util import Sentences, Sections
 
 
 class BertSiameseModel(AbstractModel):
@@ -74,7 +74,7 @@ class BertSiameseModel(AbstractModel):
             val_corpus = sentences[train_size:]
             val_disc_ids = disc_ids[train_size:]
 
-            print(f"Train size = {train_size}, Validation size = {len(val_disc_ids)}")
+            self.logger.info(f"Train size = {train_size}, Validation size = {len(val_disc_ids)}")
 
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
@@ -105,20 +105,20 @@ class BertSiameseModel(AbstractModel):
 
     def train_from_scratch_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
         for finetuning_task in self.finetuning_strategies:
-            print(f"Start pretraining with {finetuning_task.name} task")
+            self.logger.info(f"Start pretraining with {finetuning_task.name} task")
             dumb_model_name = self.__create_and_save_model_from_scratch()
             self.__train_finetuned_on_task(
                 extra_corpus, finetuning_task, dumb_model_name, self.models_suffixes.doc_task
             )
-            print(f"Train DOC+TASK with {finetuning_task.name} complete")
+            self.logger.info(f"Train DOC+TASK with {finetuning_task.name} complete")
 
     def train_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
         for finetuning_task in self.finetuning_strategies:
-            print(f"Start fine-tuning with {finetuning_task.name} task")
+            self.logger.info(f"Start fine-tuning with {finetuning_task.name} task")
             self.__train_finetuned_on_task(
                 extra_corpus, finetuning_task, self.pretrained_model, self.models_suffixes.finetuned
             )
-            print(f"Train with {finetuning_task.name} complete")
+            self.logger.info(f"Train with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
@@ -212,26 +212,25 @@ class BertSiameseModel(AbstractModel):
         return dumb_model_name
 
     def train_and_save_all(self, base_corpus: Sentences, extra_corpus: Sections, model_types_to_train: List[str]):
-
         if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
-            print(f"Train from scratch {self.name} SUCCESS")
+            self.logger.info(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
 
         if TrainTypes.PT_TASK in model_types_to_train:
             self.train_pretrained(base_corpus)
-            print(f"Train pretrained {self.name} SUCCESS")
+            self.logger.info(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
 
         if TrainTypes.DOC_TASK in model_types_to_train:
             self.train_from_scratch_finetuned(base_corpus, extra_corpus)
-            print(f"Train DOC+TASK {self.name} SUCCESS")
+            self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
             self.train_finetuned(base_corpus, extra_corpus)
-            print(f"Train fine-tuned {self.name} SUCCESS")
+            self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
 
     def get_embeddings(self, corpus: Sentences):
         return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)
