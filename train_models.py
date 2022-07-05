@@ -55,8 +55,10 @@ def main():
 
     if args.gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
-    os.environ["TMPDIR"] = config.tmpdir
-    tempfile.tempdir = config.tmpdir
+
+    if config.tmpdir is not None:
+        os.environ["TMPDIR"] = config.tmpdir
+        tempfile.tempdir = config.tmpdir
 
     logging.basicConfig(
         filename=config.log_file, level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s: %(message)s"

@@ -9,8 +9,9 @@ from util import preprocess, load_config
 
 def main():
     config = load_config()
-    os.environ["TMPDIR"] = config.tmpdir
-    tempfile.tempdir = config.tmpdir
+    if config.tmpdir is not None:
+        os.environ["TMPDIR"] = config.tmpdir
+        tempfile.tempdir = config.tmpdir
 
     logging.basicConfig(
         filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
