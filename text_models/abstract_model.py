@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Union, Optional
 
 import numpy as np
+import torch
 from omegaconf import DictConfig, ListConfig
 
 from data_processing.util import Section, Corpus
@@ -43,6 +44,11 @@ class AbstractModel(ABC):
         self.pretrained_model = pretrained_model
         self.save_to_path = save_to_path
         self.models_suffixes = models_suffixes
+
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
         np.random.seed(seed)
 
     @abstractmethod
