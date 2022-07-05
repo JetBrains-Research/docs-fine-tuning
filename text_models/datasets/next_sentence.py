@@ -5,6 +5,7 @@ import torch
 from transformers import PreTrainedTokenizerBase
 
 from text_models.datasets import BertModelDataset
+from data_processing.util import randint_except
 
 
 class NextSentenceDataset(BertModelDataset):
@@ -13,21 +14,21 @@ class NextSentenceDataset(BertModelDataset):
         corpus: List[str],
         tokenizer: PreTrainedTokenizerBase,
         n_examples: Union[str, int] = "all",
-        max_len=512,
-        forget_const=10,
+        max_len: int = 512,
+        forget_const: int = 10,
     ):
         sentence_a = []
         sentence_b = []
         label = []
-        lngth = len(corpus) - 1
-        for i in range(lngth - forget_const):
+        for i in range(len(corpus) - 1):
             if np.random.rand() >= 0.5:
                 sentence_a.append(corpus[i])
                 sentence_b.append(corpus[i + 1])
                 label.append(0)
             else:
                 sentence_a.append(corpus[i])
-                sentence_b.append(corpus[i + np.random.randint(forget_const, lngth - i)])
+                excluding = np.concatenate((np.arange(0, i - forget_const), np.arange(i + forget_const, len(corpus))))
+                sentence_b.append(corpus[randint_except(0, len(corpus), excluding)])
                 label.append(1)
 
         inputs = tokenizer(

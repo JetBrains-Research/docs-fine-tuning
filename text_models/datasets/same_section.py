@@ -5,6 +5,7 @@ import torch
 from transformers import PreTrainedTokenizerBase
 
 from text_models.datasets import BertModelDataset
+from data_processing.util import randint_except
 
 
 class SameSectionDataset(BertModelDataset):
@@ -18,10 +19,6 @@ class SameSectionDataset(BertModelDataset):
         sentences_a = []
         sentences_b = []
 
-        def randint_except(low: int, high: int, excluding: int):
-            result = np.random.randint(low, high - 1)
-            return result + int(result >= excluding)
-
         labels = []
         for i, section in enumerate(sections):
             section_lngth = len(section)
@@ -32,7 +29,7 @@ class SameSectionDataset(BertModelDataset):
                     labels.append(0)
                 else:
                     sentences_a.append(section[j])
-                    random_section = sections[randint_except(0, len(sections), i)]
+                    random_section = sections[randint_except(0, len(sections), [i])]
                     neg_example = random_section[np.random.randint(0, len(random_section))]
                     sentences_b.append(neg_example)
                     labels.append(1)

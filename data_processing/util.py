@@ -124,6 +124,15 @@ def split_sentences(text: str) -> List[str]:
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
 
 
+def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray]):
+    result = np.random.randint(low, high - len(excluding))
+    for ex in excluding:
+        if result < ex:
+            break
+        result += 1
+    return result
+
+
 def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:
     config = OmegaConf.load(path)
     for cnf in config.models.values():
