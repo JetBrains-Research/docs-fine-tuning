@@ -1,11 +1,10 @@
 import os.path
-from typing import List
 
 from sentence_transformers import models, losses, SentenceTransformer, evaluation
 from sentence_transformers.datasets import DenoisingAutoEncoderDataset
 from torch.utils.data import DataLoader
 
-from data_processing.util import sections_to_sentences
+from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
 
 
@@ -15,7 +14,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[List[List[str]]],
+        docs_corpus: Corpus,
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,

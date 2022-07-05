@@ -6,14 +6,14 @@ from gensim.models.word2vec import Word2Vec
 from nltk import FreqDist
 from omegaconf import DictConfig, ListConfig
 
-from data_processing.util import NumpyArrayEncoder, Sentences
+from data_processing.util import NumpyArrayEncoder, Section
 from text_models.abstract_model import AbstractModel
 
 
 class RandomEmbeddingModel(AbstractModel):
     def __init__(
         self,
-        train_corpus: Sentences = None,
+        train_corpus: Section = None,
         vector_size: int = 300,
         min_count: int = 1,
         random_seed: int = 42,
@@ -58,8 +58,8 @@ class RandomEmbeddingModel(AbstractModel):
         random_model.vector_size = len(list(model.values())[0])
         return random_model
 
-    def train_from_scratch(self, corpus: Sentences):
+    def train_from_scratch(self, corpus: Section):
         pass
 
-    def train_pretrained(self, corpus: Sentences):
+    def train_pretrained(self, corpus: Section):
         pass

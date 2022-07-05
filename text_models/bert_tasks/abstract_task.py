@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import Union
 
 from sentence_transformers import models, evaluation
+
+from data_processing.util import Corpus
 
 
 class AbstractTask(ABC):
@@ -25,7 +27,7 @@ class AbstractTask(ABC):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[List[List[str]]],  # list of list(sections) of list(sentences) of tokens(words)
+        docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,

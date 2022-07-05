@@ -6,8 +6,8 @@ from gensim.models.word2vec import Word2Vec
 from gensim.test.utils import get_tmpfile
 from omegaconf import DictConfig, ListConfig
 
+from data_processing.util import Section
 from text_models.abstract_model import AbstractModel
-from data_processing.util import Sentences
 
 
 class W2VModel(AbstractModel):
@@ -29,10 +29,10 @@ class W2VModel(AbstractModel):
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count
 
-    def train_from_scratch(self, corpus: Sentences):
+    def train_from_scratch(self, corpus: Section):
         self.model = Word2Vec(corpus, vector_size=self.vector_size, min_count=self.min_count, epochs=self.epochs)
 
-    def train_pretrained(self, corpus: Sentences):
+    def train_pretrained(self, corpus: Section):
         if self.init_vocab is None:
             raise RuntimeError("Init vocab is None")
 

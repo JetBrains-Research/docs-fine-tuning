@@ -1,10 +1,9 @@
 import os.path
-from typing import List, Union
 
 from sentence_transformers import models, evaluation
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
 
-from data_processing.util import sections_to_sentences
+from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.eval_trainer import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
@@ -30,7 +29,7 @@ class MaskedLMTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[List[List[str]]],  # list of list(sections) of list(sentences) of tokens(words)
+        docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,

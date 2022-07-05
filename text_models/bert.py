@@ -1,9 +1,8 @@
 import tempfile
 
-from deprecated import deprecated
-
 import numpy as np
 import torch
+from deprecated import deprecated
 from gensim.test.utils import get_tmpfile
 from tokenizers import BertWordPieceTokenizer
 from torch.utils.data import DataLoader

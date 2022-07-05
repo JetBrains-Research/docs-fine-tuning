@@ -13,7 +13,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, AutoTokenizer
 
-from data_processing.util import Sentences, Sections
+from data_processing.util import Section, Corpus
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
@@ -23,7 +23,7 @@ from text_models.datasets import CosineSimilarityDataset, TripletDataset
 class BertSiameseModel(AbstractModel):
     def __init__(
         self,
-        corpus: Sentences = None,
+        corpus: Section = None,
         disc_ids: List[str] = None,
         cnf_tasks: Union[DictConfig, ListConfig] = None,
         finetuning_strategies: List[str] = None,
@@ -89,7 +89,7 @@ class BertSiameseModel(AbstractModel):
 
     name = "BERT_SIAMESE"
 
-    def train_from_scratch(self, corpus: Sentences):
+    def train_from_scratch(self, corpus: Section):
         dumb_model_name = self.__create_and_save_model_from_scratch()
 
         word_embedding_model = models.Transformer(dumb_model_name)
@@ -97,13 +97,13 @@ class BertSiameseModel(AbstractModel):
             word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch)
         )
 
-    def train_pretrained(self, corpus: Sentences):
+    def train_pretrained(self, corpus: Section):
         word_embedding_model = models.Transformer(self.pretrained_model)
         self.__train_siamese(
             word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained)
         )
 
-    def train_from_scratch_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
+    def train_from_scratch_finetuned(self, base_corpus: Section, extra_corpus: Corpus):
         for finetuning_task in self.finetuning_strategies:
             self.logger.info(f"Start pretraining with {finetuning_task.name} task")
             dumb_model_name = self.__create_and_save_model_from_scratch()
@@ -112,7 +112,7 @@ class BertSiameseModel(AbstractModel):
             )
             self.logger.info(f"Train DOC+TASK with {finetuning_task.name} complete")
 
-    def train_finetuned(self, base_corpus: Sentences, extra_corpus: Sections):
+    def train_finetuned(self, base_corpus: Section, extra_corpus: Corpus):
         for finetuning_task in self.finetuning_strategies:
             self.logger.info(f"Start fine-tuning with {finetuning_task.name} task")
             self.__train_finetuned_on_task(
@@ -211,7 +211,7 @@ class BertSiameseModel(AbstractModel):
 
         return dumb_model_name
 
-    def train_and_save_all(self, base_corpus: Sentences, extra_corpus: Sections, model_types_to_train: List[str]):
+    def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         if TrainTypes.TASK in model_types_to_train:
             self.train_from_scratch(base_corpus)
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
@@ -232,7 +232,7 @@ class BertSiameseModel(AbstractModel):
             self.train_finetuned(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
 
-    def get_embeddings(self, corpus: Sentences):
+    def get_embeddings(self, corpus: Section):
         return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)
 
     def get_doc_embedding(self, doc: List[str]):

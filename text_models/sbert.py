@@ -1,8 +1,7 @@
 import tempfile
 
-from deprecated import deprecated
-
 import numpy as np
+from deprecated import deprecated
 from gensim.test.utils import get_tmpfile
 from sentence_transformers import SentenceTransformer, losses, models
 from sentence_transformers.readers import InputExample

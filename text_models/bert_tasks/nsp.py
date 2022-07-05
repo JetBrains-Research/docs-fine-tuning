@@ -3,10 +3,9 @@ from typing import Union
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
+from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import NextSentenceDataset
-
-from data_processing.util import sections_to_sentences, Sections
 
 
 class NextSentencePredictionTask(SentencesClassificationTask):
@@ -25,6 +24,6 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps)
         self.forget_const = forget_const
 
-    def _get_dataset(self, corpus: Sections, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
         corpus = sections_to_sentences(corpus)
         return NextSentenceDataset(corpus, tokenizer, self.n_examples, max_len, self.forget_const)

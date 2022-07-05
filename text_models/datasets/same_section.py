@@ -2,7 +2,6 @@ from typing import List, Union
 
 import numpy as np
 import torch
-
 from transformers import PreTrainedTokenizerBase
 
 from text_models.datasets import BertModelDataset

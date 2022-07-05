@@ -5,7 +5,7 @@ import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
 from torch.utils.data import DataLoader
 
-from data_processing.util import sections_to_sentences, Sentences
+from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
 
 
@@ -64,7 +64,7 @@ class STSTask(AbstractTask):
 
         return model._first_module()
 
-    def __get_train_dataloader_from_docs(self, docs_corpus: Sentences) -> DataLoader:
+    def __get_train_dataloader_from_docs(self, docs_corpus: List[str]) -> DataLoader:
         train_data = []
         corpus = [" ".join(doc) for doc in docs_corpus]
         lngth = len(docs_corpus) - 1

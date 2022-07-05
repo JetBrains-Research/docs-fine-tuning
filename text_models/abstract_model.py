@@ -1,12 +1,12 @@
-import os
 import logging
+import os
 from abc import ABC, abstractmethod
-from typing import List, Dict, Union
-from omegaconf import DictConfig, ListConfig
-
-from data_processing.util import Sentences, Sections
+from typing import List, Dict, Union, Optional
 
 import numpy as np
+from omegaconf import DictConfig, ListConfig
+
+from data_processing.util import Section, Corpus
 
 
 class TrainTypes:
@@ -23,7 +23,7 @@ class AbstractModel(ABC):
         self,
         vector_size: int = 300,
         epochs: int = 5,
-        pretrained_model: str = None,
+        pretrained_model: Optional[str] = None,
         seed: int = 42,
         save_to_path: str = "./",
         models_suffixes: Union[Dict[str, str], DictConfig, ListConfig] = None,
@@ -46,17 +46,17 @@ class AbstractModel(ABC):
         np.random.seed(seed)
 
     @abstractmethod
-    def train_from_scratch(self, corpus: Sentences):
+    def train_from_scratch(self, corpus: Section):
         raise NotImplementedError()
 
     @abstractmethod
-    def train_pretrained(self, corpus: Sentences):
+    def train_pretrained(self, corpus: Section):
         raise NotImplementedError()
 
-    def train_from_scratch_finetuned(self, base_corpus: Sentences, extra_corpus: Union[Sentences, Sections]):
+    def train_from_scratch_finetuned(self, base_corpus: Section, extra_corpus: Union[Section, Corpus]):
         self.train_from_scratch(base_corpus + extra_corpus)
 
-    def train_finetuned(self, base_corpus: Sentences, extra_corpus: Union[Sentences, Sections]):
+    def train_finetuned(self, base_corpus: Section, extra_corpus: Union[Section, Corpus]):
         self.train_pretrained(base_corpus + extra_corpus)
 
     def get_doc_embedding(self, doc: List[str]):
@@ -68,8 +68,8 @@ class AbstractModel(ABC):
                 size += 1
         return result if size == 0 else result / size
 
-    def get_embeddings(self, corpus: Sentences):
-        return np.array([self.get_doc_embedding(report) for report in corpus]).astype(np.float32)
+    def get_embeddings(self, corpus: Section):
+        return np.array([self.get_doc_embedding(report) for report in corpus], dtype=np.float32)
 
     @classmethod
     def load(cls, path: str):
@@ -79,7 +79,7 @@ class AbstractModel(ABC):
         self.model.save(path)
 
     def train_and_save_all(
-        self, base_corpus: Sentences, extra_corpus: Union[Sentences, Sections], model_types_to_train: List[str]
+        self, base_corpus: Section, extra_corpus: Union[Section, Corpus], model_types_to_train: List[str]
     ):
 
         if TrainTypes.TASK in model_types_to_train:

@@ -1,6 +1,6 @@
 import os
 from abc import abstractmethod
-from typing import List, Union
+from typing import Union
 
 from sentence_transformers import evaluation, models
 from torch.utils.data import Dataset
@@ -13,7 +13,7 @@ from transformers import (
     PreTrainedTokenizerBase,
 )
 
-from data_processing.util import Sections
+from data_processing.util import Corpus
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.eval_trainer import IREvalTrainer
 
@@ -36,7 +36,7 @@ class SentencesClassificationTask(AbstractTask):
     def finetune_on_docs(
         self,
         pretrained_model: str,
-        docs_corpus: List[List[List[str]]],
+        docs_corpus: Corpus,
         evaluator: evaluation.InformationRetrievalEvaluator,
         max_len: int,
         device: str,
@@ -77,7 +77,7 @@ class SentencesClassificationTask(AbstractTask):
         return models.Transformer(output_path)
 
     @abstractmethod
-    def _get_dataset(self, corpus: Sections, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
         raise NotImplementedError()
 
     def load(self, load_from_path) -> models.Transformer:

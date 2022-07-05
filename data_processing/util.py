@@ -3,7 +3,7 @@ import os.path
 import re
 from json import JSONEncoder
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Any
 
 import nltk
 import numpy as np
@@ -15,22 +15,24 @@ from nltk.corpus import stopwords
 from omegaconf import OmegaConf, DictConfig, ListConfig
 
 CONFIG_PATH = "config.yml"
-Sections = List[List[List[str]]]
-Sentences = List[List[str]]
+
+Sentence = List[str]
+Section = List[Sentence]
+Corpus = List[Section]
 
 
-def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Sentences, Sections]:
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Section, Corpus]:
     corpus = []
     for str_list in data["description"].tolist():
         corpus.append(ast.literal_eval(str_list))
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 
-def flatten(matrix):
+def flatten(matrix: List[List[Any]]):
     return [item for sublist in matrix for item in sublist]
 
 
-def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Sentences, Sections]:
+def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Section, Corpus]:
     result = []
     for doc_name in docs_names:
         text = Path(doc_name).read_text()
@@ -38,7 +40,7 @@ def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Senten
     return result if sections else flatten(result)
 
 
-def get_doc_sections(text: str) -> Sections:
+def get_doc_sections(text: str) -> Corpus:
     sections = text.split(sep="]], [[")
     sections = (
         [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
@@ -47,7 +49,7 @@ def get_doc_sections(text: str) -> Sections:
     return sections
 
 
-def get_doc_sentences(text: str) -> Sentences:
+def get_doc_sentences(text: str) -> Section:
     text = text.split(sep="], [")
     text = [sent.split("', '") for sent in text]
     for sent in text:
@@ -80,7 +82,7 @@ def lemmatize(word: str) -> str:
     return WordNetLemmatizer().lemmatize(word, pos="v")
 
 
-def tokenize_and_normalize(sentences: List[str]) -> Sentences:
+def tokenize_and_normalize(sentences: List[str]) -> Section:
     result = []
     eng_stopwords = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for sentence in sentences:
@@ -96,18 +98,18 @@ def tokenize_and_normalize(sentences: List[str]) -> Sentences:
     return result
 
 
-def preprocess(text: str) -> Sentences:
+def preprocess(text: str) -> Section:
     text = remove_noise(text)
     sentences = split_sentences(text)
     tokenized = tokenize_and_normalize(sentences)
     return tokenized
 
 
-def sections_to_sentences(docs_corpus: Sections) -> List[str]:
+def sections_to_sentences(docs_corpus: Corpus) -> List[str]:
     return [" ".join(doc) for doc in flatten(docs_corpus)]
 
 
-def get_corpus_properties(corpus: Sentences):
+def get_corpus_properties(corpus: Section):
     freq_dict = FreqDist()
     max_len = 0
     for docs in corpus:
