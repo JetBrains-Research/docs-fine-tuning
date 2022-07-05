@@ -14,7 +14,7 @@ from util import preprocess, Section, Corpus
 
 class DocsPreprocessor:
     def __init__(self, files_path: str, extensions: List[str]):
-        self.extensions = ["." + extension for extension in extensions]
+        self.extensions = [extension if extension.startswith(".") else "." + extension for extension in extensions]
         self.files = self.__collect_files(files_path)
 
     def preprocess_files(self) -> Corpus:

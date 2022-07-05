@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: data/logs/log.txt # set null for stdout
 models_directory: text_models/saved
 docs_directory: data/docs
-docs_formats: ['html', 'pdf', 'md', 'rst'] # supported formats
+docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
 model_types: ['TASK', 'PT+TASK', 'DOC+TASK', 'PT+DOC+TASK'] # supported training/evaluation types
 
 models_suffixes:
