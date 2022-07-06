@@ -67,7 +67,6 @@ def main():
             evaluator,
             config.models.siamese.finetuning_strategies,
             config.models_directory,
-            config.models_suffixes.finetuned,
         )
 
     if cnf_eval.approach == "intersection":
@@ -101,23 +100,23 @@ def main():
 
     if TrainTypes.TASK in config.model_types:
         model_trained_from_scratch = model_type.load(
-            os.path.join(config.models_directory, model_type.name + config.models_suffixes.from_scratch)
+            os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.TASK)
         )
 
     if TrainTypes.PT_TASK in config.model_types:
         model_pretrained = model_type.load(
-            os.path.join(config.models_directory, model_type.name + config.models_suffixes.pretrained)
+            os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.PT_TASK)
         )
 
     task_name = "" if cnf_eval.text_model != "siamese" else "_" + config.models.siamese.finetuning_strategies[0]
     if TrainTypes.DOC_TASK in config.model_types:
         model_doc_task = model_type.load(
-            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.doc_task)
+            os.path.join(config.models_directory, model_type.name + task_name + "_" + TrainTypes.DOC_TASK)
         )
 
     if TrainTypes.PT_DOC_TASK in config.model_types:
         model_finetuned = model_type.load(
-            os.path.join(config.models_directory, model_type.name + task_name + config.models_suffixes.finetuned)
+            os.path.join(config.models_directory, model_type.name + task_name + "_" + TrainTypes.PT_DOC_TASK)
         )
 
     evaluator.evaluate_all(

@@ -135,8 +135,6 @@ def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray])
 
 def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:
     config = OmegaConf.load(path)
-    for cnf in config.models.values():
-        cnf["models_suffixes"] = config.models_suffixes
     datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[config.dataset]
     return OmegaConf.merge(config, datasets_config)
 

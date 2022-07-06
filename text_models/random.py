@@ -1,10 +1,8 @@
 import json
-from typing import Union, Dict
 
 import numpy as np
 from gensim.models.word2vec import Word2Vec
 from nltk import FreqDist
-from omegaconf import DictConfig, ListConfig
 
 from data_processing.util import NumpyArrayEncoder, Section
 from text_models.abstract_model import AbstractModel
@@ -19,11 +17,8 @@ class RandomEmbeddingModel(AbstractModel):
         random_seed: int = 42,
         rand_by_w2v: bool = False,
         save_to_path: str = "./",
-        models_suffixes: Union[Dict[str, str], DictConfig, ListConfig] = None,
     ):
-        super().__init__(
-            vector_size=vector_size, seed=random_seed, save_to_path=save_to_path, models_suffixes=models_suffixes
-        )
+        super().__init__(vector_size=vector_size, seed=random_seed, save_to_path=save_to_path)
         self.min_count = min_count
 
         freq_dict = FreqDist()
@@ -58,8 +53,8 @@ class RandomEmbeddingModel(AbstractModel):
         random_model.vector_size = len(list(model.values())[0])
         return random_model
 
-    def train_from_scratch(self, corpus: Section):
+    def train_task(self, corpus: Section):
         pass
 
-    def train_pretrained(self, corpus: Section):
+    def train_pt_task(self, corpus: Section):
         pass

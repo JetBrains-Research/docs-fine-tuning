@@ -13,12 +13,10 @@ class FinetuningTasksTest(AbstractApproach):
         approach: AbstractApproach,
         tasks: List[str],
         models_directory: str,
-        model_suffix: str,
     ):
         super().__init__(approach.train, approach.test)
         self.tasks = tasks
         self.models_directory = models_directory
-        self.model_suffix = model_suffix
         self.approach = approach
 
         self.all_results = None
@@ -42,8 +40,8 @@ class FinetuningTasksTest(AbstractApproach):
             return
 
         self.all_results = self.approach.results.copy()
-        self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT+DOC({self.tasks[0]})+TASK"}, inplace=True)
-        self.all_results.rename(columns={TrainTypes.DOC_TASK: f"DOC({self.tasks[0]})+TASK"}, inplace=True)
+        self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT_DOC({self.tasks[0]})_TASK"}, inplace=True)
+        self.all_results.rename(columns={TrainTypes.DOC_TASK: f"DOC({self.tasks[0]})_TASK"}, inplace=True)
 
         # we need to skip first task because we have already processed this task
         # with the self.approach.evaluate_all() method call above
@@ -53,20 +51,24 @@ class FinetuningTasksTest(AbstractApproach):
 
             if finetuned_model is not None:
                 model_finetuned = BertSiameseModel.load(
-                    os.path.join(self.models_directory, BertSiameseModel.name + "_" + task_name + self.model_suffix)
+                    os.path.join(
+                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.DOC_TASK
+                    )
                 )
                 task_result = self.approach.evaluate(model_finetuned, topns)
                 res_copy[TrainTypes.PT_DOC_TASK] = task_result
-                self.all_results[f"PT+DOC({self.tasks[i]})+TASK"] = task_result
+                self.all_results[f"PT_DOC({self.tasks[i]})_TASK"] = task_result
                 self.results_list.append(res_copy)
 
             if doc_task_model is not None:
                 model_doc_task = BertSiameseModel.load(
-                    os.path.join(self.models_directory, BertSiameseModel.name + "_" + task_name + self.model_suffix)
+                    os.path.join(
+                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.PT_DOC_TASK
+                    )
                 )
                 task_doc_test_res = self.approach.evaluate(model_doc_task, topns)
                 res_copy[TrainTypes.DOC_TASK] = task_doc_test_res
-                self.all_results[f"DOC({self.tasks[i]})+TASK"] = task_doc_test_res
+                self.all_results[f"DOC({self.tasks[i]})_TASK"] = task_doc_test_res
                 self.results_list.append(res_copy)
 
         if verbose:

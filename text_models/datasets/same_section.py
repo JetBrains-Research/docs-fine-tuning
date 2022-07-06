@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from transformers import PreTrainedTokenizerBase
 
-from text_models.datasets import BertModelDataset
 from data_processing.util import randint_except
+from text_models.datasets import BertModelDataset
 
 
 class SameSectionDataset(BertModelDataset):

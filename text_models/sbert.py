@@ -29,9 +29,8 @@ class SBertModel(AbstractModel):
         pretrained_model="all-mpnet-base-v2",
         seed=42,
         save_to_path="./",
-        models_suffixes=None,
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
 
@@ -44,7 +43,7 @@ class SBertModel(AbstractModel):
 
     name = "SBERT"
 
-    def train_from_scratch(self, corpus):
+    def train_task(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
         dumb_model, tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len, task="sts")
 
@@ -69,14 +68,14 @@ class SBertModel(AbstractModel):
         self.model = SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model])
         self.__train_sts(self.train_sts_dataloader)
 
-    def train_from_scratch_finetuned(self, base_corpus, extra_corpus):
+    def train_doc_task(self, base_corpus, extra_corpus):
         raise NotImplementedError()
 
-    def train_pretrained(self, corpus):
+    def train_pt_task(self, corpus):
         self.model = SentenceTransformer(self.pretrained_model)
         self.__train_sts(self.train_sts_dataloader)
 
-    def train_finetuned(self, base_corpus, extra_corpus):
+    def train_pt_doc_task(self, base_corpus, extra_corpus):
         self.model = SentenceTransformer(self.pretrained_model)
         extra_train_dataloader = self.__get_train_dataloader_from_docs(extra_corpus)
         self.__train_sts(extra_train_dataloader)

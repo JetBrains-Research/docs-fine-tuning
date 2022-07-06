@@ -1,6 +1,6 @@
 import os.path
 import tempfile
-from typing import List, Union, Dict
+from typing import List, Union
 
 import numpy as np
 from gensim.test.utils import get_tmpfile
@@ -44,9 +44,8 @@ class BertSiameseModel(AbstractModel):
         save_best_model: bool = False,
         seed: int = 42,
         save_to_path: str = "./",
-        models_suffixes: Union[Dict[str, str], DictConfig, ListConfig] = None,
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         if finetuning_strategies is None:
             finetuning_strategies = ["mlm"]
         self.device = device
@@ -89,35 +88,29 @@ class BertSiameseModel(AbstractModel):
 
     name = "BERT_SIAMESE"
 
-    def train_from_scratch(self, corpus: Section):
+    def train_task(self, corpus: Section):
         dumb_model_name = self.__create_and_save_model_from_scratch()
 
         word_embedding_model = models.Transformer(dumb_model_name)
-        self.__train_siamese(
-            word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch)
-        )
+        self.__train_siamese(word_embedding_model, os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
 
-    def train_pretrained(self, corpus: Section):
+    def train_pt_task(self, corpus: Section):
         word_embedding_model = models.Transformer(self.pretrained_model)
         self.__train_siamese(
-            word_embedding_model, os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained)
+            word_embedding_model, os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK)
         )
 
-    def train_from_scratch_finetuned(self, base_corpus: Section, extra_corpus: Corpus):
+    def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
         for finetuning_task in self.finetuning_strategies:
             self.logger.info(f"Start pretraining with {finetuning_task.name} task")
             dumb_model_name = self.__create_and_save_model_from_scratch()
-            self.__train_finetuned_on_task(
-                extra_corpus, finetuning_task, dumb_model_name, self.models_suffixes.doc_task
-            )
+            self.__train_finetuned_on_task(extra_corpus, finetuning_task, dumb_model_name, TrainTypes.DOC_TASK)
             self.logger.info(f"Train DOC+TASK with {finetuning_task.name} complete")
 
-    def train_finetuned(self, base_corpus: Section, extra_corpus: Corpus):
+    def train_pt_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
         for finetuning_task in self.finetuning_strategies:
             self.logger.info(f"Start fine-tuning with {finetuning_task.name} task")
-            self.__train_finetuned_on_task(
-                extra_corpus, finetuning_task, self.pretrained_model, self.models_suffixes.finetuned
-            )
+            self.__train_finetuned_on_task(extra_corpus, finetuning_task, self.pretrained_model, TrainTypes.PT_DOC_TASK)
             self.logger.info(f"Train with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
@@ -158,7 +151,9 @@ class BertSiameseModel(AbstractModel):
         pretrained_model: str,
         save_to_path_suffix: str,
     ):
-        save_to_dir = os.path.join(self.save_to_path, self.name + "_" + finetuning_task.name + save_to_path_suffix)
+        save_to_dir = os.path.join(
+            self.save_to_path, self.name + "_" + finetuning_task.name + "_" + save_to_path_suffix
+        )
         word_embedding_model = (
             finetuning_task.finetune_on_docs(
                 pretrained_model,
@@ -213,23 +208,23 @@ class BertSiameseModel(AbstractModel):
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         if TrainTypes.TASK in model_types_to_train:
-            self.train_from_scratch(base_corpus)
+            self.train_task(base_corpus)
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
-                self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.from_scratch))
+                self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
 
         if TrainTypes.PT_TASK in model_types_to_train:
-            self.train_pretrained(base_corpus)
+            self.train_pt_task(base_corpus)
             self.logger.info(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
-                self.save(os.path.join(self.save_to_path, self.name + self.models_suffixes.pretrained))
+                self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK))
 
         if TrainTypes.DOC_TASK in model_types_to_train:
-            self.train_from_scratch_finetuned(base_corpus, extra_corpus)
+            self.train_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
-            self.train_finetuned(base_corpus, extra_corpus)
+            self.train_pt_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
 
     def get_embeddings(self, corpus: Section):
