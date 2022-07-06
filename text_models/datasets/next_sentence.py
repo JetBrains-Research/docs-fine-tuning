@@ -27,8 +27,9 @@ class NextSentenceDataset(BertModelDataset):
                 label.append(0)
             else:
                 sentence_a.append(corpus[i])
-                excluding = np.concatenate((np.arange(0, i - forget_const), np.arange(i + forget_const, len(corpus))))
-                sentence_b.append(corpus[randint_except(0, len(corpus), excluding)])
+                sentence_b.append(
+                    corpus[randint_except(0, len(corpus), np.arange(i - forget_const, i + forget_const + 1))]
+                )
                 label.append(1)
 
         inputs = tokenizer(

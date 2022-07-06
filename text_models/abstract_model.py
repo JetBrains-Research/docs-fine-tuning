@@ -4,9 +4,8 @@ from abc import ABC, abstractmethod
 from typing import List, Union, Optional
 
 import numpy as np
-import torch
 
-from data_processing.util import Section, Corpus
+from data_processing.util import Section, Corpus, fix_random_seed
 
 
 class TrainTypes:
@@ -34,11 +33,7 @@ class AbstractModel(ABC):
         self.pretrained_model = pretrained_model
         self.save_to_path = save_to_path
 
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        np.random.seed(seed)
+        fix_random_seed(seed)
 
     @abstractmethod
     def train_task(self, corpus: Section):

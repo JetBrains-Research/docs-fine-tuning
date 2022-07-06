@@ -8,6 +8,7 @@ from typing import List, Union, Any
 import nltk
 import numpy as np
 import pandas as pd
+import torch
 from gensim.utils import simple_preprocess
 from nltk import FreqDist
 from nltk import WordNetLemmatizer
@@ -124,13 +125,21 @@ def split_sentences(text: str) -> List[str]:
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
 
 
-def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray]):
+def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray]) -> int:
     result = np.random.randint(low, high - len(excluding))
     for ex in excluding:
         if result < ex:
             break
         result += 1
     return result
+
+
+def fix_random_seed(seed: int):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
 
 
 def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:
