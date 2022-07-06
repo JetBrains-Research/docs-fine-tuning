@@ -1,18 +1,18 @@
 import tempfile
-import numpy as np
 
+import numpy as np
+from deprecated import deprecated
+from gensim.test.utils import get_tmpfile
+from sentence_transformers import SentenceTransformer, losses, models
+from sentence_transformers.readers import InputExample
 from torch import nn
 from torch.utils.data import DataLoader
 
-from sentence_transformers import SentenceTransformer, losses, models
-from sentence_transformers.readers import InputExample
-
-from gensim.test.utils import get_tmpfile
-
 from text_models import AbstractModel, BertModelMLM
-from text_models.datasets import SbertModelDataset
+from text_models.datasets import CosineSimilarityDataset
 
 
+@deprecated("Will be removed in the future. Use BertSiameseModel with STS task instead")
 class SBertModel(AbstractModel):
     def __init__(
         self,
@@ -29,9 +29,8 @@ class SBertModel(AbstractModel):
         pretrained_model="all-mpnet-base-v2",
         seed=42,
         save_to_path="./",
-        models_suffixes=None,
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
 
@@ -44,7 +43,7 @@ class SBertModel(AbstractModel):
 
     name = "SBERT"
 
-    def train_from_scratch(self, corpus):
+    def train_task(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
         dumb_model, tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len, task="sts")
 
@@ -69,11 +68,14 @@ class SBertModel(AbstractModel):
         self.model = SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model])
         self.__train_sts(self.train_sts_dataloader)
 
-    def train_pretrained(self, corpus):
+    def train_doc_task(self, base_corpus, extra_corpus):
+        raise NotImplementedError()
+
+    def train_pt_task(self, corpus):
         self.model = SentenceTransformer(self.pretrained_model)
         self.__train_sts(self.train_sts_dataloader)
 
-    def train_finetuned(self, base_corpus, extra_corpus):
+    def train_pt_doc_task(self, base_corpus, extra_corpus):
         self.model = SentenceTransformer(self.pretrained_model)
         extra_train_dataloader = self.__get_train_dataloader_from_docs(extra_corpus)
         self.__train_sts(extra_train_dataloader)
@@ -103,7 +105,7 @@ class SBertModel(AbstractModel):
 
     def __get_train_dataloader_from_reports(self, corpus, disc_ids, n_examples):
         corpus = list(map(lambda x: " ".join(x), corpus))
-        train_data = SbertModelDataset(corpus, disc_ids, n_examples, shuffle=True)
+        train_data = CosineSimilarityDataset(corpus, disc_ids, n_examples, shuffle=True)
         return DataLoader(train_data, shuffle=True, batch_size=self.batch_size)
 
     def __get_train_dataloader_from_docs(self, docs_corpus):

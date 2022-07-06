@@ -1,27 +1,24 @@
 import json
+
 import numpy as np
-
-from nltk import FreqDist
 from gensim.models.word2vec import Word2Vec
+from nltk import FreqDist
 
-from data_processing.util import NumpyArrayEncoder
+from data_processing.util import NumpyArrayEncoder, Section
 from text_models.abstract_model import AbstractModel
 
 
 class RandomEmbeddingModel(AbstractModel):
     def __init__(
         self,
-        train_corpus=None,
-        vector_size=300,
-        min_count=1,
-        random_seed=42,
-        rand_by_w2v=False,
-        save_to_path="./",
-        models_suffixes=None,
+        train_corpus: Section = None,
+        vector_size: int = 300,
+        min_count: int = 1,
+        random_seed: int = 42,
+        rand_by_w2v: bool = False,
+        save_to_path: str = "./",
     ):
-        super().__init__(
-            vector_size=vector_size, seed=random_seed, save_to_path=save_to_path, models_suffixes=models_suffixes
-        )
+        super().__init__(vector_size=vector_size, seed=random_seed, save_to_path=save_to_path)
         self.min_count = min_count
 
         freq_dict = FreqDist()
@@ -40,12 +37,12 @@ class RandomEmbeddingModel(AbstractModel):
 
     name = "random"
 
-    def save(self, path):
+    def save(self, path: str):
         with open(path, "w+") as fp:
             json.dump(self.model, fp, cls=NumpyArrayEncoder)
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: str):
         with open(path) as json_file:
             model = json.load(json_file)
         for word, emb in model.items():
@@ -56,11 +53,8 @@ class RandomEmbeddingModel(AbstractModel):
         random_model.vector_size = len(list(model.values())[0])
         return random_model
 
-    def train_from_scratch(self, corpus):
+    def train_task(self, corpus: Section):
         pass
 
-    def train_pretrained(self, corpus):
-        pass
-
-    def train_finetuned(self, base_corpus, extra_corpus):
+    def train_pt_task(self, corpus: Section):
         pass

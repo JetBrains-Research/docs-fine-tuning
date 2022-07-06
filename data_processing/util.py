@@ -1,40 +1,56 @@
-import re
 import ast
+import os.path
+import re
+from json import JSONEncoder
+from pathlib import Path
+from typing import List, Union, Any
+
 import nltk
 import numpy as np
-
-from pathlib import Path
+import pandas as pd
+import torch
 from gensim.utils import simple_preprocess
+from nltk import FreqDist
 from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
-from nltk import FreqDist
-
-from json import JSONEncoder
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, DictConfig, ListConfig
 
 CONFIG_PATH = "config.yml"
 
+Sentence = List[str]
+Section = List[Sentence]
+Corpus = List[Section]
 
-def get_corpus(data, sentences=False):
+
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Section, Corpus]:
     corpus = []
     for str_list in data["description"].tolist():
         corpus.append(ast.literal_eval(str_list))
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 
-def flatten(t):
-    return [item for sublist in t for item in sublist]
+def flatten(matrix: List[List[Any]]):
+    return [item for sublist in matrix for item in sublist]
 
 
-def get_docs_text(docs_names):
+def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Section, Corpus]:
     result = []
     for doc_name in docs_names:
         text = Path(doc_name).read_text()
-        result = result + get_doc_sentences(text)
-    return result
+        result = result + get_doc_sections(text)
+    return result if sections else flatten(result)
 
 
-def get_doc_sentences(text):
+def get_doc_sections(text: str) -> Corpus:
+    sections = text.split(sep="]], [[")
+    sections = (
+        [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
+    )
+    sections = [get_doc_sentences(section) for section in sections]
+    return sections
+
+
+def get_doc_sentences(text: str) -> Section:
     text = text.split(sep="], [")
     text = [sent.split("', '") for sent in text]
     for sent in text:
@@ -45,12 +61,12 @@ def get_doc_sentences(text):
     return text
 
 
-def remove_noise(text):
-    text = re.sub(r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE)
-    text = re.sub("\w*\d\w*", " ", text)
-    text = re.sub("\w*\f\w*", " ", text)
-    text = re.sub("\(.*?\)", " ", text)
-    text = re.sub("\[.*]\)", " ", text)
+def remove_noise(text: str) -> str:
+    text = re.sub(r"(https|http)?://(\w|\.|/|\?|=|&|%)*\b", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\w*\d\w*", " ", text)
+    text = re.sub(r"\w*\f\w*", " ", text)
+    text = re.sub(r"\(.*?\)", " ", text)
+    text = re.sub(r"\[.*]\)", " ", text)
     # remove non latin characters
     text = text.encode("ascii", "ignore")
     text = text.decode()
@@ -63,17 +79,17 @@ def remove_noise(text):
     return text
 
 
-def lemmatize(text):
-    return WordNetLemmatizer().lemmatize(text, pos="v")
+def lemmatize(word: str) -> str:
+    return WordNetLemmatizer().lemmatize(word, pos="v")
 
 
-def tokenize_and_normalize(sentences):
+def tokenize_and_normalize(sentences: List[str]) -> Section:
     result = []
-    STOPWORDS = stopwords.words("english") + ["http", "https", "org", "use", "com"]
+    eng_stopwords = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for sentence in sentences:
         tokens = []
         for token in simple_preprocess(sentence, min_len=3):
-            if token not in STOPWORDS:
+            if token not in eng_stopwords:
                 tokens.append(lemmatize(token))
         if len(tokens) >= 3:
             result.append(tokens)
@@ -83,47 +99,57 @@ def tokenize_and_normalize(sentences):
     return result
 
 
-def parse_list(doc_name):
-    return ast.literal_eval(Path(doc_name).read_text())
+def preprocess(text: str) -> Section:
+    text = remove_noise(text)
+    sentences = split_sentences(text)
+    tokenized = tokenize_and_normalize(sentences)
+    return tokenized
 
 
-def replace_rarest_words(corpus, min_count):
-    d = FreqDist()
-    for docs in corpus:
-        d.update(FreqDist(docs))
-
-    for doc in corpus:
-        for i in range(len(doc)):
-            if d[doc[i]] < min_count:
-                doc[i] = "<UNK>"
-    return corpus
+def sections_to_sentences(docs_corpus: Corpus) -> List[str]:
+    return [" ".join(doc) for doc in flatten(docs_corpus)]
 
 
-def get_corpus_properties(corpus):
-    d = FreqDist()
+def get_corpus_properties(corpus: Section):
+    freq_dict = FreqDist()
     max_len = 0
     for docs in corpus:
         max_len = max(max_len, len(docs))
-        d.update(FreqDist(docs))
+        freq_dict.update(FreqDist(docs))
 
-    return len(d), max_len
+    return len(freq_dict), max_len
 
 
-def split_sentences(text):
+def split_sentences(text: str) -> List[str]:
     tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     return list(filter(lambda x: len(x) > 3, tokenizer.tokenize(text)))
 
 
-def load_config(path=None):
-    cnf_path = CONFIG_PATH if path is None else path
-    config = OmegaConf.load(cnf_path)
-    for cnf in config.models.values():
-        cnf["models_suffixes"] = config.models_suffixes
-    return config
+def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray]) -> int:
+    result = np.random.randint(low, high - len(excluding))
+    for ex in excluding:
+        if result < ex:
+            break
+        result += 1
+    return result
+
+
+def fix_random_seed(seed: int):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+
+
+def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:
+    config = OmegaConf.load(path)
+    datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[config.dataset]
+    return OmegaConf.merge(config, datasets_config)
 
 
 class NumpyArrayEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return JSONEncoder.default(self, o)

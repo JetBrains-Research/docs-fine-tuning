@@ -1,12 +1,10 @@
 import argparse
+import logging
 import os.path
+import tempfile
 
-from pathlib import Path
-from tika import parser
-from omegaconf import OmegaConf
-
-from util import remove_noise, tokenize_and_normalize, split_sentences
-from util import CONFIG_PATH
+from docs_preprocessor import DocsPreprocessor
+from util import load_config
 
 
 def parse_arguments():
@@ -16,29 +14,38 @@ def parse_arguments():
         dest="docs",
         action="extend",
         nargs="+",
-        help="Paths to pdf docs to be preprocessed",
+        help="Paths to docs to be preprocessed",
     )
     arg_parser.add_argument(
-        "-p", dest="prefix", action="store", default="doc", help="Preprocessed docs file name prefix"
+        "--sfx", dest="suffix", action="store", default="prcsd", help="Preprocessed docs file name prefix"
     )
     return arg_parser.parse_args()
 
 
-def get_text_from_pdf(file_name):
-    raw = parser.from_file(file_name)
-    return raw["content"]
-
-
 def main():
     args = parse_arguments()
-    config = OmegaConf.load(CONFIG_PATH)
-    for i, doc in enumerate(args.docs):
-        text = get_text_from_pdf(doc)
-        text = remove_noise(text)
-        sentences = split_sentences(text)
-        text = tokenize_and_normalize(sentences)
-        with Path(os.path.join(config.docs_directory, f"{args.prefix}_{i}.txt")).open(mode="w") as f:
-            f.write(str(text))
+    config = load_config()
+
+    if config.tmpdir is not None:
+        os.environ["TMPDIR"] = config.tmpdir
+        tempfile.tempdir = config.tmpdir
+
+    logging.basicConfig(
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+
+    for docs_path in args.docs:
+        preprocessor = DocsPreprocessor(docs_path, config.docs_formats)
+        tokenized = preprocessor.preprocess_files()
+
+        result_file_name = os.path.join(
+            config.docs_directory, os.path.splitext(os.path.split(docs_path)[1])[0] + "-" + args.suffix + ".txt"
+        )
+        with open(result_file_name, "w") as doc:
+            doc.write(str(tokenized))
+
+        logger.info(f"Text artifacts from {docs_path} processed successfully and saved into {result_file_name}")
 
 
 if __name__ == "__main__":

@@ -1,17 +1,14 @@
-.DS_Store
-results.ipynb
-transformers.ipynb
-tf_idf.ipynb
-docs_parsing.ipynb
-
-out/
 .idea/
 venv/
 __pycache__/
 
 text_models/saved
 text_models/pretrained
-data/
+
+data/docs
+data/csv
+data/logs
+
 results/
 
 .ipynb_checkpoints/

@@ -2,6 +2,7 @@ import tempfile
 
 import numpy as np
 import torch
+from deprecated import deprecated
 from gensim.test.utils import get_tmpfile
 from tokenizers import BertWordPieceTokenizer
 from torch.utils.data import DataLoader
@@ -15,6 +16,7 @@ from text_models import AbstractModel
 from text_models.datasets import BertModelDataset, BertModelMLMDataset
 
 
+@deprecated("Will be removed in the future. Use BertSiameseModel with MLM task instead")
 class BertModelMLM(AbstractModel):
     def __init__(
         self,
@@ -28,9 +30,8 @@ class BertModelMLM(AbstractModel):
         device="cpu",
         seed=42,
         save_to_path="./",
-        models_suffixes=None,
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path, models_suffixes)
+        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         self.tokenizer = None
         self.device = torch.device(device)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
@@ -42,7 +43,7 @@ class BertModelMLM(AbstractModel):
 
     name = "BERT"
 
-    def train_from_scratch(self, corpus):
+    def train_task(self, corpus):
         train_sentences = [" ".join(doc) for doc in corpus]
         self.model, self.tokenizer = BertModelMLM.create_bert_model(train_sentences, self.tmp_file, self.max_len)
 
@@ -54,7 +55,7 @@ class BertModelMLM(AbstractModel):
         )
         self.__train(dataset)
 
-    def train_pretrained(self, corpus):
+    def train_pt_task(self, corpus):
         self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
         self.model = AutoModelForMaskedLM.from_pretrained(self.pretrained_model)
         sentences = [" ".join(sentence) for sentence in corpus]
@@ -64,7 +65,10 @@ class BertModelMLM(AbstractModel):
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability)
         self.__train(dataset)
 
-    def train_finetuned(self, base_corpus, extra_corpus):
+    def train_doc_task(self, base_corpus, extra_corpus):
+        raise NotImplementedError()
+
+    def train_pt_doc_task(self, base_corpus, extra_corpus):
         sentences = [" ".join(sentence) for sentence in extra_corpus]
         inputs = self.tokenizer(
             sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"

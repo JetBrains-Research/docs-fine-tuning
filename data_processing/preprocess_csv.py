@@ -1,20 +1,28 @@
-import argparse
-import pandas as pd
-from omegaconf import OmegaConf
+import logging
+import os
+import tempfile
 
-from util import remove_noise, split_sentences
-from util import tokenize_and_normalize, CONFIG_PATH
+import pandas as pd
+
+from util import preprocess, load_config
 
 
 def main():
-    config = OmegaConf.load(CONFIG_PATH)
+    config = load_config()
+    if config.tmpdir is not None:
+        os.environ["TMPDIR"] = config.tmpdir
+        tempfile.tempdir = config.tmpdir
+
+    logging.basicConfig(
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+
     data = pd.read_csv(config.datasets.full)
 
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
-    data["description"] = data["description"].apply(remove_noise)
-    data["description"] = data["description"].apply(split_sentences)
-    data["description"] = data["description"].apply(tokenize_and_normalize)
+    data["description"] = data["description"].apply(preprocess)
     data = data.dropna(axis=0, subset=["description"])
     data = data.reset_index(drop=True)
 
@@ -24,12 +32,12 @@ def main():
     test = data.iloc[train_size:]
     test = test.reset_index(drop=True)
     test.to_csv(config.datasets.test, index=False)
-    print(f"Test size = {len(test.index)}")
+    logger.info(f"Test size = {len(test.index)}")
 
     train = data.iloc[:train_size]
     train = train.reset_index(drop=True)
     train.to_csv(config.datasets.train, index=False)
-    print(f"Train size = {len(train.index)}")
+    logger.info(f"Train size = {len(train.index)}")
 
 
 if __name__ == "__main__":

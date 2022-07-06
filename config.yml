@@ -1,22 +1,33 @@
-datasets:
-  full: data/csv/IDEA2020.csv
-  train: data/csv/train2020.csv
-  test: data/csv/test2020.csv
+dataset: idea # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
+tmpdir: null # if null default tmp directory will be used
+log_file: data/logs/log.txt # set null for stdout
 models_directory: text_models/saved
 docs_directory: data/docs
+docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
+model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK'] # supported training/evaluation types
 
-topns: [5, 10, 15, 20, 25]
-save_results: true
-save_graph: true
-results_path: ./results
 
-models_suffixes:
-  from_scratch: .model
-  pretrained: _pretrained.model
-  finetuned: _finetuned.model
+evaluation:
+  text_model: siamese # see available text models in the corresponding section
+  approach: simple # see available approaches in the corresponding section
+  topns: [1, 5, 10, 15, 20, 25]
+  save_results: true
+  save_graph: true
+  results_path: ./results
+
+  is_tasks_test: true # available only if siamese text model will be used
+
+
+approaches:
+  intersection:
+    min_count: 1
+
+  tf_idf:
+    weight: 0.7 # weight of tf-idf vectors similarity score in final score
+
 
 models:
   random:
@@ -58,7 +69,7 @@ models:
   sbert:
     vector_size: 300
     epochs: 2
-    batch_size: 16
+    batch_size: 8
     warmup_steps: 0.1 # share of train data
     max_len: 512
     tmp_file: null
@@ -67,15 +78,71 @@ models:
     pretrained_model: all-MiniLM-L6-v2
     seed: 42
     save_to_path: text_models/saved
+    
+  siamese:
+    vector_size: 300
+    epochs: 10
+    batch_size: 8
+    n_examples: all
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    warmup_rate: 0.1 # percent of training data
+    max_len: 512
+    task_loss: triplet  # 'triplet' or 'cossim'
+    finetuning_strategies: ['mlm', 'tsdae', 'sase'] # see available strategies in 'bert_tasks' section
+    pretrained_model: bert-base-uncased
+    evaluation_steps: 500
+    val_size: 0.1
+    tmp_file: null
+    device: cuda # 'cpu' or 'cuda'
+    start_train_from_task: false
+    seed: 42
+    save_to_path: text_models/saved
 
-approaches:
-  intersection:
-    min_count: 1
+    evaluator_config:
+      batch_size: 8
+      precision_recall_at_k: [1, 5, 10, 15, 20]
+      accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
+      map_at_k: [5, 10] # validation metric
 
-  tf_idf:
-    weight: 0.7 # weight of tf-idf vectors similarity score in final score
 
+bert_tasks:
+  mlm:
+    epochs: 10
+    batch_size: 8
+    eval_steps: 250
+    n_examples: all
+    mask_probability: 0.15
+    save_steps: 250
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
-evaluation:
-  text_model: random # see available text models in the corresponding section
-  approach: simple # see available approaches in the corresponding section
+  nsp:
+    epochs: 2
+    batch_size: 8
+    eval_steps: 250
+    n_examples: all
+    forget_const: 10
+    save_steps: 250
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+
+  sase:
+    epochs: 10
+    batch_size: 8
+    eval_steps: 250
+    n_examples: all
+    save_steps: 250
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+
+  sts:
+    epochs: 2
+    batch_size: 8
+    eval_steps: 250
+    n_examples: all
+    forget_const: 10
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+
+  tsdae:
+    epochs: 10
+    batch_size: 8
+    eval_steps: 250
+    n_examples: all
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
