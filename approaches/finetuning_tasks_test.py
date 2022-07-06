@@ -50,7 +50,7 @@ class FinetuningTasksTest(AbstractApproach):
             if doc_task_model is not None:
                 model_doc_task = BertSiameseModel.load(
                     os.path.join(
-                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.PT_DOC_TASK
+                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.DOC_TASK
                     )
                 )
                 task_doc_test_res = self.approach.evaluate(model_doc_task, topns)
@@ -60,7 +60,7 @@ class FinetuningTasksTest(AbstractApproach):
             if pt_doc_task_model is not None:
                 model_pt_doc_task = BertSiameseModel.load(
                     os.path.join(
-                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.DOC_TASK
+                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.PT_DOC_TASK
                     )
                 )
                 task_result = self.approach.evaluate(model_pt_doc_task, topns)
