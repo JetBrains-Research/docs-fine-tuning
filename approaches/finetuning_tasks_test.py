@@ -24,19 +24,17 @@ class FinetuningTasksTest(AbstractApproach):
 
     def evaluate_all(
         self,
-        from_scratch_model: AbstractModel,
-        pretrained_model: AbstractModel,
+        task_model: AbstractModel,
+        pt_task_model: AbstractModel,
         doc_task_model: AbstractModel,
-        finetuned_model: AbstractModel,
+        pt_doc_task_model: AbstractModel,
         topns: List[int],
         verbose: bool = True,
     ):
-        self.approach.evaluate_all(
-            from_scratch_model, pretrained_model, doc_task_model, finetuned_model, topns, verbose=False
-        )
+        self.approach.evaluate_all(task_model, pt_task_model, doc_task_model, pt_doc_task_model, topns, verbose=False)
         self.results_list = [self.approach.results]
 
-        if finetuned_model is None and doc_task_model is None:
+        if pt_doc_task_model is None and doc_task_model is None:
             return
 
         self.all_results = self.approach.results.copy()
@@ -49,17 +47,6 @@ class FinetuningTasksTest(AbstractApproach):
             task_name = self.tasks[i]
             res_copy = self.approach.results.copy()
 
-            if finetuned_model is not None:
-                model_finetuned = BertSiameseModel.load(
-                    os.path.join(
-                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.DOC_TASK
-                    )
-                )
-                task_result = self.approach.evaluate(model_finetuned, topns)
-                res_copy[TrainTypes.PT_DOC_TASK] = task_result
-                self.all_results[f"PT_DOC({self.tasks[i]})_TASK"] = task_result
-                self.results_list.append(res_copy)
-
             if doc_task_model is not None:
                 model_doc_task = BertSiameseModel.load(
                     os.path.join(
@@ -69,7 +56,18 @@ class FinetuningTasksTest(AbstractApproach):
                 task_doc_test_res = self.approach.evaluate(model_doc_task, topns)
                 res_copy[TrainTypes.DOC_TASK] = task_doc_test_res
                 self.all_results[f"DOC({self.tasks[i]})_TASK"] = task_doc_test_res
-                self.results_list.append(res_copy)
+
+            if pt_doc_task_model is not None:
+                model_pt_doc_task = BertSiameseModel.load(
+                    os.path.join(
+                        self.models_directory, BertSiameseModel.name + "_" + task_name + "_" + TrainTypes.DOC_TASK
+                    )
+                )
+                task_result = self.approach.evaluate(model_pt_doc_task, topns)
+                res_copy[TrainTypes.PT_DOC_TASK] = task_result
+                self.all_results[f"PT_DOC({self.tasks[i]})_TASK"] = task_result
+
+            self.results_list.append(res_copy)
 
         if verbose:
             print(self.all_results)
@@ -77,7 +75,7 @@ class FinetuningTasksTest(AbstractApproach):
     def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
         for i, result in enumerate(self.results_list):
             self.results = result
-            super().save_results(save_to_path, model_name + "_" + self.tasks[int(i / 2)], plot)
+            super().save_results(save_to_path, model_name + "_" + self.tasks[i], plot)
 
         if self.all_results is not None:
             self.results = self.all_results

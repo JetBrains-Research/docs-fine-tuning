@@ -93,18 +93,16 @@ def main():
     else:
         raise ValueError(f"Text model ${cnf_eval.text_model} is not supported")
 
-    model_trained_from_scratch = None
-    model_pretrained = None
+    model_task = None
+    model_pt_task = None
     model_doc_task = None
-    model_finetuned = None
+    model_pt_doc_task = None
 
     if TrainTypes.TASK in config.model_types:
-        model_trained_from_scratch = model_type.load(
-            os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.TASK)
-        )
+        model_task = model_type.load(os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.TASK))
 
     if TrainTypes.PT_TASK in config.model_types:
-        model_pretrained = model_type.load(
+        model_pt_task = model_type.load(
             os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.PT_TASK)
         )
 
@@ -115,13 +113,11 @@ def main():
         )
 
     if TrainTypes.PT_DOC_TASK in config.model_types:
-        model_finetuned = model_type.load(
+        model_pt_doc_task = model_type.load(
             os.path.join(config.models_directory, model_type.name + task_name + "_" + TrainTypes.PT_DOC_TASK)
         )
 
-    evaluator.evaluate_all(
-        model_trained_from_scratch, model_pretrained, model_doc_task, model_finetuned, cnf_eval.topns
-    )
+    evaluator.evaluate_all(model_task, model_pt_task, model_doc_task, model_pt_doc_task, cnf_eval.topns)
     if cnf_eval.save_results:
         evaluator.save_results(cnf_eval.results_path, model_type.name, plot=cnf_eval.save_graph)
 

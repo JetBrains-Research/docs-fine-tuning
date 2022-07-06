@@ -29,19 +29,19 @@ class AbstractApproach(ABC):
 
     def evaluate_all(
         self,
-        from_scratch_model: AbstractModel,
-        pretrained_model: AbstractModel,
+        task_model: AbstractModel,
+        pt_task_model: AbstractModel,
         doc_task_model: AbstractModel,
-        finetuned_model: AbstractModel,
+        pt_doc_task_model: AbstractModel,
         topns: List[int],
         verbose: bool = True,
     ):
-        res_dict = {"topn": topns}
+        res_dict = {"k": topns}
         models_dict = {
-            TrainTypes.TASK: from_scratch_model,
-            TrainTypes.PT_TASK: pretrained_model,
+            TrainTypes.TASK: task_model,
+            TrainTypes.PT_TASK: pt_task_model,
             TrainTypes.DOC_TASK: doc_task_model,
-            TrainTypes.PT_DOC_TASK: finetuned_model,
+            TrainTypes.PT_DOC_TASK: pt_doc_task_model,
         }
         for name, model in models_dict.items():
             if model is not None:
@@ -61,12 +61,12 @@ class AbstractApproach(ABC):
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
         if plot:
             self.results.plot(
-                x="topn",
+                x="k",
                 kind="line",
                 marker="o",
                 figsize=(7, 5),
                 title=model_name,
-                ylabel="success rate",
+                ylabel="SuccessRate@k",
                 grid=True,
             )
             plt.savefig(os.path.join(save_to_path, model_name + ".png"))
