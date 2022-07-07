@@ -11,7 +11,7 @@ class FastTextModel(AbstractModel):
         vector_size: int = 300,
         epochs: int = 5,
         min_count: int = 1,
-        pretrained_model: str = None,
+        pretrained_model: str = "undefined",
         seed: int = 42,
         save_to_path: str = "./",
     ):

@@ -26,4 +26,4 @@ jobs:
           black . --check -l 120
       - name: Type checking
         run: |
-          mypy $(git ls-files '*.py')
+          mypy --ignore-missing-imports --install-types --non-interactive $(git ls-files '*.py')

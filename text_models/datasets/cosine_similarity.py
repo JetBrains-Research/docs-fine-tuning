@@ -17,10 +17,10 @@ class CosineSimilarityDataset(Dataset):
             np.random.shuffle(self.total_examples)
 
         self.n_examples = n_examples
-        if n_examples == "all" or len(self.total_examples) < n_examples:
+        if n_examples == "all" or len(self.total_examples) < int(n_examples):
             self.n_examples = len(self.total_examples)
         else:
-            self.total_examples = self.total_examples[:n_examples]
+            self.total_examples = self.total_examples[: int(n_examples)]
 
     def __getitem__(self, index):
         i, j = self.total_examples[index]

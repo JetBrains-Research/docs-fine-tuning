@@ -1,4 +1,5 @@
 import os.path
+from typing import Union
 
 from sentence_transformers import models, evaluation
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
@@ -17,7 +18,7 @@ class MaskedLMTask(AbstractTask):
         epochs: int = 2,
         batch_size: int = 16,
         eval_steps: int = 200,
-        n_examples: int = "all",
+        n_examples: Union[int, str] = "all",
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: int = 5000,

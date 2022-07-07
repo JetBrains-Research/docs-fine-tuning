@@ -20,6 +20,7 @@ CONFIG_PATH = "config.yml"
 Sentence = List[str]
 Section = List[Sentence]
 Corpus = List[Section]
+NumpyNaN = float
 
 
 def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Section, Corpus]:
@@ -29,12 +30,12 @@ def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Section, Co
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 
-def flatten(matrix: List[List[Any]]):
+def flatten(matrix: List[List[Any]]) -> List[Any]:
     return [item for sublist in matrix for item in sublist]
 
 
 def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Section, Corpus]:
-    result = []
+    result: Corpus = []
     for doc_name in docs_names:
         text = Path(doc_name).read_text()
         result = result + get_doc_sections(text)
@@ -46,19 +47,18 @@ def get_doc_sections(text: str) -> Corpus:
     sections = (
         [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
     )
-    sections = [get_doc_sentences(section) for section in sections]
-    return sections
+    return [get_doc_sentences(section) for section in sections]
 
 
 def get_doc_sentences(text: str) -> Section:
-    text = text.split(sep="], [")
-    text = [sent.split("', '") for sent in text]
-    for sent in text:
+    text_tmp_1 = text.split(sep="], [")
+    text_tmp = [sent.split("', '") for sent in text_tmp_1]
+    for sent in text_tmp:
         sent[0] = sent[0][1:]
         sent[-1] = sent[-1][:-1]
-    text[0][0] = text[0][0][2:]
-    text[-1][-1] = text[-1][-1][:-2]
-    return text
+    text_tmp[0][0] = text_tmp[0][0][2:]
+    text_tmp[-1][-1] = text_tmp[-1][-1][:-2]
+    return text_tmp
 
 
 def remove_noise(text: str) -> str:
@@ -68,8 +68,8 @@ def remove_noise(text: str) -> str:
     text = re.sub(r"\(.*?\)", " ", text)
     text = re.sub(r"\[.*]\)", " ", text)
     # remove non latin characters
-    text = text.encode("ascii", "ignore")
-    text = text.decode()
+    encoded_text = text.encode("ascii", "ignore")
+    text = encoded_text.decode()
     text = text.lower()
 
     text = re.sub("[‘’“”…]", " ", text)
@@ -83,7 +83,7 @@ def lemmatize(word: str) -> str:
     return WordNetLemmatizer().lemmatize(word, pos="v")
 
 
-def tokenize_and_normalize(sentences: List[str]) -> Section:
+def tokenize_and_normalize(sentences: List[str]) -> Union[Section, NumpyNaN]:
     result = []
     eng_stopwords = stopwords.words("english") + ["http", "https", "org", "use", "com"]
     for sentence in sentences:
@@ -99,7 +99,7 @@ def tokenize_and_normalize(sentences: List[str]) -> Section:
     return result
 
 
-def preprocess(text: str) -> Section:
+def preprocess(text: str) -> Union[Section, NumpyNaN]:
     text = remove_noise(text)
     sentences = split_sentences(text)
     tokenized = tokenize_and_normalize(sentences)

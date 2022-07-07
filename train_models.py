@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import tempfile
+
 import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
@@ -66,7 +67,7 @@ def main():
 
     train = pd.read_csv(config.datasets.train)
     train_corpus = get_corpus(train)
-    docs_corpus = get_docs_text(args.docs, sections=args.siamese)
+    docs_corpus = get_docs_text(args.docs, sections=True)
 
     if args.w2v:
         model = W2VModel(**config.models.word2vec)

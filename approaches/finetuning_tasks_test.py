@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import numpy as np
+import pandas as pd
 
 from approaches import AbstractApproach
 from text_models import AbstractModel, TrainTypes, BertSiameseModel
@@ -19,9 +20,6 @@ class FinetuningTasksTest(AbstractApproach):
         self.models_directory = models_directory
         self.approach = approach
 
-        self.all_results = None
-        self.results_list = None
-
     def evaluate_all(
         self,
         task_model: AbstractModel,
@@ -37,7 +35,7 @@ class FinetuningTasksTest(AbstractApproach):
         if pt_doc_task_model is None and doc_task_model is None:
             return
 
-        self.all_results = self.approach.results.copy()
+        self.all_results: pd.DataFrame = self.approach.results.copy()  # type: ignore
         self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT_DOC({self.tasks[0]})_TASK"}, inplace=True)
         self.all_results.rename(columns={TrainTypes.DOC_TASK: f"DOC({self.tasks[0]})_TASK"}, inplace=True)
 
@@ -45,7 +43,7 @@ class FinetuningTasksTest(AbstractApproach):
         # with the self.approach.evaluate_all() method call above
         for i in range(1, len(self.tasks)):
             task_name = self.tasks[i]
-            res_copy = self.approach.results.copy()
+            res_copy = self.approach.results.copy()  # type: ignore
 
             if doc_task_model is not None:
                 model_doc_task = BertSiameseModel.load(

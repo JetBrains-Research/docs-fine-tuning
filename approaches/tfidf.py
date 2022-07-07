@@ -12,10 +12,6 @@ class TfIdfApproach(AbstractApproach):
         super(TfIdfApproach, self).__init__(train, test)
         self.w = w
 
-        self.tf_idf = None
-        self.train_tfidf_vectors = None
-        self.test_tfidf_vectors = None
-
     def setup_approach(self):
         self.tf_idf = TfidfVectorizer(use_idf=True)
         train_corpus_tf_idf = [" ".join(doc) for doc in self.train_corpus]

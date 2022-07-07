@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional, Union, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,14 +18,12 @@ class AbstractApproach(ABC):
         self.train["id_num"] = np.arange(len(self.train.index))
         self.test["id_num"] = np.arange(len(self.test.index))
 
-        self.train_corpus = get_corpus(train)
-        self.test_corpus = get_corpus(test)
+        self.train_corpus: List = get_corpus(train)
+        self.test_corpus: List = get_corpus(test)
 
-        self.embeddings = None
-        self.test_embs = None
-        self.results = None
-        self.test_size = None
-        self.true_positive = None
+        self.results: Optional[pd.DataFrame] = None
+        self.test_size: Optional[int] = None
+        self.true_positive: Optional[np.ndarray] = None
 
     def evaluate_all(
         self,
@@ -36,7 +34,7 @@ class AbstractApproach(ABC):
         topns: List[int],
         verbose: bool = True,
     ):
-        res_dict = {"k": topns}
+        res_dict: Dict[str, Union[np.ndarray, List[int]]] = {"k": topns}
         models_dict = {
             TrainTypes.TASK: task_model,
             TrainTypes.PT_TASK: pt_task_model,
@@ -93,9 +91,6 @@ class AbstractApproach(ABC):
             self.update_history(query_report.id_num)
 
         self.test.apply(eval_sample, axis=1)
-
-        self.embeddings = None
-        self.test_embs = None
 
         return self.true_positive / self.test_size
 

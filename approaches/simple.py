@@ -8,7 +8,7 @@ class SimpleApproach(AbstractApproach):
     def setup_approach(self):
         self.index = faiss.IndexFlatIP(self.embeddings.shape[1])
         faiss.normalize_L2(self.embeddings)
-        self.index.add(self.embeddings)
+        self.index.add(self.embeddings)  # type: ignore
 
     def get_duplicated_ids(self, query_num: int, topn: int) -> np.ndarray:
         return self.index.search(self.test_embs[query_num].reshape(1, -1), topn)[1][0]

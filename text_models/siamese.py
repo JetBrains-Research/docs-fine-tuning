@@ -3,6 +3,7 @@ import tempfile
 from typing import List, Union
 
 import numpy as np
+import torch.utils.data
 from gensim.test.utils import get_tmpfile
 from omegaconf import DictConfig, ListConfig
 from sentence_transformers import SentenceTransformer
@@ -58,11 +59,8 @@ class BertSiameseModel(AbstractModel):
         self.evaluator_config = evaluator_config
         self.start_train_from_task = start_train_from_task
 
-        self.task_dataset = None
-        self.evaluator = None
         self.vocab_size = None
         self.tokenizer = None
-        self.warmup_steps = None
 
         if corpus is not None and disc_ids is not None:
             sentences = [" ".join(doc) for doc in corpus]
@@ -78,13 +76,11 @@ class BertSiameseModel(AbstractModel):
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
 
-            self.n_examples = n_examples
-            if n_examples == "all":
-                self.n_examples = len(self.task_dataset)
+            self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
 
         if cnf_tasks is not None:
-            self.finetuning_strategies = [tasks[name](**cnf_tasks[name]) for name in finetuning_strategies]
+            self.finetuning_strategies = [tasks[name](**cnf_tasks[name]) for name in finetuning_strategies]  # type: ignore
 
     name = "BERT_SIAMESE"
 
@@ -146,7 +142,7 @@ class BertSiameseModel(AbstractModel):
 
     def __train_finetuned_on_task(
         self,
-        extra_corpus: List[List[List[str]]],
+        extra_corpus: Corpus,
         finetuning_task: AbstractTask,
         pretrained_model: str,
         save_to_path_suffix: str,
@@ -170,7 +166,7 @@ class BertSiameseModel(AbstractModel):
         if not self.save_best_model:
             self.save(save_to_dir)
 
-    def __get_dataset(self, corpus, disc_ids, n_examples):
+    def __get_dataset(self, corpus, disc_ids, n_examples) -> torch.utils.data.Dataset:
         if self.loss == "cossim":
             return CosineSimilarityDataset(corpus, disc_ids, n_examples, shuffle=True)
         if self.loss == "triplet":
@@ -191,7 +187,7 @@ class BertSiameseModel(AbstractModel):
             corpus,
             relevant_docs,
             main_score_function="cos_sim",
-            score_functions={"cos_sim": cos_sim},
+            score_functions={"cos_sim": cos_sim},  # type: ignore
             **self.evaluator_config,
         )
 
@@ -228,7 +224,7 @@ class BertSiameseModel(AbstractModel):
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
 
     def get_embeddings(self, corpus: Section):
-        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)
+        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)  # type: ignore
 
     def get_doc_embedding(self, doc: List[str]):
         return self.get_embeddings([doc])[0]

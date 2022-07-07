@@ -25,5 +25,5 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
-        corpus = sections_to_sentences(corpus)
-        return NextSentenceDataset(corpus, tokenizer, self.n_examples, max_len, self.forget_const)
+        sentences = sections_to_sentences(corpus)
+        return NextSentenceDataset(sentences, tokenizer, self.n_examples, max_len, self.forget_const)

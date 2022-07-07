@@ -29,7 +29,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         if self.n_examples == "all":
             self.n_examples = len(corpus)
 
-        train_dataset = DenoisingAutoEncoderDataset(corpus[: self.n_examples])
+        train_dataset = DenoisingAutoEncoderDataset(corpus[: int(self.n_examples)])
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
 
         train_loss = losses.DenoisingAutoEncoderLoss(

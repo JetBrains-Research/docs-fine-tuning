@@ -81,4 +81,4 @@ class DocsPreprocessor:
         return result
 
     def __should_preprocess(self, file_name: str) -> bool:
-        return np.any([file_name.endswith(extension) for extension in self.extensions])
+        return any([file_name.endswith(extension) for extension in self.extensions])
