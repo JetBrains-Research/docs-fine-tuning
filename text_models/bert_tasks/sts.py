@@ -10,6 +10,18 @@ from text_models.bert_tasks import AbstractTask
 
 
 class STSTask(AbstractTask):
+    """
+    Semantic Textual Similarity Task. We assume that two adjacent sentences are similar in meaning.
+
+    :param epochs: Number of fine-tuning epochs
+    :param batch_size: Batch size used for fine-tuning
+    :param eval_steps: Number of update steps between two evaluations
+    :param n_examples: Number of input examples that will be used for fine-tuning
+    :param save_best_model: Whether or not to save the best model found during training at the end of training
+    :param warmup_steps: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
+    :param forget_const: Negative example is chosen as a random sentence in range [(i + forget_const)..len(corpus))
+    """
+
     name = "sts"
 
     def __init__(

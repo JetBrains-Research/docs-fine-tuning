@@ -4,6 +4,13 @@ from torch.utils.data import Dataset
 
 
 class BertModelDataset(Dataset):
+    """
+    Dataset for BERT model computations.
+
+    :param encodings: BERT tokenizer results
+    :param n_examples: Number of examples used in dataset
+    """
+
     def __init__(self, encodings, n_examples: Union[str, int] = "all"):
         self.encodings = encodings
 

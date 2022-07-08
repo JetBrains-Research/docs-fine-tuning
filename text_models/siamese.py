@@ -22,6 +22,32 @@ from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
 class BertSiameseModel(AbstractModel):
+    """
+    Text Transformer-Based model, that can be fine-tuned on docs through various tasks and can also be used to map sentences / text to embeddings.
+    Model uses Siamese Neural Network (SNN) architecture for the task of finding duplicate bug reports.
+
+    :param corpus: Corpus of bug descriptions for dataset building
+    :param disc_ids: List where position i is the id of the oldest bug report that is a duplicate of i-th bug report
+    :param finetuning_strategies: List of fine-tuning tasks that will be used for fine-tuning on docs
+    :param cnf_tasks: Configuration for fine-tuning tasks
+    :param vector_size: The size of embedding vector
+    :param epochs: Number of train epochs
+    :param batch_size: Batch size used for SNN training
+    :param n_examples: Number of bug report pairs that will be used for SNN training
+    :param max_len: max_length parameter of tokenizer
+    :param warmup_rate: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
+    :param evaluation_steps: Number of update steps between two evaluations
+    :param evaluation_config: Configuration for the evaluator
+    :param val_size: Ratio of total training examples used for validation dataset
+    :param task_loss: The loss function for SNN. Possible values: "cossim", "triplet"
+    :param pretrained_model: The name of pretrained text model
+    :param start_train_from_task: If True then fine-tuning on docs step will be skipped and fine-tuned model from save_to_path will be used to train SNN as pre-trained model.
+    :param device: What device will be used for training. Possible values: "cpu", "cuda".
+    :param save_best_model: Whether or not to save the best model found during training at the end of training.
+    :param seed: Random seed
+    :param save_to_path: Where the trained model should be saved
+    """
+
     def __init__(
         self,
         corpus: Section = None,

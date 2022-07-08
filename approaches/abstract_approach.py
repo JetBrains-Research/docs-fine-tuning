@@ -11,6 +11,14 @@ from text_models import AbstractModel, TrainTypes
 
 
 class AbstractApproach(ABC):
+    """
+    Base class for all approaches to solving the problem of finding duplicate bug reports.
+    This class also evaluates final metrics for all text models.
+
+    :param train: Train dataset
+    :param test: Test dataset
+    """
+
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
         self.train = train
         self.test = test
@@ -34,6 +42,17 @@ class AbstractApproach(ABC):
         topns: List[int],
         verbose: bool = True,
     ):
+        """
+        Evaluate all models trained in different ways.
+
+        :param task_model: Model trained from scratch on the final task
+        :param pt_task_model: Model trained on the final task using pre-trained model
+        :param doc_task_model: Model trained from scratch on docs and then train on the final task
+        :param pt_doc_task_model: Model trained on docs using a pre-trained model and then train on the task
+        :param topns: What number of the most similar bug reports according to the model will be used in the evaluation
+        :param verbose: Should evaluation logs be verbose or not
+        """
+
         res_dict: Dict[str, Union[np.ndarray, List[int]]] = {"k": topns}
         models_dict = {
             TrainTypes.TASK: task_model,
@@ -51,6 +70,13 @@ class AbstractApproach(ABC):
             print(self.results)
 
     def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
+        """
+        Save the final metrics to disk in the CSV format
+
+        :param save_to_path: Path on disk
+        :param model_name: The name of the text model that was used in the evaluation
+        :param plot: Should draw a plot or not
+        """
         if self.results is None:
             raise ValueError("No results to save")
 
@@ -70,6 +96,13 @@ class AbstractApproach(ABC):
             plt.savefig(os.path.join(save_to_path, model_name + ".png"))
 
     def evaluate(self, model: AbstractModel, topns: List[int]) -> np.ndarray:
+        """
+        Evaluate model.
+
+        :param model: Evaluation model
+        :param topns: What number of the most similar bug reports according to the model will be used in the evaluation
+        :return: SuccessRate@n for all topns from topns parameter.
+        """
         if model is None:
             return np.zeros(len(topns))
 

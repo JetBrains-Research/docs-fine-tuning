@@ -5,6 +5,10 @@ from approaches import AbstractApproach
 
 
 class SimpleApproach(AbstractApproach):
+    """
+    Default Approach where bug report embedding is its description embedding.
+    """
+
     def setup_approach(self):
         self.index = faiss.IndexFlatIP(self.embeddings.shape[1])
         faiss.normalize_L2(self.embeddings)

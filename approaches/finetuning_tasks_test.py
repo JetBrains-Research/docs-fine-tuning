@@ -9,6 +9,14 @@ from text_models import AbstractModel, TrainTypes, BertSiameseModel
 
 
 class FinetuningTasksTest(AbstractApproach):
+    """
+    The approach to evaluate all fine-tuning tasks for a transformer-based model (BertSiameseModel).
+
+    :param approach: Base approach
+    :param tasks: Tasks to evaluate
+    :param models_directory: path on disk where trained models are stored
+    """
+
     def __init__(
         self,
         approach: AbstractApproach,

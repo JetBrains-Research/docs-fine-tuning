@@ -10,16 +10,27 @@ from text_models.abstract_model import AbstractModel
 
 
 class RandomEmbeddingModel(AbstractModel):
+    """
+    Baseline text model that map every word to random embedding
+
+    :param train_corpus: Sentences from which random embeddings will be generated
+    :param vector_size: The size of embedding vector
+    :param min_count: Ignores all words with total frequency lower than this
+    :param seed: Random seed
+    :param rand_by_w2v: Use dumb Word2Vec model to generate random embeddings
+    :param save_to_path: Where the trained model should be saved
+    """
+
     def __init__(
         self,
         train_corpus: Optional[Section] = None,
         vector_size: int = 300,
         min_count: int = 1,
-        random_seed: int = 42,
+        seed: int = 42,
         rand_by_w2v: bool = False,
         save_to_path: str = "./",
     ):
-        super().__init__(vector_size=vector_size, seed=random_seed, save_to_path=save_to_path)
+        super().__init__(vector_size=vector_size, seed=seed, save_to_path=save_to_path)
         self.min_count = min_count
 
         if train_corpus is None:
@@ -31,7 +42,7 @@ class RandomEmbeddingModel(AbstractModel):
 
         dumb_w2v = None
         if rand_by_w2v:
-            dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=random_seed, min_count=self.min_count)
+            dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=seed, min_count=self.min_count)
             dumb_w2v.build_vocab(train_corpus)
 
         self.model = {}

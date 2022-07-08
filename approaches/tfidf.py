@@ -8,7 +8,16 @@ from approaches import AbstractApproach
 
 
 class TfIdfApproach(AbstractApproach):
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame, w: int):
+    """
+    We build a term frequency-inverse document frequency(TF-IDF) matrix and take the sum of the metrics for text model
+    embeddings and TF-IDF embeddings with coefficients w and (1 − w) as the final similarity metric.
+
+    :param train: Train dataset
+    :param test: Test dataset
+    :param w: The weight of the text model embedding in similarity metric.
+    """
+
+    def __init__(self, train: pd.DataFrame, test: pd.DataFrame, w: float = 0.3):
         super(TfIdfApproach, self).__init__(train, test)
         self.w = w
 

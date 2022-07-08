@@ -16,6 +16,16 @@ class TrainTypes:
 
 
 class AbstractModel(ABC):
+    """
+    Base class for all text models, that can be fine-tuned on docs and can also be used to map sentences / text to embeddings.
+
+    :param vector_size: the size of embedding vector
+    :param epochs: the number of train epochs
+    :param pretrained_model: the name of pretrained text model
+    :param seed: random seed
+    :param save_to_path: where the trained model should be saved
+    """
+
     name = "abstract"
 
     def __init__(
@@ -37,19 +47,47 @@ class AbstractModel(ABC):
 
     @abstractmethod
     def train_task(self, corpus: Section):
+        """
+        Train from scratch on the task of finding duplicate bug reports
+
+        :param corpus: corpus of bug report descriptions
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def train_pt_task(self, corpus: Section):
+        """
+        Train on the task of finding duplicate bug reports using a pre-trained text model.
+
+        :param corpus: corpus of bug report descriptions
+        """
         raise NotImplementedError()
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
+        """
+        Train from scratch on docs and then train on the task of finding duplicate bug reports.
+
+        :param base_corpus: corpus of bug report descriptions
+        :param extra_corpus: corpus of text artefacts
+        """
         self.train_task(base_corpus + flatten(extra_corpus))  # type: ignore
 
     def train_pt_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
+        """
+        Train on docs using a pre-trained model and then train on the task of finding duplicate bug reports.
+
+        :param base_corpus: corpus of bug report descriptions
+        :param extra_corpus: corpus of text artefacts
+        """
         self.train_pt_task(base_corpus + flatten(extra_corpus))  # type: ignore
 
     def get_doc_embedding(self, doc: List[str]) -> np.ndarray:
+        """
+        Map one sentence/text to embedding
+
+        :param doc: tokenized sentence/text
+        :return: embedding
+        """
         result = np.zeros(self.vector_size)
         size = 0
         for word in doc:
@@ -59,17 +97,40 @@ class AbstractModel(ABC):
         return result if size == 0 else result / size
 
     def get_embeddings(self, corpus: Section) -> np.ndarray:
+        """
+        Map corpus of sentences to embeddings
+
+        :param corpus: tokenized sentences
+        :return: embeddings
+        """
         return np.array([self.get_doc_embedding(report) for report in corpus], dtype=np.float32)
 
     @classmethod
     def load(cls, path: str):
+        """
+        Loads model
+
+        :param path: path on disk
+        :return: AbstractModel that can be used to encode sentences / text
+        """
         raise NotImplementedError()
 
     def save(self, path: str):
+        """
+        Saves model
+
+        :param path: Path on disk
+        """
         self.model.save(path)  # type: ignore
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
+        """
+        Trains the model in various ways and save each resulting model.
 
+        :param base_corpus: corpus of bug report descriptions
+        :param extra_corpus: corpus of text artefacts
+        :param model_types_to_train: list of training types
+        """
         if TrainTypes.TASK in model_types_to_train:
             self.train_task(base_corpus)
             self.logger.info(f"Train TASK {self.name} SUCCESS")

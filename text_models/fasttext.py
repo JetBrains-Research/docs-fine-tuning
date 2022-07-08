@@ -6,6 +6,17 @@ from text_models.abstract_model import AbstractModel
 
 
 class FastTextModel(AbstractModel):
+    """
+    FastText model, that can be fine-tuned on docs and can also be used to map sentences / text to embeddings.
+
+    :param vector_size: The size of embedding vector
+    :param epochs: The number of train epochs
+    :param min_count: Ignores all words with total frequency lower than this
+    :param pretrained_model: The name of pretrained text model
+    :param seed: Random seed
+    :param save_to_path: Where the trained model should be saved
+    """
+
     def __init__(
         self,
         vector_size: int = 300,

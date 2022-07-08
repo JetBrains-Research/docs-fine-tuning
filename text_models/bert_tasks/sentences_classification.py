@@ -19,6 +19,17 @@ from text_models.bert_tasks.eval_trainer import IREvalTrainer
 
 
 class SentencesClassificationTask(AbstractTask):
+    """
+    Base class for all sentence classification tasks.
+
+    :param epochs: Number of fine-tuning epochs
+    :param batch_size: Batch size used for fine-tuning
+    :param eval_steps: Number of update steps between two evaluations
+    :param n_examples: Number of input examples that will be used for fine-tuning
+    :param save_best_model: Whether or not to save the best model found during training at the end of training
+    :param save_steps: Number of updates steps before two checkpoint saves
+    """
+
     name = "abstract_sentence_classification"
 
     def __init__(

@@ -7,6 +7,12 @@ from text_models.datasets import SameSectionDataset
 
 
 class SameSectionTask(SentencesClassificationTask):
+    """
+    Same Section (SaSe) Task.
+
+    SaSe is a slight modification of the Next Sentence Prediction task, where negative examples are taken only from different sections of the documentation.
+    """
+
     name = "sase"
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

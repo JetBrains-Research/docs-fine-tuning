@@ -9,6 +9,10 @@ from text_models.bert_tasks import AbstractTask
 
 
 class TSDenoisingAutoEncoderTask(AbstractTask):
+    """
+    Transformer-based Denoising AutoEncoder.
+    """
+
     name = "tsdae"
 
     def finetune_on_docs(
