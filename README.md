@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-![CI](https://github.com/Readrid/aug-text-to-sql/actions/workflows/ubuntu-python.yml/badge.svg)
+![CI](https://github.com/JetBrains-Research/docs-fine-tuning/actions/workflows/ubuntu-python.yml/badge.svg)
 
 
 This repository contains a machine learning pipeline for solving the problem of finding duplicate bug reports 
