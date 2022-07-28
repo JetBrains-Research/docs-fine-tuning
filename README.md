@@ -8,11 +8,11 @@
 This repository contains a machine learning pipeline for solving the problem of finding duplicate bug reports 
 using text models trained on the documentation of the corresponding projects. 
 
-You can see available text models and solution approaches in `config.yml`.
+You can see available text models and solution approaches in [`config.yml`](config.yml).
 
 ## Data Preparation
 
-To use this pipeline, your data must look like this 
+To use this pipeline, your data should be in csv format and must look like this 
 
 | id | ... |  description  | ... | disc_id |
 |----|-----|:-------------:|-----|:-------:|
@@ -21,7 +21,7 @@ To use this pipeline, your data must look like this
 
 where **disc_id** is the id of the oldest duplicate bug report.
 
-You can configure your dataset paths with `data/datasets_config.yml` and select them in `config.yml`.
+You can configure your dataset paths with [`data/datasets_config.yml`](data/datasets_config.yml) and select them in [`config.yml`](config.yml).
 To preprocess your csv data, use this command:
 
 ```shell
@@ -42,7 +42,7 @@ There are 4 training approaches available:
 * **DOC+TASK**: train from scratch on docs and then train on the task of finding duplicate bug reports
 * **PT+DOC+TASK**: train **DOC+TASK** using a pre-trained text model
 
-You can configure training approaches and models with `config.yml`.
+You can configure training approaches and models with [`config.yml`](config.yml).
 
 To run training, use this command:
 
@@ -58,4 +58,4 @@ To calculate quality metrics, use this command:
 $ python evaluation.py
 ```
 
-You can configure the results' path with `config.yml`. 
+You can configure the results' path with [`config.yml`](config.yml). 
