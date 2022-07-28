@@ -9,6 +9,17 @@ from text_models.datasets import BertModelDataset
 
 
 class SameSectionDataset(BertModelDataset):
+    """
+    Dataset for BERT model computations on Same Section (SaSe) task.
+
+    SaSe is a slight modification of the Next Sentence Prediction task, where negative examples are taken only from different sections of the documentation.
+
+    :param corpus: Corpus of documentation sections
+    :param tokenizer: Tokenizer that will be used to tokenize bug report descriptions
+    :param n_examples: Number of examples used in dataset
+    :param max_len: max_length parameter of tokenizer
+    """
+
     def __init__(
         self,
         sections: List[List[str]],

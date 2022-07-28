@@ -9,6 +9,16 @@ from text_models.datasets import BertModelDataset
 
 
 class NextSentenceDataset(BertModelDataset):
+    """
+    Dataset for BERT model computations on Next Sentence Prediction (NSP) task.
+
+    :param corpus: Corpus of sentences
+    :param tokenizer: Tokenizer that will be used to tokenize bug report descriptions
+    :param n_examples: Number of examples used in dataset
+    :param max_len: max_length parameter of tokenizer
+    :param forget_const: Negative example is chosen as a random sentence in range 0..len(corpus) excluding [i - forget_const, i + forget_const]
+    """
+
     def __init__(
         self,
         corpus: List[str],

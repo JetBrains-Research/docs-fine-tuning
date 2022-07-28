@@ -23,3 +23,6 @@ jobs:
       - name: Lint with Black
         run: |
           black . --check -l 120
+      - name: Type checking
+        run: |
+          mypy --ignore-missing-imports --install-types --non-interactive $(git ls-files '*.py')

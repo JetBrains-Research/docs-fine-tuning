@@ -7,6 +7,14 @@ from text_models import AbstractModel
 
 
 class IntersectionApproach(AbstractApproach):
+    """
+    Bug reports are considered most similar if they have the highest number of identical words.
+
+    :param train: Train dataset
+    :param test: Test dataset
+    :param min_count: Ignores all words with total frequency lower than this
+    """
+
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame, min_count: int):
         super().__init__(train, test)
         self.min_count = min_count

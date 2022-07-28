@@ -7,6 +7,20 @@ from text_models.datasets import BertModelDataset
 
 
 class BertModelMLMDataset(BertModelDataset):
+    """
+    Dataset for BERT model computations on Masked Language Modeling (MLM) task.
+
+    Inherits from BertModelDataset.
+
+    :param encodings: BERT tokenizer results
+    :param mask_id: <MASK> token ID
+    :param cls_id: <CLS> token ID
+    :param sep_id: <SEP> token ID
+    :param pad_id: <PAD> token ID
+    :param mask_probability: Probability that some word will be replaced by a <MASK> token
+    :param n_examples: Number of examples used in dataset
+    """
+
     def __init__(
         self,
         encodings,

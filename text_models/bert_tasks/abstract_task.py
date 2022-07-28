@@ -7,6 +7,16 @@ from data_processing.util import Corpus
 
 
 class AbstractTask(ABC):
+    """
+    Base class for all fine-tuning tasks.
+
+    :param epochs: Number of fine-tuning epochs
+    :param batch_size: Batch size used for fine-tuning
+    :param eval_steps: Number of update steps between two evaluations
+    :param n_examples: Number of input examples that will be used for fine-tuning
+    :param save_best_model: Whether or not to save the best model found during training at the end of training.
+    """
+
     name = "abstract"
 
     def __init__(
@@ -33,8 +43,25 @@ class AbstractTask(ABC):
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
+        """
+        Load, fine-tune and save model.
+
+        :param pretrained_model: Path on disk or name of pre-trained model
+        :param docs_corpus: Corpus of documentation sections
+        :param evaluator: The Information Retrieval Evaluator for validation
+        :param max_len: max_length parameter of tokenizer
+        :param device: What device will be used for training. Possible values: "cpu", "cuda".
+        :param save_to_path: Where the fine-tuned model should be saved
+        :return: fine-tuned transformer-based model
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def load(self, load_from_path) -> models.Transformer:
+        """
+        Load fine-tuned model.
+
+        :param load_from_path: Path on disk
+        :return: fine-tuned transformer-based model
+        """
         raise NotImplementedError()

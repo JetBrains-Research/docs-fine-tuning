@@ -1,4 +1,5 @@
 import os.path
+from typing import Union
 
 from sentence_transformers import models, evaluation
 from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
@@ -10,6 +11,18 @@ from text_models.datasets import BertModelMLMDataset
 
 
 class MaskedLMTask(AbstractTask):
+    """
+    Masked Language Modeling task.
+
+    :param epochs: Number of fine-tuning epochs
+    :param batch_size: Batch size used for fine-tuning
+    :param eval_steps: Number of update steps between two evaluations
+    :param n_examples: Number of input examples that will be used for fine-tuning
+    :param save_best_model: Whether or not to save the best model found during training at the end of training
+    :param mask_probability: Probability that some word will be masked
+    :param save_steps: Number of updates steps before two checkpoint saves
+    """
+
     name = "mlm"
 
     def __init__(
@@ -17,7 +30,7 @@ class MaskedLMTask(AbstractTask):
         epochs: int = 2,
         batch_size: int = 16,
         eval_steps: int = 200,
-        n_examples: int = "all",
+        n_examples: Union[int, str] = "all",
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: int = 5000,

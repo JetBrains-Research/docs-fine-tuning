@@ -6,6 +6,15 @@ from torch.utils.data import Dataset
 
 
 class CosineSimilarityDataset(Dataset):
+    """
+    Dataset for Siamese Neural Network with Cosine Similarity Loss.
+
+    :param corpus: Corpus of bug report descriptions
+    :param disc_ids: List where position i is the id of the oldest bug report that is a duplicate of i-th bug report
+    :param n_examples: Number of examples used in dataset
+    :param suffle: Shuffle or not the resulting dataset
+    """
+
     def __init__(
         self, corpus: List[str], disc_ids: List[str], n_examples: Union[str, int] = "all", shuffle: bool = False
     ):
@@ -17,10 +26,10 @@ class CosineSimilarityDataset(Dataset):
             np.random.shuffle(self.total_examples)
 
         self.n_examples = n_examples
-        if n_examples == "all" or len(self.total_examples) < n_examples:
+        if n_examples == "all" or len(self.total_examples) < int(n_examples):
             self.n_examples = len(self.total_examples)
         else:
-            self.total_examples = self.total_examples[:n_examples]
+            self.total_examples = self.total_examples[: int(n_examples)]
 
     def __getitem__(self, index):
         i, j = self.total_examples[index]

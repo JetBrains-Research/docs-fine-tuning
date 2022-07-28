@@ -8,6 +8,18 @@ from text_models.abstract_model import AbstractModel
 
 
 class W2VModel(AbstractModel):
+    """
+    Word2Vec model, that can be fine-tuned on docs and can also be used to map sentences / text to embeddings.
+
+    :param vector_size: The size of embedding vector
+    :param epochs: The number of train epochs
+    :param min_count: Ignores all words with total frequency lower than this
+    :param pretrained_model: The name of pretrained text model
+    :param tmp_file: Temporary file that will be used to store the model for fine-tuning
+    :param seed: Random seed
+    :param save_to_path: Where the trained model should be saved
+    """
+
     name = "Word2Vec"
 
     def __init__(

@@ -9,6 +9,18 @@ from text_models.datasets import NextSentenceDataset
 
 
 class NextSentencePredictionTask(SentencesClassificationTask):
+    """
+    Next Sentence Prediction task.
+
+    :param epochs: Number of fine-tuning epochs
+    :param batch_size: Batch size used for fine-tuning
+    :param eval_steps: Number of update steps between two evaluations
+    :param n_examples: Number of input examples that will be used for fine-tuning
+    :param save_best_model: Whether or not to save the best model found during training at the end of training
+    :param forget_const: Negative example is chosen as a random sentence in range 0..len(corpus) excluding [i - forget_const, i + forget_const]
+    :param save_steps: Number of updates steps before two checkpoint saves
+    """
+
     name = "nsp"
 
     def __init__(
@@ -25,5 +37,5 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
-        corpus = sections_to_sentences(corpus)
-        return NextSentenceDataset(corpus, tokenizer, self.n_examples, max_len, self.forget_const)
+        sentences = sections_to_sentences(corpus)
+        return NextSentenceDataset(sentences, tokenizer, self.n_examples, max_len, self.forget_const)
