@@ -33,7 +33,7 @@ class TripletDataset(Dataset):
             if n_dupl <= 1:
                 continue
 
-            old_negs = dict()
+            old_negs: Dict[int, int] = dict()
             for i in range(n_dupl):
                 anchor = dupl_series[i]
                 for j in range(n_dupl):

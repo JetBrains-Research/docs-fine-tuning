@@ -23,10 +23,14 @@ Corpus = List[Section]
 NumpyNaN = float
 
 
-def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Section, Corpus]:
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Section:
+    def parse_list(str_list):
+        return [] if isinstance(str_list, float) else ast.literal_eval(str_list)
+
     corpus = []
-    for str_list in data["description"].tolist():
-        corpus.append(ast.literal_eval(str_list))
+    for summ, descr in zip(data.summary, data.description):
+        full_descr = parse_list(summ) + parse_list(descr)
+        corpus.append(full_descr)
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 

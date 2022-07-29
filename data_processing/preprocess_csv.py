@@ -20,10 +20,10 @@ def main():
 
     data = pd.read_csv(config.datasets.full)
 
-    data = data.dropna(axis=0, subset=["description"])
-    data = data.reset_index(drop=True)
-    data["description"] = data["description"].apply(preprocess)
-    data = data.dropna(axis=0, subset=["description"])
+    data["summary"] = data["summary"].map(preprocess, na_action="ignore")
+    data["description"] = data["description"].map(preprocess, na_action="ignore")
+
+    data = data[~(data.summary.isnull() & data.description.isnull())]
     data = data.reset_index(drop=True)
 
     data_size = len(data.index)
