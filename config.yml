@@ -34,7 +34,7 @@ models:
     vector_size: 300
     min_count: 1
     rand_by_w2v: false
-    random_seed: 42
+    seed: 42
     save_to_path: text_models/saved
 
   word2vec:
