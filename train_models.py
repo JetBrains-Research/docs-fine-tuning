@@ -6,7 +6,7 @@ import tempfile
 import pandas as pd
 
 from data_processing.util import get_corpus, get_docs_text, load_config
-from text_models import W2VModel, FastTextModel, BertModelMLM, SBertModel, BertSiameseModel
+from text_models import W2VModel, FastTextModel, BertSiameseModel
 
 
 # for python <=3.7 support
@@ -29,8 +29,6 @@ def parse_arguments():
     )
     parser.add_argument("--w2v", dest="w2v", action="store_true", help="Train and save word2vec model")
     parser.add_argument("--fasttext", dest="fasttext", action="store_true", help="Train and save fasttext model")
-    parser.add_argument("--bert", dest="bert", action="store_true", help="Train and save BERT model for MLM task.")
-    parser.add_argument("--sbert", dest="sbert", action="store_true", help="Train and save SBERT model for STS tasks.")
     parser.add_argument(
         "--siamese",
         dest="siamese",
@@ -75,14 +73,8 @@ def main():
     if args.fasttext:
         model = FastTextModel(**config.models.fasttext)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
-    if args.bert:
-        model = BertModelMLM(**config.models.bert)
-        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
     disc_ids = train["disc_id"].tolist()
-    if args.sbert:
-        model = SBertModel(train_corpus, disc_ids, **config.models.sbert)
-        model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
     if args.siamese:
         model = BertSiameseModel(train_corpus, disc_ids, config.bert_tasks, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)

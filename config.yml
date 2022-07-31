@@ -1,4 +1,4 @@
-dataset: idea # you can configure datasets with configs/datasets.yml
+dataset: kotlin # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
@@ -53,35 +53,10 @@ models:
     pretrained_model: text_models/pretrained/cc.en.300.bin # must match vector_size
     seed: 42
     save_to_path: text_models/saved
-
-  bert:
-    vector_size: 300
-    epochs: 2
-    batch_size: 16
-    mask_probability: 0.15
-    max_len: 512
-    tmp_file: null
-    pretrained_model: sentence-transformers/all-MiniLM-L6-v2
-    device: cpu # 'cuda' or 'cpu'
-    seed: 42
-    save_to_path: text_models/saved
-
-  sbert:
-    vector_size: 300
-    epochs: 2
-    batch_size: 8
-    warmup_steps: 0.1 # share of train data
-    max_len: 512
-    tmp_file: null
-    n_examples: 5000 # number of bug reports pairs for train
-    forget_const: 10
-    pretrained_model: all-MiniLM-L6-v2
-    seed: 42
-    save_to_path: text_models/saved
     
   siamese:
     vector_size: 300
-    epochs: 10
+    epochs: 8
     batch_size: 8
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
@@ -90,7 +65,7 @@ models:
     task_loss: triplet  # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae', 'sase'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
-    evaluation_steps: 500
+    evaluation_steps: 55
     val_size: 0.1
     tmp_file: null
     device: cuda # 'cpu' or 'cuda'
@@ -107,7 +82,7 @@ models:
 
 bert_tasks:
   mlm:
-    epochs: 10
+    epochs: 8
     batch_size: 8
     eval_steps: 250
     n_examples: all
@@ -125,7 +100,7 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sase:
-    epochs: 10
+    epochs: 8
     batch_size: 8
     eval_steps: 250
     n_examples: all
@@ -141,7 +116,7 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   tsdae:
-    epochs: 10
+    epochs: 8
     batch_size: 8
     eval_steps: 250
     n_examples: all

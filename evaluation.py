@@ -11,8 +11,6 @@ from data_processing.util import get_corpus, load_config
 from text_models import (
     W2VModel,
     FastTextModel,
-    BertModelMLM,
-    SBertModel,
     RandomEmbeddingModel,
     BertSiameseModel,
     TrainTypes,
@@ -85,10 +83,6 @@ def main():
         model_type = W2VModel
     elif cnf_eval.text_model == "fasttext":
         model_type = FastTextModel
-    elif cnf_eval.text_model == "bert":
-        model_type = BertModelMLM
-    elif cnf_eval.text_model == "sbert":
-        model_type = SBertModel
     elif cnf_eval.text_model == "siamese":
         model_type = BertSiameseModel
     else:
