@@ -22,6 +22,7 @@ class AbstractApproach(ABC):
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
         self.train = train
         self.test = test
+        self.relevant_reports_num = self.__get_relevant_reports_num()
 
         self.train["id_num"] = np.arange(len(self.train.index))
         self.test["id_num"] = np.arange(len(self.test.index))
@@ -90,7 +91,9 @@ class AbstractApproach(ABC):
             self.__plot_metric("MAP@k", model_name, save_to_path)
 
     def __plot_metric(self, metric_name, model_name, save_to_path):
-        metric_results = self.results.loc[:, self.results.columns.str.endswith(metric_name)]
+        metric_results = self.results.loc[:, self.results.columns.str.endswith(metric_name)].copy()
+        metric_results["k"] = self.results.k
+
         metric_results.plot(
             x="k",
             kind="line",
@@ -112,8 +115,7 @@ class AbstractApproach(ABC):
         """
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
-
-        self.relevant_reports_num = self.__get_relevant_reports_num()
+        self.train_copy = self.train.copy()
 
         self.setup_approach()
 
@@ -127,13 +129,13 @@ class AbstractApproach(ABC):
                 for i, topk in enumerate(topks):
 
                     self.true_positive_at_k[i] += np.any(
-                        self.train.iloc[dupl_ids[:topk]]["disc_id"] == query_report.disc_id
+                        self.train_copy.iloc[dupl_ids[:topk]]["disc_id"] == query_report.disc_id
                     )
 
                     sum_precisions = 0
                     num_correct = 0
                     for rank, dupl_id in enumerate(dupl_ids[:topk]):
-                        if query_report.disc_id == self.train.iloc[dupl_id]["disc_id"]:
+                        if query_report.disc_id == self.train_copy.iloc[dupl_id]["disc_id"]:
                             num_correct += 1
                             sum_precisions += num_correct / (rank + 1)
 
@@ -141,7 +143,7 @@ class AbstractApproach(ABC):
                     self.ave_precision_at_k[i] += ave_precision
 
                 self.test_size += 1
-            self.train = self.train.append(query_report, ignore_index=True)
+            self.train_copy = self.train_copy.append(query_report, ignore_index=True)
             self.update_history(query_report.id_num)
 
         self.test.apply(eval_sample, axis=1)
@@ -151,7 +153,6 @@ class AbstractApproach(ABC):
             "MAP@k": self.ave_precision_at_k / self.test_size,
         }
         return metrics
-        # return self.true_positive_at_k / self.test_size, self.ave_precision_at_k / self.test_size
 
     @abstractmethod
     def setup_approach(self):
