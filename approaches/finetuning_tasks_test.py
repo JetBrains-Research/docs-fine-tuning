@@ -44,8 +44,20 @@ class FinetuningTasksTest(AbstractApproach):
             return
 
         self.all_results: pd.DataFrame = self.approach.results.copy()  # type: ignore
-        self.all_results.rename(columns={TrainTypes.PT_DOC_TASK: f"PT_DOC({self.tasks[0]})_TASK"}, inplace=True)
-        self.all_results.rename(columns={TrainTypes.DOC_TASK: f"DOC({self.tasks[0]})_TASK"}, inplace=True)
+        self.all_results.rename(
+            columns={
+                TrainTypes.PT_DOC_TASK + "_SuccessRate@k": f"PT_DOC({self.tasks[0]})_TASK_SuccessRate@k",
+                TrainTypes.PT_DOC_TASK + "_MAP@k": f"PT_DOC({self.tasks[0]})_TASK_MAP@k",
+            },
+            inplace=True,
+        )
+        self.all_results.rename(
+            columns={
+                TrainTypes.DOC_TASK + "_SuccessRate@k": f"DOC({self.tasks[0]})_TASK_SuccessRate@k",
+                TrainTypes.DOC_TASK + "_MAP@k": f"DOC({self.tasks[0]})_TASK_MAP@k",
+            },
+            inplace=True,
+        )
 
         # we need to skip first task because we have already processed this task
         # with the self.approach.evaluate_all() method call above
@@ -60,8 +72,10 @@ class FinetuningTasksTest(AbstractApproach):
                     )
                 )
                 task_doc_test_res = self.approach.evaluate(model_doc_task, topns)
-                res_copy[TrainTypes.DOC_TASK] = task_doc_test_res
-                self.all_results[f"DOC({self.tasks[i]})_TASK"] = task_doc_test_res
+
+                for metric_name, values in task_doc_test_res.items():
+                    res_copy[TrainTypes.DOC_TASK + "_" + metric_name] = values
+                    self.all_results[f"DOC({self.tasks[i]})_TASK_" + metric_name] = values
 
             if pt_doc_task_model is not None:
                 model_pt_doc_task = BertSiameseModel.load(
@@ -70,8 +84,10 @@ class FinetuningTasksTest(AbstractApproach):
                     )
                 )
                 task_result = self.approach.evaluate(model_pt_doc_task, topns)
-                res_copy[TrainTypes.PT_DOC_TASK] = task_result
-                self.all_results[f"PT_DOC({self.tasks[i]})_TASK"] = task_result
+
+                for metric_name, values in task_result.items():
+                    res_copy[TrainTypes.PT_DOC_TASK + "_" + metric_name] = values
+                    self.all_results[f"PT_DOC({self.tasks[i]})_TASK_" + metric_name] = values
 
             self.results_list.append(res_copy)
 

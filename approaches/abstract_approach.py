@@ -31,7 +31,7 @@ class AbstractApproach(ABC):
 
         self.results: Optional[pd.DataFrame] = None
         self.test_size: Optional[int] = None
-        self.true_positive: Optional[np.ndarray] = None
+        self.true_positive_at_k: Optional[np.ndarray] = None
 
     def evaluate_all(
         self,
@@ -62,7 +62,9 @@ class AbstractApproach(ABC):
         }
         for name, model in models_dict.items():
             if model is not None:
-                res_dict[name] = self.evaluate(model, topns)
+                metrics = self.evaluate(model, topns)
+                for metric_name, values in metrics.items():
+                    res_dict[name + "_" + metric_name] = values
 
         self.results = pd.DataFrame.from_dict(res_dict)
 
@@ -84,48 +86,72 @@ class AbstractApproach(ABC):
 
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
         if plot:
-            self.results.plot(
-                x="k",
-                kind="line",
-                marker="o",
-                figsize=(7, 5),
-                title=model_name,
-                ylabel="SuccessRate@k",
-                grid=True,
-            )
-            plt.savefig(os.path.join(save_to_path, model_name + ".png"))
+            self.__plot_metric("SuccessRate@k", model_name, save_to_path)
+            self.__plot_metric("MAP@k", model_name, save_to_path)
 
-    def evaluate(self, model: AbstractModel, topns: List[int]) -> np.ndarray:
+    def __plot_metric(self, metric_name, model_name, save_to_path):
+        metric_results = self.results.loc[:, self.results.columns.str.endswith(metric_name)]
+        metric_results.plot(
+            x="k",
+            kind="line",
+            marker="o",
+            figsize=(7, 5),
+            title=model_name,
+            ylabel=metric_name,
+            grid=True,
+        )
+        plt.savefig(os.path.join(save_to_path, model_name + "_" + metric_name + ".png"))
+
+    def evaluate(self, model: AbstractModel, topks: List[int]) -> Dict[str, np.ndarray]:
         """
         Evaluate model.
 
         :param model: Evaluation model
-        :param topns: What number of the most similar bug reports according to the model will be used in the evaluation
+        :param topks: What number of the most similar bug reports according to the model will be used in the evaluation
         :return: SuccessRate@n for all topns from topns parameter.
         """
-        if model is None:
-            return np.zeros(len(topns))
-
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
+
+        self.relevant_reports_num = self.__get_relevant_reports_num()
 
         self.setup_approach()
 
         self.test_size = 0
-        self.true_positive = np.zeros(len(topns))
+        self.true_positive_at_k = np.zeros(len(topks))
+        self.ave_precision_at_k = np.zeros(len(topks))
 
         def eval_sample(query_report):
             if query_report.id != query_report.disc_id:  # not in master ids
-                dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topns))
-                for i, topn in enumerate(topns):
-                    self.true_positive[i] += np.any(self.train.iloc[dupl_ids[:topn]]["disc_id"] == query_report.disc_id)
+                dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topks))
+                for i, topk in enumerate(topks):
+
+                    self.true_positive_at_k[i] += np.any(
+                        self.train.iloc[dupl_ids[:topk]]["disc_id"] == query_report.disc_id
+                    )
+
+                    sum_precisions = 0
+                    num_correct = 0
+                    for rank, dupl_id in enumerate(dupl_ids[:topk]):
+                        if query_report.disc_id == self.train.iloc[dupl_id]["disc_id"]:
+                            num_correct += 1
+                            sum_precisions += num_correct / (rank + 1)
+
+                    ave_precision = sum_precisions / min(topk, self.relevant_reports_num[query_report.id])
+                    self.ave_precision_at_k[i] += ave_precision
+
                 self.test_size += 1
             self.train = self.train.append(query_report, ignore_index=True)
             self.update_history(query_report.id_num)
 
         self.test.apply(eval_sample, axis=1)
 
-        return self.true_positive / self.test_size
+        metrics = {
+            "SuccessRate@k": self.true_positive_at_k / self.test_size,
+            "MAP@k": self.ave_precision_at_k / self.test_size,
+        }
+        return metrics
+        # return self.true_positive_at_k / self.test_size, self.ave_precision_at_k / self.test_size
 
     @abstractmethod
     def setup_approach(self):
@@ -138,3 +164,21 @@ class AbstractApproach(ABC):
     @abstractmethod
     def update_history(self, query_num: int):
         raise NotImplementedError()
+
+    def __get_relevant_reports_num(self) -> Dict[str, int]:
+        result: Dict[str, int] = dict()
+
+        query_ids = self.test.id.tolist()
+        train_disc_ids = self.train.disc_id.tolist()
+        test_disc_ids = self.test.disc_id.tolist()
+
+        for i, query_id in enumerate(query_ids):
+            for train_disc_id in train_disc_ids:
+                if train_disc_id == test_disc_ids[i]:
+                    if query_id in result.keys():
+                        result[query_id] += 1
+                    else:
+                        result[query_id] = 1
+            train_disc_ids.append(test_disc_ids[i])
+
+        return result
