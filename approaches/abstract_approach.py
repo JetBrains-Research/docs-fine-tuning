@@ -97,7 +97,7 @@ class AbstractApproach(ABC):
         metric_results.plot(
             x="k",
             kind="line",
-            marker="o",
+            marker="v",
             figsize=(7, 5),
             title=model_name,
             ylabel=metric_name,
@@ -124,7 +124,7 @@ class AbstractApproach(ABC):
         self.ave_precision_at_k = np.zeros(len(topks))
 
         def eval_sample(query_report):
-            if query_report.id != query_report.disc_id:  # not in master ids
+            if query_report.id != query_report.disc_id and self.relevant_reports_num.get(query_report.id, 0) > 0:  # is duplicate
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topks))
                 for i, topk in enumerate(topks):
 
