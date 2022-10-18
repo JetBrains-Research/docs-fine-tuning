@@ -23,7 +23,7 @@ def main():
     data["summary"] = data["summary"].map(preprocess, na_action="ignore")
     data["description"] = data["description"].map(preprocess, na_action="ignore")
 
-    data = data[~(data.summary.isnull() & data.description.isnull())]
+    data = data[data.summary.notnull() | data.description.notnull()]
     data = data.reset_index(drop=True)
 
     data_size = len(data.index)

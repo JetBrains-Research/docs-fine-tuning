@@ -1,6 +1,8 @@
+import collections
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union, Dict
+from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -121,11 +123,11 @@ class AbstractApproach(ABC):
 
         self.test_size = 0
         self.true_positive_at_k = np.zeros(len(topks))
-        self.ave_precision_at_k = np.zeros(len(topks))
+        self.avg_precision_at_k = np.zeros(len(topks))
 
         def eval_sample(query_report):
             if (
-                query_report.id != query_report.disc_id and self.relevant_reports_num.get(query_report.id, 0) > 0
+                query_report.id != query_report.disc_id and self.relevant_reports_num[query_report.id] > 0
             ):  # is duplicate
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topks))
                 for i, topk in enumerate(topks):
@@ -141,8 +143,8 @@ class AbstractApproach(ABC):
                             num_correct += 1
                             sum_precisions += num_correct / (rank + 1)
 
-                    ave_precision = sum_precisions / min(topk, self.relevant_reports_num[query_report.id])
-                    self.ave_precision_at_k[i] += ave_precision
+                    avg_precision = sum_precisions / min(topk, self.relevant_reports_num[query_report.id])
+                    self.avg_precision_at_k[i] += avg_precision
 
                 self.test_size += 1
             self.train_copy = self.train_copy.append(query_report, ignore_index=True)
@@ -152,7 +154,7 @@ class AbstractApproach(ABC):
 
         metrics = {
             "SuccessRate@k": self.true_positive_at_k / self.test_size,
-            "MAP@k": self.ave_precision_at_k / self.test_size,
+            "MAP@k": self.avg_precision_at_k / self.test_size,
         }
         return metrics
 
@@ -168,8 +170,8 @@ class AbstractApproach(ABC):
     def update_history(self, query_num: int):
         raise NotImplementedError()
 
-    def __get_relevant_reports_num(self) -> Dict[str, int]:
-        result: Dict[str, int] = dict()
+    def __get_relevant_reports_num(self) -> Counter:
+        result: Counter = Counter()
 
         query_ids = self.test.id.tolist()
         train_disc_ids = self.train.disc_id.tolist()
@@ -177,11 +179,7 @@ class AbstractApproach(ABC):
 
         for i, query_id in enumerate(query_ids):
             for train_disc_id in train_disc_ids:
-                if train_disc_id == test_disc_ids[i]:
-                    if query_id in result.keys():
-                        result[query_id] += 1
-                    else:
-                        result[query_id] = 1
+                result[query_id] += train_disc_id == test_disc_ids[i]
             train_disc_ids.append(test_disc_ids[i])
 
         return result

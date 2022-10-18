@@ -27,10 +27,7 @@ def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Section:
     def parse_list(str_list):
         return [] if isinstance(str_list, float) else ast.literal_eval(str_list)
 
-    corpus = []
-    for summ, descr in zip(data.summary, data.description):
-        full_descr = parse_list(summ) + parse_list(descr)
-        corpus.append(full_descr)
+    corpus = [parse_list(summ) + parse_list(descr) for summ, descr in zip(data.summary, data.description)]
     return flatten(corpus) if sentences else list(map(flatten, corpus))
 
 
