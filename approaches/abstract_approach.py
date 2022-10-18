@@ -173,13 +173,11 @@ class AbstractApproach(ABC):
     def __get_relevant_reports_num(self) -> Counter:
         result: Counter = Counter()
 
-        query_ids = self.test.id.tolist()
-        train_disc_ids = self.train.disc_id.tolist()
         test_disc_ids = self.test.disc_id.tolist()
+        count_train: Counter = Counter(self.train.disc_id)
 
-        for i, query_id in enumerate(query_ids):
-            for train_disc_id in train_disc_ids:
-                result[query_id] += train_disc_id == test_disc_ids[i]
-            train_disc_ids.append(test_disc_ids[i])
+        for i, query_id in enumerate(self.test.id):
+            result[query_id] += count_train[test_disc_ids[i]]
+            count_train[test_disc_ids[i]] += 1
 
         return result
