@@ -14,7 +14,7 @@ class AbstractTask(ABC):
     :param batch_size: Batch size used for fine-tuning
     :param eval_steps: Number of update steps between two evaluations
     :param n_examples: Number of input examples that will be used for fine-tuning
-    :param save_best_model: Whether or not to save the best model found during training at the end of training.
+    :param save_best_model: Whether to save the best model found during training at the end of training.
     """
 
     name = "abstract"

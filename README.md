@@ -14,10 +14,10 @@ You can see available text models and solution approaches in [`config.yml`](conf
 
 To use this pipeline, your data should be in csv format and must look like this 
 
-| id | ... |  description  | ... | disc_id |
-|----|-----|:-------------:|-----|:-------:|
-|... | ... |      ...      | ... |   ...   |
-| 33 | ... | this is a bug | ... |   11    |
+|  id  | ... |   summary   |  ...  |  description  |  ...  | disc_id |
+|:----:|-----|:-----------:|:-----:|:-------------:|:-----:|:-------:|
+| ...  | ... |     ...     |  ...  |      ...      |  ...  |   ...   |
+|  33  | ... | bug example |  ...  | this is a bug |  ...  |   11    |
 
 where **disc_id** is the id of the oldest duplicate bug report.
 

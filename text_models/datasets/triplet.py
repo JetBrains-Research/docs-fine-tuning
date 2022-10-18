@@ -29,14 +29,20 @@ class TripletDataset(Dataset):
 
         self.triplets = []
         for dupl_series in duplicate_clusters.values():
-            if len(dupl_series) <= 1:
+            n_dupl = len(dupl_series)
+            if n_dupl <= 1:
                 continue
-            for i in range(len(dupl_series)):
+
+            used_pos_negs_pairs: Dict[int, int] = dict()
+            for i in range(n_dupl):
                 anchor = dupl_series[i]
-                for j in range(i + 1, len(dupl_series)):
+                for j in range(n_dupl):
+                    if j == i:
+                        continue
                     pos = dupl_series[j]
-                    neg = self.__get_negative_example(dupl_series, len(disc_ids))
+                    neg = self.__get_negative_example(dupl_series, len(disc_ids), used_pos_negs_pairs.get(pos))
                     self.triplets.append((anchor, pos, neg))
+                    used_pos_negs_pairs[anchor] = neg
 
         if shuffle:
             np.random.shuffle(self.triplets)
@@ -44,9 +50,9 @@ class TripletDataset(Dataset):
         if n_examples != "all":
             self.triplets = self.triplets[: int(n_examples)]
 
-    def __get_negative_example(self, dupl_series, corpus_size) -> int:
+    def __get_negative_example(self, dupl_series, corpus_size, used_neg) -> int:
         neg = np.random.randint(corpus_size)
-        while neg in dupl_series:
+        while neg in dupl_series or neg == used_neg:
             neg = np.random.randint(corpus_size)
         return neg
 
