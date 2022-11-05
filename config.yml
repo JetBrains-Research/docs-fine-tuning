@@ -1,6 +1,6 @@
 dataset: kotlin # you can configure datasets with configs/datasets.yml
 
-test_size: 0.1
+test_size: 0.115
 
 tmpdir: null # if null default tmp directory will be used
 log_file: data/logs/log.txt # set null for stdout
@@ -68,7 +68,7 @@ models:
     evaluation_steps: 55
     val_size: 0.1
     tmp_file: null
-    device: cuda # 'cpu' or 'cuda'
+    device: cpu # 'cpu' or 'cuda'
     start_train_from_task: false
     seed: 42
     save_to_path: text_models/saved

@@ -48,7 +48,7 @@ class MaskedLMTask(AbstractTask):
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
-        corpus = sections_to_sentences(docs_corpus)
+        corpus = docs_corpus  # sections_to_sentences(docs_corpus)
 
         config = AutoConfig.from_pretrained(pretrained_model)
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model, config=config)

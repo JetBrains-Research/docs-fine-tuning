@@ -1,4 +1,5 @@
 import os.path
+from typing import List
 
 from sentence_transformers import models, losses, SentenceTransformer, evaluation
 from sentence_transformers.datasets import DenoisingAutoEncoderDataset
@@ -24,7 +25,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         device: str,
         save_to_path: str,
     ) -> models.Transformer:
-        corpus = sections_to_sentences(docs_corpus)
+        corpus = docs_corpus  # sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())

@@ -50,7 +50,7 @@ class BertSiameseModel(AbstractModel):
 
     def __init__(
         self,
-        corpus: Section = None,
+        corpus: List[str] = None,
         disc_ids: List[str] = None,
         cnf_tasks: Union[DictConfig, ListConfig] = None,
         finetuning_strategies: List[str] = None,
@@ -89,7 +89,7 @@ class BertSiameseModel(AbstractModel):
         self.tokenizer = None
 
         if corpus is not None and disc_ids is not None:
-            sentences = [" ".join(doc) for doc in corpus]
+            sentences = corpus  # [" ".join(doc) for doc in corpus]
             train_size = int(len(corpus) * (1 - val_size))
             train_corpus = sentences[:train_size]
             train_disc_ids = disc_ids[:train_size]

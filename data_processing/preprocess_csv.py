@@ -4,7 +4,7 @@ import tempfile
 
 import pandas as pd
 
-from util import preprocess, load_config
+from util import preprocess, load_config, remove_noise
 
 
 def main():
@@ -20,8 +20,8 @@ def main():
 
     data = pd.read_csv(config.datasets.full)
 
-    data["summary"] = data["summary"].map(preprocess, na_action="ignore")
-    data["description"] = data["description"].map(preprocess, na_action="ignore")
+    data["summary"] = data["summary"].map(remove_noise, na_action="ignore")
+    data["description"] = data["description"].map(remove_noise, na_action="ignore")
 
     data = data[data.summary.notnull() | data.description.notnull()]
     data = data.reset_index(drop=True)

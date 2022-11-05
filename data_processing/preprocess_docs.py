@@ -2,6 +2,7 @@ import argparse
 import logging
 import os.path
 import tempfile
+import json
 
 from docs_preprocessor import DocsPreprocessor
 from util import load_config
@@ -38,12 +39,13 @@ def main():
     for docs_path in args.docs:
         preprocessor = DocsPreprocessor(docs_path, config.docs_formats)
         tokenized = preprocessor.preprocess_files()
+        json_data = json.dumps(tokenized)
 
         result_file_name = os.path.join(
-            config.docs_directory, os.path.splitext(os.path.split(docs_path)[1])[0] + "-" + args.suffix + ".txt"
+            config.docs_directory, os.path.splitext(os.path.split(docs_path)[1])[0] + "-" + args.suffix + ".json"
         )
         with open(result_file_name, "w") as doc:
-            doc.write(str(tokenized))
+            json.dump(json_data, doc)
 
         logger.info(f"Text artifacts from {docs_path} processed successfully and saved into {result_file_name}")
 

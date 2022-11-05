@@ -1,4 +1,5 @@
 import ast
+import json
 import os.path
 import re
 from json import JSONEncoder
@@ -23,24 +24,26 @@ Corpus = List[Section]
 NumpyNaN = float
 
 
-def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Section:
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> List[str]:
     def parse_list(str_list):
-        return [] if isinstance(str_list, float) else ast.literal_eval(str_list)
+        return "" if isinstance(str_list, float) else str_list
 
-    corpus = [parse_list(summ) + parse_list(descr) for summ, descr in zip(data.summary, data.description)]
-    return flatten(corpus) if sentences else list(map(flatten, corpus))
+    return [parse_list(summ) + parse_list(descr) for summ, descr in zip(data.summary, data.description)]
 
 
 def flatten(matrix: List[List[Any]]) -> List[Any]:
     return [item for sublist in matrix for item in sublist]
 
 
-def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Section, Corpus]:
-    result: Corpus = []
+def get_docs_text(docs_names: List[str], sections: bool = False) -> List[str]:
+    result: List[str] = []
     for doc_name in docs_names:
-        text = Path(doc_name).read_text()
-        result = result + get_doc_sections(text)
-    return result if sections else flatten(result)
+        doc_file = open(doc_name)
+        text = json.load(doc_file)
+        text = json.loads(text)
+        result = result + list(text)
+        doc_file.close()
+    return result
 
 
 def get_doc_sections(text: str) -> Corpus:
@@ -63,17 +66,17 @@ def get_doc_sentences(text: str) -> Section:
 
 
 def remove_noise(text: str) -> str:
-    text = re.sub(r"(https|http)?://(\w|\.|/|\?|=|&|%)*\b", "", text, flags=re.MULTILINE)
-    text = re.sub(r"\w*\d\w*", " ", text)
-    text = re.sub(r"\w*\f\w*", " ", text)
-    text = re.sub(r"\(.*?\)", " ", text)
-    text = re.sub(r"\[.*]\)", " ", text)
+    text = re.sub(r"(https|http)?://(\w|\.|/|\?|=|&|%)*\b", "[URL]", text, flags=re.MULTILINE)
+    # text = re.sub(r"\w*\d\w*", " ", text)
+    # text = re.sub(r"\w*\f\w*", " ", text)
+    # text = re.sub(r"\(.*?\)", " ", text)
+    # text = re.sub(r"\[.*]\)", " ", text)
     # remove non latin characters
     encoded_text = text.encode("ascii", "ignore")
     text = encoded_text.decode()
     text = text.lower()
 
-    text = re.sub("[‘’“”…]", " ", text)
+    # text = re.sub("[‘’“”…]", " ", text)
     text = re.sub("\n", " ", text)
     text = re.sub("\t", " ", text)
 
@@ -100,11 +103,11 @@ def tokenize_and_normalize(sentences: List[str]) -> Union[Section, NumpyNaN]:
     return result
 
 
-def preprocess(text: str) -> Union[Section, NumpyNaN]:
+def preprocess(text: str) -> Union[List[str], NumpyNaN]:
     text = remove_noise(text)
     sentences = split_sentences(text)
-    tokenized = tokenize_and_normalize(sentences)
-    return tokenized
+    # tokenized = tokenize_and_normalize(sentences)
+    return sentences
 
 
 def sections_to_sentences(docs_corpus: Corpus) -> List[str]:

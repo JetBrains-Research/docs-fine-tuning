@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import rst2txt
@@ -9,7 +9,7 @@ from docutils.core import publish_string
 from markdown import markdown
 from tika import parser
 
-from util import preprocess, Section, Corpus
+from util import preprocess, Section, Corpus, NumpyNaN
 
 
 class DocsPreprocessor:
@@ -17,25 +17,25 @@ class DocsPreprocessor:
         self.extensions = [extension if extension.startswith(".") else "." + extension for extension in extensions]
         self.files = self.__collect_files(files_path)
 
-    def preprocess_files(self) -> Corpus:
+    def preprocess_files(self) -> List[str]:
         result = []
         for file_name in self.files:
             if file_name.endswith("index.rst"):
                 continue
             tokenized = DocsPreprocessor.read_and_preprocess(file_name)
             if not isinstance(tokenized, float) and tokenized not in result:
-                result.append(tokenized)
+                result += tokenized
         return result
 
     @staticmethod
-    def read_and_preprocess(file_name: str) -> Section:
+    def read_and_preprocess(file_name: str) -> List[str]:
         text = DocsPreprocessor.__read_file(file_name)
         file_extension = os.path.splitext(file_name)[1][1:]
         tokenized = DocsPreprocessor.__preprocess(text, file_extension)
         return tokenized
 
     @staticmethod
-    def __preprocess(text, file_format: str) -> Section:
+    def __preprocess(text, file_format: str) -> Union[List[str], NumpyNaN]:
         if file_format == "md":
             is_html = bool(BeautifulSoup(text, "html.parser").find())
             text = re.sub(r"```[^\S\r\n]*[a-z]*\n.*?\n```", "", text, 0, re.DOTALL)

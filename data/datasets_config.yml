@@ -7,8 +7,8 @@ idea:
 kotlin:
   datasets:
     full: data/csv/KT2020.csv
-    train: data/csv/train_KT.csv
-    test: data/csv/test_KT.csv
+    train: data/csv/train_KT_non_prcsd.csv
+    test: data/csv/test_KT_non_prcsd.csv
 
 mozilla_core:
   datasets:
