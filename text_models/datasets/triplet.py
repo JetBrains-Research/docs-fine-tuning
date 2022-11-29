@@ -12,7 +12,7 @@ class TripletDataset(Dataset):
     :param corpus: Corpus of bug report descriptions
     :param disc_ids: List where position i is the id of the oldest bug report that is a duplicate of i-th bug report
     :param n_examples: Number of examples used in dataset
-    :param suffle: Shuffle or not the resulting dataset
+    :param shuffle: Shuffle or not the resulting dataset
     """
 
     def __init__(
@@ -49,6 +49,12 @@ class TripletDataset(Dataset):
 
         if n_examples != "all":
             self.triplets = self.triplets[: int(n_examples)]
+
+        self.__init_unused_ids(corpus)
+
+    def __init_unused_ids(self, corpus):
+        used_ids = set([i for triplet in self.triplets for i in triplet])
+        self.unused_ids = set(np.arange(len(corpus))) - used_ids
 
     def __get_negative_example(self, dupl_series, corpus_size, used_neg) -> int:
         neg = np.random.randint(corpus_size)

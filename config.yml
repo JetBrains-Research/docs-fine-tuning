@@ -70,6 +70,7 @@ models:
     tmp_file: null
     device: cuda # 'cpu' or 'cuda'
     start_train_from_task: false
+    start_train_from_bugs: false
     seed: 42
     save_to_path: text_models/saved
 

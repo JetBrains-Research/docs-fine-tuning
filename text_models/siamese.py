@@ -1,6 +1,6 @@
 import os.path
 import tempfile
-from typing import List, Union
+from typing import List, Union, Callable
 
 import numpy as np
 import torch.utils.data
@@ -37,7 +37,7 @@ class BertSiameseModel(AbstractModel):
     :param max_len: max_length parameter of tokenizer
     :param warmup_rate: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
     :param evaluation_steps: Number of update steps between two evaluations
-    :param evaluation_config: Configuration for the evaluator
+    :param evaluator_config: Configuration for the evaluator
     :param val_size: Ratio of total training examples used for validation dataset
     :param task_loss: The loss function for SNN. Possible values: "cossim", "triplet"
     :param pretrained_model: The name of pretrained text model
@@ -67,6 +67,7 @@ class BertSiameseModel(AbstractModel):
         pretrained_model: str = "bert-base-uncased",
         tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
         start_train_from_task: bool = False,
+        start_train_from_bugs: bool = False,
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
         seed: int = 42,
@@ -84,9 +85,11 @@ class BertSiameseModel(AbstractModel):
         self.save_best_model = save_best_model
         self.evaluator_config = evaluator_config
         self.start_train_from_task = start_train_from_task
+        self.start_train_from_bugs = start_train_from_bugs
 
         self.vocab_size = None
         self.tokenizer = None
+        self.tapt_data = None
 
         if corpus is not None and disc_ids is not None:
             sentences = [" ".join(doc) for doc in corpus]
@@ -101,6 +104,8 @@ class BertSiameseModel(AbstractModel):
 
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
+
+            self.tapt_data: Section = [corpus[i] for i in self.task_dataset.unused_ids]
 
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
@@ -123,17 +128,47 @@ class BertSiameseModel(AbstractModel):
         )
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
-        for finetuning_task in self.finetuning_strategies:
-            self.logger.info(f"Start pretraining with {finetuning_task.name} task")
-            dumb_model_name = self.__create_and_save_model_from_scratch()
-            self.__train_finetuned_on_task(extra_corpus, finetuning_task, dumb_model_name, TrainTypes.DOC_TASK)
-            self.logger.info(f"Train DOC+TASK with {finetuning_task.name} complete")
+        self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_TASK, lambda x: self.__create_and_save_model_from_scratch())
 
     def train_pt_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
+        self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_TASK, lambda x: self.pretrained_model)
+
+    def train_bugs_task(self):
+        self.__adapt_to_domain([self.tapt_data], TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch())
+
+    def train_pt_bugs_task(self):
+        self.__adapt_to_domain([self.tapt_data], TrainTypes.PT_BUGS_TASK, lambda x: self.pretrained_model)
+
+    def train_doc_bugs_task(self, extra_corpus: Corpus):
+        pretraining_model_supplier = lambda x: self.__create_and_save_model_from_scratch()
+        if not self.start_train_from_task and self.start_train_from_bugs:
+            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
+            extra_corpus = [self.tapt_data]
+        else:
+            extra_corpus.append(self.tapt_data)
+
+        self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_BUGS_TASK, pretraining_model_supplier)
+
+    def train_pt_doc_bugs_task(self, extra_corpus: Corpus):
+        pretraining_model_supplier = lambda x: self.pretrained_model
+        if not self.start_train_from_task and self.start_train_from_bugs:
+            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
+            extra_corpus = [self.tapt_data]
+        else:
+            extra_corpus.append(self.tapt_data)
+
+        self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
+
+    def __get_doc_model_name(self, training_type: str, finetuning_task_name: str):
+        return os.path.join(
+            self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "outputs_docs"
+        )
+
+    def __adapt_to_domain(self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]):
         for finetuning_task in self.finetuning_strategies:
-            self.logger.info(f"Start fine-tuning with {finetuning_task.name} task")
-            self.__train_finetuned_on_task(extra_corpus, finetuning_task, self.pretrained_model, TrainTypes.PT_DOC_TASK)
-            self.logger.info(f"Train with {finetuning_task.name} complete")
+            self.logger.info(f"Start pre-training with {finetuning_task.name} task")
+            self.__train_finetuned_on_task(extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type)
+            self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
@@ -248,6 +283,22 @@ class BertSiameseModel(AbstractModel):
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
             self.train_pt_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
+
+        if TrainTypes.BUGS_TASK in model_types_to_train:
+            self.train_bugs_task()
+            self.logger.info(f"Train {TrainTypes.BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
+
+        if TrainTypes.PT_BUGS_TASK in model_types_to_train:
+            self.train_pt_bugs_task()
+            self.logger.info(f"Train {TrainTypes.PT_BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
+
+        if TrainTypes.DOC_BUGS_TASK in model_types_to_train:
+            self.train_doc_bugs_task(extra_corpus)
+            self.logger.info(f"Train {TrainTypes.DOC_BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
+
+        if TrainTypes.BUGS_TASK in model_types_to_train:
+            self.train_pt_doc_bugs_task(extra_corpus)
+            self.logger.info(f"Train {TrainTypes.PT_DOC_BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
 
     def get_embeddings(self, corpus: Section):
         return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)  # type: ignore

@@ -31,6 +31,8 @@ class CosineSimilarityDataset(Dataset):
         else:
             self.total_examples = self.total_examples[: int(n_examples)]
 
+        self.__init_unused_ids(corpus)
+
     def __getitem__(self, index):
         i, j = self.total_examples[index]
         label = 1.0 if self.disc_ids[i] == self.disc_ids[j] else 0.0
@@ -38,6 +40,10 @@ class CosineSimilarityDataset(Dataset):
 
     def __len__(self):
         return self.n_examples
+
+    def __init_unused_ids(self, corpus):
+        used_ids = set([i for pair in self.total_examples for i in pair])
+        self.unused_ids = set(np.arange(len(corpus))) - used_ids
 
     def __collect_examples(self) -> List[Tuple[int, int]]:
         pos_examples = [
