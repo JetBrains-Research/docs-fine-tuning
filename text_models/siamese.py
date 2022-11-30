@@ -163,7 +163,7 @@ class BertSiameseModel(AbstractModel):
 
     def __get_doc_model_name(self, training_type: str, finetuning_task_name: str):
         return os.path.join(
-            self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "outputs_docs"
+            self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "output_docs"
         )
 
     def __adapt_to_domain(
@@ -302,7 +302,7 @@ class BertSiameseModel(AbstractModel):
             self.train_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.DOC_BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
 
-        if TrainTypes.BUGS_TASK in model_types_to_train:
+        if TrainTypes.PT_DOC_BUGS_TASK in model_types_to_train:
             self.train_pt_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.PT_DOC_BUGS_TASK.replace('_','+')} {self.name} SUCCESS")
 
