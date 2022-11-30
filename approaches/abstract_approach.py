@@ -1,7 +1,7 @@
 import collections
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union, Dict
+from typing import List, Optional, Union, Dict, Type
 from collections import Counter
 
 import matplotlib.pyplot as plt
@@ -38,31 +38,24 @@ class AbstractApproach(ABC):
 
     def evaluate_all(
         self,
-        task_model: AbstractModel,
-        pt_task_model: AbstractModel,
-        doc_task_model: AbstractModel,
-        pt_doc_task_model: AbstractModel,
+        model_types: List[str],
+        model_class: Type[AbstractModel],
+        models_directory: str,
         topns: List[int],
         verbose: bool = True,
     ):
         """
         Evaluate all models trained in different ways.
 
-        :param task_model: Model trained from scratch on the final task
-        :param pt_task_model: Model trained on the final task using pre-trained model
-        :param doc_task_model: Model trained from scratch on docs and then train on the final task
-        :param pt_doc_task_model: Model trained on docs using a pre-trained model and then train on the task
+        :param model_types: model types to evaluate
+        :param model_class: model class to load
+        :param models_directory: Which directory use to load models
         :param topns: What number of the most similar bug reports according to the model will be used in the evaluation
         :param verbose: Should evaluation logs be verbose or not
         """
 
         res_dict: Dict[str, Union[np.ndarray, List[int]]] = {"k": topns}
-        models_dict = {
-            TrainTypes.TASK: task_model,
-            TrainTypes.PT_TASK: pt_task_model,
-            TrainTypes.DOC_TASK: doc_task_model,
-            TrainTypes.PT_DOC_TASK: pt_doc_task_model,
-        }
+        models_dict = self._load_models(model_types, model_class, models_directory)
         for name, model in models_dict.items():
             if model is not None:
                 metrics = self.evaluate(model, topns)
@@ -169,6 +162,14 @@ class AbstractApproach(ABC):
     @abstractmethod
     def update_history(self, query_num: int):
         raise NotImplementedError()
+
+    def _load_models(
+        self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
+    ) -> Dict[str, AbstractModel]:
+        return {
+            train_type: model_class.load(os.path.join(models_directory, model_class.name + "_" + train_type))
+            for train_type in model_types
+        }
 
     def __get_relevant_reports_num(self) -> Counter:
         result: Counter = Counter()

@@ -63,7 +63,7 @@ models:
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet  # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'tsdae', 'sase'] # see available strategies in 'bert_tasks' section
+    finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 55
     val_size: 0.1

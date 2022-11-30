@@ -89,7 +89,7 @@ class BertSiameseModel(AbstractModel):
 
         self.vocab_size = None
         self.tokenizer = None
-        self.tapt_data = None
+        self.tapt_data: Section = [[]]
 
         if corpus is not None and disc_ids is not None:
             sentences = [" ".join(doc) for doc in corpus]
@@ -105,7 +105,7 @@ class BertSiameseModel(AbstractModel):
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
 
-            self.tapt_data: Section = [corpus[i] for i in self.task_dataset.unused_ids]
+            self.tapt_data = [corpus[i] for i in self.task_dataset.unused_ids]
 
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
@@ -134,7 +134,9 @@ class BertSiameseModel(AbstractModel):
         self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_TASK, lambda x: self.pretrained_model)
 
     def train_bugs_task(self):
-        self.__adapt_to_domain([self.tapt_data], TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch())
+        self.__adapt_to_domain(
+            [self.tapt_data], TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch()
+        )
 
     def train_pt_bugs_task(self):
         self.__adapt_to_domain([self.tapt_data], TrainTypes.PT_BUGS_TASK, lambda x: self.pretrained_model)
@@ -164,10 +166,14 @@ class BertSiameseModel(AbstractModel):
             self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "outputs_docs"
         )
 
-    def __adapt_to_domain(self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]):
+    def __adapt_to_domain(
+        self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]
+    ):
         for finetuning_task in self.finetuning_strategies:
             self.logger.info(f"Start pre-training with {finetuning_task.name} task")
-            self.__train_finetuned_on_task(extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type)
+            self.__train_finetuned_on_task(
+                extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type
+            )
             self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
 
     def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
