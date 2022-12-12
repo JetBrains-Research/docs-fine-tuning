@@ -3,20 +3,21 @@ dataset: kotlin # you can configure datasets with configs/datasets.yml
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: data/logs/log.txt # set null for stdout
-models_directory: text_models/saved
+log_file: null # set null for stdout
+models_directory: text_models/saved/bert_base/kotlin_triplet
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK', 'BUGS_TASK', 'PT_BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+
+text_model: siamese # see available text models in the corresponding section
 
 
 evaluation:
-  text_model: siamese # see available text models in the corresponding section
   approach: simple # see available approaches in the corresponding section
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  results_path: ./results
+  results_path: ./results/test
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -59,10 +60,10 @@ models:
     epochs: 8
     batch_size: 8
     n_examples: all
-    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    save_best_model: false # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_rate: 0.1 # percent of training data
     max_len: 512
-    task_loss: triplet  # 'triplet' or 'cossim'
+    task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 55
@@ -72,7 +73,7 @@ models:
     start_train_from_task: false
     start_train_from_bugs: false
     seed: 42
-    save_to_path: text_models/saved
+    save_to_path: text_models/saved/test
 
     evaluator_config:
       batch_size: 8

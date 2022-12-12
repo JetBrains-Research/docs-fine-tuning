@@ -25,7 +25,7 @@ def parse_arguments():
         dest="gpu_id",
         action="store",
         type=str,
-        default="0",
+        default=None,
         help="GPU id for CUDA_VISIBLE_DEVICES environment param",
     )
     return parser.parse_args()
@@ -60,7 +60,7 @@ def main():
     else:
         raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
-    if cnf_eval.is_tasks_test and cnf_eval.text_model == "siamese":
+    if cnf_eval.is_tasks_test and config.text_model == "siamese":
         evaluator = PretrainingTasksTest(evaluator, config.models.siamese.finetuning_strategies)
 
     if cnf_eval.approach == "intersection":
@@ -69,19 +69,19 @@ def main():
         )
         return
 
-    if cnf_eval.text_model == "random":
+    if config.text_model == "random":
         model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
         logger.info(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
         return
 
-    if cnf_eval.text_model == "word2vec":
+    if config.text_model == "word2vec":
         model_class = W2VModel
-    elif cnf_eval.text_model == "fasttext":
+    elif config.text_model == "fasttext":
         model_class = FastTextModel
-    elif cnf_eval.text_model == "siamese":
+    elif config.text_model == "siamese":
         model_class = BertSiameseModel
     else:
-        raise ValueError(f"Text model ${cnf_eval.text_model} is not supported")
+        raise ValueError(f"Text model ${config.text_model} is not supported")
 
     evaluator.evaluate_all(config.model_types, model_class, config.models_directory, cnf_eval.topns)
     if cnf_eval.save_results:

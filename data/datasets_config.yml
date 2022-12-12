@@ -3,15 +3,18 @@ idea:
     full: data/csv/IDEA2020.csv
     train: data/csv/train_IDEA.csv
     test: data/csv/test_IDEA.csv
+  docs: ['data/docs/intellij_idea_docs.txt', 'data/docs/intellij_sdk_docs.txt']
 
 kotlin:
   datasets:
     full: data/csv/KT2020.csv
     train: data/csv/train_KT.csv
     test: data/csv/test_KT.csv
+  docs: ['data/docs/kt_docs.txt', 'data/docs/kt_spec.txt', 'data/docs/kt_eep.txt']
 
 mozilla_core:
   datasets:
     full: data/csv/MOZILLA_CORE_2013.csv
     train: data/csv/train_MOZILLA.csv
     test: data/csv/test_MOZILLA.csv
+  docs: ['data/docs/mozilla-docs.txt']
