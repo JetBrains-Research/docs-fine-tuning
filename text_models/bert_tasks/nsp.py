@@ -29,11 +29,13 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         batch_size: int = 16,
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
+        val: float = 0.1,
+        eval_with_task: bool = False,
         save_best_model: bool = False,
         forget_const: int = 10,
         save_steps: int = 2000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model, save_steps)
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

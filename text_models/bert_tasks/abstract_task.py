@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Tuple
 
 from sentence_transformers import models, evaluation
+from torch.utils.data import random_split, Dataset
 
 from data_processing.util import Corpus
 
@@ -25,6 +26,8 @@ class AbstractTask(ABC):
         batch_size: int = 16,
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
+        val: float = 0.1,
+        eval_with_task: bool = False,
         save_best_model: bool = False,
     ):
         self.epochs = epochs
@@ -32,6 +35,8 @@ class AbstractTask(ABC):
         self.n_examples = n_examples
         self.eval_steps = eval_steps
         self.save_best_model = save_best_model
+        self.val = val
+        self.eval_with_task = eval_with_task
 
     @abstractmethod
     def finetune_on_docs(
@@ -65,3 +70,9 @@ class AbstractTask(ABC):
         :return: fine-tuned transformer-based model
         """
         raise NotImplementedError()
+
+    def _train_val_split(self, dataset: Dataset) -> Tuple[Dataset, Dataset]:
+        train_size = int((1 - self.val)  * len(dataset))
+        test_size = len(dataset) - train_size
+        train_dataset, val_dataset =  random_split(dataset, [train_size, test_size])
+        return train_dataset, val_dataset

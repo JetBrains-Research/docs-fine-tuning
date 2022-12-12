@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
+from text_models.bert_tasks.loss_evaluator import LossEvaluator
 
 
 class TSDenoisingAutoEncoderTask(AbstractTask):
@@ -33,12 +34,16 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         if self.n_examples == "all":
             self.n_examples = len(corpus)
 
-        train_dataset = DenoisingAutoEncoderDataset(corpus[: int(self.n_examples)])
+        dataset = DenoisingAutoEncoderDataset(corpus[: int(self.n_examples)])
+        train_dataset, val_dataset = self._train_val_split(dataset)
+
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
 
         train_loss = losses.DenoisingAutoEncoderLoss(
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True
         )
+        if not self.eval_with_task:
+            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size)
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")

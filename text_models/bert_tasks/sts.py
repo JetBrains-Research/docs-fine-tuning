@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
+from text_models.bert_tasks.loss_evaluator import LossEvaluator
 
 
 class STSTask(AbstractTask):
@@ -30,11 +31,13 @@ class STSTask(AbstractTask):
         batch_size: int = 16,
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
+        val: float = 0.1,
+        eval_with_task: bool = False,
         save_best_model: bool = False,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model)
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
@@ -50,11 +53,18 @@ class STSTask(AbstractTask):
         corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model)
-        train_dataloader = self.__get_train_dataloader_from_docs(corpus)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
+
+        dataset = self.__get_train_data_from_docs(corpus)
+        train_dataset, val_dataset = dataset[:int((1 - self.val) * len(dataset))], dataset[int((1 - self.val) * len(dataset)):]
+
+        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size) # type: ignore
+
         train_loss = losses.CosineSimilarityLoss(model)
+
+        if not self.eval_with_task:
+            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size) # type: ignore
 
         warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
@@ -76,7 +86,7 @@ class STSTask(AbstractTask):
 
         return model._first_module()
 
-    def __get_train_dataloader_from_docs(self, docs_corpus: List[str]) -> DataLoader:
+    def __get_train_data_from_docs(self, docs_corpus: List[str]) -> List[InputExample]:
         train_data = []
         corpus = [" ".join(doc) for doc in docs_corpus]
         lngth = len(docs_corpus) - 1
@@ -89,7 +99,7 @@ class STSTask(AbstractTask):
                     )
                 )
 
-        return DataLoader(train_data[: self.n_examples], shuffle=True, batch_size=self.batch_size)  # type: ignore
+        return train_data[: self.n_examples]
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

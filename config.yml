@@ -4,7 +4,7 @@ test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
 log_file: null # set null for stdout
-models_directory: text_models/saved/bert_base/kotlin_triplet
+models_directory: text_models/saved/test
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
 model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK', 'BUGS_TASK', 'PT_BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
@@ -64,7 +64,7 @@ models:
     warmup_rate: 0.1 # percent of training data
     max_len: 512
     task_loss: triplet # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    finetuning_strategies: ['mlm'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased
     evaluation_steps: 55
     val_size: 0.1
@@ -90,6 +90,8 @@ bert_tasks:
     n_examples: all
     mask_probability: 0.15
     save_steps: 250
+    val: 0.1
+    eval_with_task: False
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   nsp:
@@ -99,6 +101,8 @@ bert_tasks:
     n_examples: all
     forget_const: 10
     save_steps: 250
+    val: 0.1
+    eval_with_task: False
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sase:
@@ -107,6 +111,8 @@ bert_tasks:
     eval_steps: 250
     n_examples: all
     save_steps: 250
+    val: 0.1
+    eval_with_task: False
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sts:
@@ -115,11 +121,13 @@ bert_tasks:
     eval_steps: 250
     n_examples: all
     forget_const: 10
+    val: 0.1
+    eval_with_task: False
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   tsdae:
     epochs: 8
     batch_size: 8
-    eval_steps: 250
+    eval_steps: 10
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
