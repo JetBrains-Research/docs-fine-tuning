@@ -6,7 +6,7 @@ from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer,
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.eval_trainer import IREvalTrainer
+from text_models.bert_tasks.evaluation import IREvalTrainer
 from text_models.datasets import BertModelMLMDataset
 
 
@@ -78,6 +78,7 @@ class MaskedLMTask(AbstractTask):
             metric_for_best_model=f"MAP@{max(evaluator.map_at_k)}" if self.eval_with_task else None,
             greater_is_better=self.eval_with_task,
             disable_tqdm=False,
+            do_eval=True
         )
 
         trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)

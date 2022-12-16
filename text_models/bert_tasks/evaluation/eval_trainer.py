@@ -9,6 +9,7 @@ from tqdm import tqdm
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
 
 from text_models.datasets import BertModelDataset
+from text_models.bert_tasks.evaluation.save_loss import write_csv_loss
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +104,19 @@ class IREvalTrainer(Trainer):
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
     ) -> Dict[str, float]:
-        metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix) if eval_dataset is not None or self.eval_dataset is not None else {}
+        metrics = {}
+        epoch = self.state.epoch if self.state.epoch is not None else -1
+
+        if eval_dataset is not None or self.eval_dataset is not None:
+            metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+            if self.args.output_dir is not None:
+                print("alallalalalalla")
+                write_csv_loss(metrics[f"{metric_key_prefix}_loss"], self.args.output_dir, epoch, self.state.global_step)
 
         map_value = self.evaluator(
             self.eval_model,
             output_path=self.args.output_dir,
-            epoch=self.state.epoch if self.state.epoch is not None else -1,
+            epoch=epoch,
             steps=self.state.global_step,
         )
         logger.info(f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}: {map_value}")

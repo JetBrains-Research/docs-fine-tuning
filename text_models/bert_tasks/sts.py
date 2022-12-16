@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.loss_evaluator import LossEvaluator
+from text_models.bert_tasks.evaluation import LossEvaluator
 
 
 class STSTask(AbstractTask):
