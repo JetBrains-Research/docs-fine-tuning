@@ -62,7 +62,8 @@ class SentencesClassificationTask(AbstractTask):
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
-        train_dataset, val_dataset = self._train_val_split(dataset)
+        val_dataset_call = lambda: self._get_dataset(evaluator.corpus, tokenizer, max_len)
+        train_dataset, val_dataset = self._train_val_split(dataset, val_dataset_call)
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")

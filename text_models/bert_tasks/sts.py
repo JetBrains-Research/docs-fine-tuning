@@ -3,12 +3,11 @@ from typing import List, Union
 
 import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.evaluation import LossEvaluator
-
 
 class STSTask(AbstractTask):
     """
@@ -24,6 +23,16 @@ class STSTask(AbstractTask):
     """
 
     name = "sts"
+
+    class ListDataset(Dataset):
+        def __init__(self, data_list: list):
+            self.data = data_list
+
+        def __getitem__(self, item):
+            return self.data[item]
+
+        def __len__(self):
+            return len(self.data)
 
     def __init__(
         self,
@@ -58,12 +67,11 @@ class STSTask(AbstractTask):
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
         dataset = self.__get_train_data_from_docs(corpus)
-        train_dataset, val_dataset = dataset[:int((1 - self.val) * len(dataset))], dataset[int((1 - self.val) * len(dataset)):]
 
+        train_dataset, val_dataset = self._train_val_split(dataset, lambda: STSTask.ListDataset(evaluator.queries))
         train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size) # type: ignore
 
         train_loss = losses.CosineSimilarityLoss(model)
-
         if not self.eval_with_task:
             evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size) # type: ignore
 
@@ -87,7 +95,7 @@ class STSTask(AbstractTask):
 
         return model._first_module()
 
-    def __get_train_data_from_docs(self, docs_corpus: List[str]) -> List[InputExample]:
+    def __get_train_data_from_docs(self, docs_corpus: List[str]) -> ListDataset:
         train_data = []
         corpus = [" ".join(doc) for doc in docs_corpus]
         lngth = len(docs_corpus) - 1
@@ -100,7 +108,7 @@ class STSTask(AbstractTask):
                     )
                 )
 
-        return train_data[: self.n_examples]
+        return STSTask.ListDataset(train_data[: self.n_examples])
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

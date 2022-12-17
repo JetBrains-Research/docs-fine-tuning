@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union, Tuple
+from typing import Union, Tuple, Callable, Optional
 
 from sentence_transformers import models, evaluation
 from torch.utils.data import random_split, Dataset
@@ -74,8 +74,12 @@ class AbstractTask(ABC):
         """
         raise NotImplementedError()
 
-    def _train_val_split(self, dataset: Dataset) -> Tuple[Dataset, Dataset]:
-        train_size = int((1 - self.val)  * len(dataset))
-        test_size = len(dataset) - train_size
-        train_dataset, val_dataset =  random_split(dataset, [train_size, test_size])
-        return train_dataset, val_dataset
+    def _train_val_split(self, dataset: Dataset, val_dataset: Optional[Callable[[], Dataset]]) -> Tuple[Dataset, Optional[Dataset]]:
+        if self.val_on_docs:
+            train_size = int((1 - self.val) * len(dataset))
+            test_size = len(dataset) - train_size
+            train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])
+            return train_dataset, eval_dataset
+        if not self.eval_with_task:
+            return dataset, val_dataset()
+        return dataset, None

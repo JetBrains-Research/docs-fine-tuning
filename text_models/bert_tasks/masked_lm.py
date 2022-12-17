@@ -59,18 +59,15 @@ class MaskedLMTask(AbstractTask):
 
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
+        val_dataset_call = lambda: BertModelMLMDataset(
+            tokenizer(evaluator.queries, max_length=max_len, padding="max_length",
+                      truncation=True, return_tensors="pt"),
+            mask_probability=self.mask_probability, n_examples=self.n_examples
+        )
 
-        # train_dataset, val_dataset = self._train_val_split(dataset)
-        if self.val_on_docs:
-            train_dataset, val_dataset = self._train_val_split(dataset)
-        elif not self.eval_with_task:
-            train_dataset, val_dataset = dataset, BertModelMLMDataset(evaluator.queries, mask_probability=self.mask_probability, n_examples=self.n_examples)
-        else:
-            train_dataset, val_dataset = dataset, None
-
+        train_dataset, val_dataset = self._train_val_split(dataset, val_dataset_call)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")
-
         args = TrainingArguments(
             output_dir=checkpoints_path,
             per_device_train_batch_size=self.batch_size,
