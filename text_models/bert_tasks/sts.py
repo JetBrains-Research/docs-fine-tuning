@@ -62,18 +62,18 @@ class STSTask(AbstractTask):
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
-        word_embedding_model = models.Transformer(pretrained_model)
+        word_embedding_model = models.Transformer(pretrained_model, max_seq_length=max_len)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
         dataset = self.__get_train_data_from_docs(corpus)
 
         train_dataset, val_dataset = self._train_val_split(dataset, lambda: STSTask.ListDataset(evaluator.queries))
-        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size) # type: ignore
+        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
 
         train_loss = losses.CosineSimilarityLoss(model)
         if not self.eval_with_task:
-            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size) # type: ignore
+            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size)
 
         warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")

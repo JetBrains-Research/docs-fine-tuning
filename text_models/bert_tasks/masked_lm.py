@@ -65,35 +65,8 @@ class MaskedLMTask(AbstractTask):
             mask_probability=self.mask_probability, n_examples=self.n_examples
         )
 
-        train_dataset, val_dataset = self._train_val_split(dataset, val_dataset_call)
-        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
-        output_path = os.path.join(save_to_path, "output_docs")
-        args = TrainingArguments(
-            output_dir=checkpoints_path,
-            per_device_train_batch_size=self.batch_size,
-            per_device_eval_batch_size=evaluator.batch_size,
-            num_train_epochs=self.epochs,
-            save_strategy=IntervalStrategy.STEPS,
-            save_steps=self.save_steps,
-            save_total_limit=3,
-            evaluation_strategy=IntervalStrategy.STEPS,
-            eval_steps=self.eval_steps,
-            load_best_model_at_end=self.save_best_model,
-            metric_for_best_model=f"MAP@{max(evaluator.map_at_k)}" if self.eval_with_task else None,
-            greater_is_better=self.eval_with_task,
-            disable_tqdm=False,
-            do_eval=True
-        )
-
-        trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
-        trainer.set_env_vars(evaluator, model, tokenizer, self.name, max_len, device)
-        trainer.train()
-
-        # if self.save_best_model == True we will use best model
-        model.save_pretrained(output_path)
-        tokenizer.save_pretrained(output_path)
-
-        return models.Transformer(output_path)
+        return self._train_and_save(model, tokenizer, dataset, val_dataset_call, evaluator, save_to_path,
+                                    self.save_steps, max_len, device)
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

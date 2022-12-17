@@ -1,11 +1,13 @@
+import os
 from abc import ABC, abstractmethod
 from typing import Union, Tuple, Callable, Optional
 
 from sentence_transformers import models, evaluation
 from torch.utils.data import random_split, Dataset
-from transformers import PreTrainedTokenizerBase
+from transformers import IntervalStrategy, TrainingArguments, PreTrainedTokenizer, PreTrainedModel
 
 from data_processing.util import Corpus
+from text_models.bert_tasks.evaluation import IREvalTrainer
 
 
 class AbstractTask(ABC):
@@ -74,12 +76,48 @@ class AbstractTask(ABC):
         """
         raise NotImplementedError()
 
-    def _train_val_split(self, dataset: Dataset, val_dataset: Optional[Callable[[], Dataset]]) -> Tuple[Dataset, Optional[Dataset]]:
+    def _train_and_save(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, dataset: Dataset,
+               val_dataset_call: Callable[[], Dataset],
+               evaluator: evaluation.InformationRetrievalEvaluator, save_to_path: str,
+               save_steps: int, max_len: int, device: str) -> models.Transformer:
+
+        train_dataset, val_dataset = self._train_val_split(dataset, val_dataset_call)
+        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
+
+        args = TrainingArguments(
+            output_dir=checkpoints_path,
+            per_device_train_batch_size=self.batch_size,
+            per_device_eval_batch_size=evaluator.batch_size,
+            num_train_epochs=self.epochs,
+            save_strategy=IntervalStrategy.STEPS,
+            save_steps=save_steps,
+            save_total_limit=3,
+            evaluation_strategy=IntervalStrategy.STEPS,
+            eval_steps=self.eval_steps,
+            load_best_model_at_end=self.save_best_model,
+            metric_for_best_model=f"MAP@{max(evaluator.map_at_k)}" if self.eval_with_task else None,
+            greater_is_better=self.eval_with_task,
+            disable_tqdm=False,
+            do_eval=True
+        )
+
+        trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
+        trainer.set_env_vars(evaluator, model.bert, tokenizer, self.name, max_len, device)
+        trainer.train()
+        # if self.save_best_model == True we will use best model
+        output_path = os.path.join(save_to_path, "output_docs")
+        model.save_pretrained(output_path)
+        tokenizer.save_pretrained(output_path)
+
+        return models.Transformer(output_path)
+
+    def _train_val_split(self, dataset: Dataset, val_dataset: Callable[[], Dataset]) -> Tuple[
+        Dataset, Optional[Dataset]]:
         if self.val_on_docs:
             train_size = int((1 - self.val) * len(dataset))
             test_size = len(dataset) - train_size
             train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])
             return train_dataset, eval_dataset
-        if not self.eval_with_task and val_dataset is not None:
-            return dataset, val_dataset()
-        return dataset, None
+        if self.eval_with_task:
+            return dataset, None
+        return dataset, val_dataset()

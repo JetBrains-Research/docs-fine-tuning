@@ -110,7 +110,6 @@ class IREvalTrainer(Trainer):
         if eval_dataset is not None or self.eval_dataset is not None:
             metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
             if self.args.output_dir is not None:
-                print("alallalalalalla")
                 write_csv_loss(metrics[f"{metric_key_prefix}_loss"], self.args.output_dir, epoch, self.state.global_step)
 
         map_value = self.evaluator(

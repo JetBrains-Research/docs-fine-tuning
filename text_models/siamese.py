@@ -105,7 +105,7 @@ class BertSiameseModel(AbstractModel):
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
 
-            self.tapt_data = corpus
+            self.tapt_data = corpus[:train_size]
 
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
@@ -260,7 +260,7 @@ class BertSiameseModel(AbstractModel):
 
     def __create_and_save_model_from_scratch(self) -> str:
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
-        bert_config = BertConfig(vocab_size=tokenizer.vocab_size, max_position_embeddings=self.max_len + 2)
+        bert_config = BertConfig(vocab_size=tokenizer.vocab_size, max_position_embeddings=self.max_len)
         dumb_model = BertModel(bert_config)
 
         dumb_model_name = tempfile.mkdtemp()
