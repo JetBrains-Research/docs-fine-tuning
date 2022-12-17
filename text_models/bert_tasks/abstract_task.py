@@ -80,6 +80,6 @@ class AbstractTask(ABC):
             test_size = len(dataset) - train_size
             train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])
             return train_dataset, eval_dataset
-        if not self.eval_with_task:
+        if not self.eval_with_task and val_dataset is not None:
             return dataset, val_dataset()
         return dataset, None

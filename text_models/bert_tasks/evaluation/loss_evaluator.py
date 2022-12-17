@@ -17,7 +17,7 @@ class LossEvaluator(SentenceEvaluator):
     def __call__(self,  model, output_path: str = None, epoch: int = -1, steps: int = -1) -> float:
         self.eval_dataloader.collate_fn = model.smart_batching_collate
 
-        val_loss = 0
+        val_loss = 0.
         with torch.no_grad():
             for data in self.eval_dataloader:
                 features, labels = data
@@ -25,7 +25,7 @@ class LossEvaluator(SentenceEvaluator):
 
         val_loss /= len(self.eval_dataloader)
 
-        loss_value = val_loss.item()
+        loss_value = val_loss.item() # type: ignore
 
         logger.info(f"Epoch: {epoch} Step: {steps} Eval Loss: {loss_value}")
         if output_path is not None:

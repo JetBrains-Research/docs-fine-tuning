@@ -43,7 +43,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         train_loss = losses.DenoisingAutoEncoderLoss(
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True
         )
-        if not self.eval_with_task:
+        if val_dataset is not None:
             evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size)
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")

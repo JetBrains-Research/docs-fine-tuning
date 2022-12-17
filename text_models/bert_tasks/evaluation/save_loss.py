@@ -1,7 +1,7 @@
 import os
 
 
-def write_csv_loss(loss_value: float, output_path: str, epoch: int, steps: int):
+def write_csv_loss(loss_value: float, output_path: str, epoch: float, steps: int):
     csv_path = os.path.join(output_path, "eval_loss.csv")
     if not os.path.isfile(csv_path):
         fOut = open(csv_path, mode="w", encoding="utf-8")

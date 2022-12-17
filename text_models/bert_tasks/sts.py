@@ -107,8 +107,9 @@ class STSTask(AbstractTask):
                         texts=[corpus[i], corpus[i + np.random.randint(self.forget_const, lngth - i)]], label=0.0
                     )
                 )
+        n_examples = len(train_data) if self.n_examples == "all" else int(self.n_examples)
 
-        return STSTask.ListDataset(train_data[: self.n_examples])
+        return STSTask.ListDataset(train_data[: n_examples])
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")
