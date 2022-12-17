@@ -14,7 +14,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, AutoTokenizer
 
-from data_processing.util import Section, Corpus
+from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
@@ -50,7 +50,7 @@ class BertSiameseModel(AbstractModel):
 
     def __init__(
         self,
-        corpus: Section = None,
+        corpus: Corpus = None,
         disc_ids: List[str] = None,
         cnf_tasks: Union[DictConfig, ListConfig] = None,
         finetuning_strategies: List[str] = None,
@@ -89,11 +89,11 @@ class BertSiameseModel(AbstractModel):
 
         self.vocab_size = None
         self.tokenizer = None
-        self.tapt_data: Section = [[]]
+        self.tapt_data: Corpus = [[[]]]
 
         if corpus is not None and disc_ids is not None:
-            sentences = [" ".join(doc) for doc in corpus]
-            train_size = int(len(corpus) * (1 - val_size))
+            sentences = [" ".join(doc) for doc in list(map(flatten, corpus))]
+            train_size = int(len(sentences) * (1 - val_size))
             train_corpus = sentences[:train_size]
             train_disc_ids = disc_ids[:train_size]
 
@@ -105,7 +105,7 @@ class BertSiameseModel(AbstractModel):
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
 
-            self.tapt_data = [corpus[i] for i in self.task_dataset.unused_ids]
+            self.tapt_data = corpus
 
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
@@ -135,19 +135,19 @@ class BertSiameseModel(AbstractModel):
 
     def train_bugs_task(self):
         self.__adapt_to_domain(
-            [self.tapt_data], TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch()
+            self.tapt_data, TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch()
         )
 
     def train_pt_bugs_task(self):
-        self.__adapt_to_domain([self.tapt_data], TrainTypes.PT_BUGS_TASK, lambda x: self.pretrained_model)
+        self.__adapt_to_domain(self.tapt_data, TrainTypes.PT_BUGS_TASK, lambda x: self.pretrained_model)
 
     def train_doc_bugs_task(self, extra_corpus: Corpus):
         pretraining_model_supplier = lambda x: self.__create_and_save_model_from_scratch()
         if not self.start_train_from_task and self.start_train_from_bugs:
             pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
-            extra_corpus = [self.tapt_data]
+            extra_corpus = self.tapt_data
         else:
-            extra_corpus.append(self.tapt_data)
+            extra_corpus += self.tapt_data
 
         self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_BUGS_TASK, pretraining_model_supplier)
 
@@ -155,9 +155,9 @@ class BertSiameseModel(AbstractModel):
         pretraining_model_supplier = lambda x: self.pretrained_model
         if not self.start_train_from_task and self.start_train_from_bugs:
             pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
-            extra_corpus = [self.tapt_data]
+            extra_corpus = self.tapt_data
         else:
-            extra_corpus.append(self.tapt_data)
+            extra_corpus += self.tapt_data
 
         self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
 

@@ -5,7 +5,7 @@ import tempfile
 
 import pandas as pd
 
-from data_processing.util import get_corpus, get_docs_text, load_config
+from data_processing.util import flatten, get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertSiameseModel
 
 
@@ -40,7 +40,8 @@ def main():
     )
 
     train = pd.read_csv(config.datasets.train)
-    train_corpus = get_corpus(train)
+    train_corpus_sent = get_corpus(train, sentences=True)
+    train_corpus = list(map(flatten, train_corpus_sent))
     docs_corpus = get_docs_text(config.docs, sections=True)
 
     if config.text_model == "word2vec":
@@ -52,7 +53,7 @@ def main():
 
     if config.text_model == "siamese":
         disc_ids = train["disc_id"].tolist()
-        model = BertSiameseModel(train_corpus, disc_ids, config.bert_tasks, **config.models.siamese)
+        model = BertSiameseModel(train_corpus_sent, disc_ids, config.bert_tasks, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
 

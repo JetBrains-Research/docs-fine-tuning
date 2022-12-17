@@ -33,11 +33,12 @@ class MaskedLMTask(AbstractTask):
         n_examples: Union[int, str] = "all",
         val: float = 0.1,
         eval_with_task: bool = False,
+        val_on_docs: bool = False,
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: int = 5000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 
@@ -59,7 +60,13 @@ class MaskedLMTask(AbstractTask):
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
 
-        train_dataset, val_dataset = self._train_val_split(dataset)
+        # train_dataset, val_dataset = self._train_val_split(dataset)
+        if self.val_on_docs:
+            train_dataset, val_dataset = self._train_val_split(dataset)
+        elif not self.eval_with_task:
+            train_dataset, val_dataset = dataset, BertModelMLMDataset(evaluator.queries, mask_probability=self.mask_probability, n_examples=self.n_examples)
+        else:
+            train_dataset, val_dataset = dataset, None
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")

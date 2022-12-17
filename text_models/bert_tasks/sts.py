@@ -33,11 +33,12 @@ class STSTask(AbstractTask):
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         eval_with_task: bool = False,
+        val_on_docs: bool = False,
         save_best_model: bool = False,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 

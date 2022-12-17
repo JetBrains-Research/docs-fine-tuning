@@ -40,10 +40,11 @@ class SentencesClassificationTask(AbstractTask):
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         eval_with_task: bool = False,
+        val_on_docs: bool = False,
         save_best_model: bool = False,
         save_steps: int = 2000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
         self.save_steps = save_steps
 
     def finetune_on_docs(

@@ -31,11 +31,12 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         eval_with_task: bool = False,
+        val_on_docs: bool = False,
         save_best_model: bool = False,
         forget_const: int = 10,
         save_steps: int = 2000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, save_best_model, save_steps)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model, save_steps)
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

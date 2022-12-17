@@ -83,7 +83,7 @@ def main():
     else:
         raise ValueError(f"Text model ${config.text_model} is not supported")
 
-    evaluator.evaluate_all(config.model_types, model_class, config.models_directory, cnf_eval.topns)
+    evaluator.evaluate_all(config.model_types, model_class, cnf_eval.models_path, cnf_eval.topns)
     if cnf_eval.save_results:
         evaluator.save_results(cnf_eval.results_path, model_class.name, plot=cnf_eval.save_graph)
 

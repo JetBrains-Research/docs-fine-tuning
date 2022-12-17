@@ -3,6 +3,7 @@ from typing import Union, Tuple
 
 from sentence_transformers import models, evaluation
 from torch.utils.data import random_split, Dataset
+from transformers import PreTrainedTokenizerBase
 
 from data_processing.util import Corpus
 
@@ -28,6 +29,7 @@ class AbstractTask(ABC):
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         eval_with_task: bool = False,
+        val_on_docs: bool = False,
         save_best_model: bool = False,
     ):
         self.epochs = epochs
@@ -37,6 +39,7 @@ class AbstractTask(ABC):
         self.save_best_model = save_best_model
         self.val = val
         self.eval_with_task = eval_with_task
+        self.val_on_docs = val_on_docs
 
     @abstractmethod
     def finetune_on_docs(
