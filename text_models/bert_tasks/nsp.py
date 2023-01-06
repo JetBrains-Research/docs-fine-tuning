@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from data_processing.util import sections_to_sentences, Corpus
+from text_models.bert_tasks.evaluation import ValMetric
 from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import NextSentenceDataset
 
@@ -30,13 +31,12 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
-        eval_with_task: bool = False,
-        val_on_docs: bool = False,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         forget_const: int = 10,
         save_steps: int = 2000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model, save_steps)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model, save_steps)
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

@@ -8,10 +8,15 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
 
-from text_models.datasets import BertModelDataset
 from text_models.bert_tasks.evaluation.save_loss import write_csv_loss
+from text_models.datasets import BertModelDataset
 
 logger = logging.getLogger(__name__)
+
+class ValMetric:
+    LOSS_DOCS = "loss"
+    LOSS_TASK = "loss_task"
+    TASK = "task_map"
 
 
 class IREvalTrainer(Trainer):
@@ -92,10 +97,12 @@ class IREvalTrainer(Trainer):
         model: BertModel,
         tokenizer: PreTrainedTokenizerBase,
         task: str,
+        val_task_dataset: Dataset,
         max_len: int = 512,
         device: str = "cpu",
     ):
         self.evaluator = evaluator
+        self.val_task_dataset = val_task_dataset
         self.eval_model = IREvalTrainer.EvalModel(model, tokenizer, task, max_len, device)
 
     def evaluate(
@@ -108,9 +115,11 @@ class IREvalTrainer(Trainer):
         epoch = self.state.epoch if self.state.epoch is not None else -1
 
         if eval_dataset is not None or self.eval_dataset is not None:
-            metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+            metrics = super().evaluate(self.eval_dataset, ignore_keys, metric_key_prefix)
+            loss_task_val = super().evaluate(self.val_task_dataset, ignore_keys, metric_key_prefix)[f"{metric_key_prefix}_loss"]
+            metrics[f"{metric_key_prefix}_{ValMetric.LOSS_TASK}"] = loss_task_val
             if self.args.output_dir is not None:
-                write_csv_loss(metrics[f"{metric_key_prefix}_loss"], self.args.output_dir, epoch, self.state.global_step)
+                write_csv_loss(metrics[f"{metric_key_prefix}_loss"], loss_task_val, self.args.output_dir, epoch, self.state.global_step)
 
         map_value = self.evaluator(
             self.eval_model,
@@ -118,6 +127,5 @@ class IREvalTrainer(Trainer):
             epoch=epoch,
             steps=self.state.global_step,
         )
-        logger.info(f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}: {map_value}")
-        metrics[f"{metric_key_prefix}_MAP@{max(self.evaluator.map_at_k)}"] = map_value
+        metrics[f"{metric_key_prefix}_{ValMetric.TASK}"] = map_value
         return metrics

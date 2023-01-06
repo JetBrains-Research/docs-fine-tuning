@@ -15,7 +15,7 @@ from transformers import (
 
 from data_processing.util import Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import IREvalTrainer
+from text_models.bert_tasks.evaluation import IREvalTrainer, ValMetric
 
 
 class SentencesClassificationTask(AbstractTask):
@@ -39,12 +39,11 @@ class SentencesClassificationTask(AbstractTask):
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
-        eval_with_task: bool = False,
-        val_on_docs: bool = False,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         save_steps: int = 2000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
         self.save_steps = save_steps
 
     def finetune_on_docs(
@@ -62,8 +61,8 @@ class SentencesClassificationTask(AbstractTask):
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
-        val_dataset_call = lambda: self._get_dataset(evaluator.corpus, tokenizer, max_len)
-        return self._train_and_save(model, tokenizer, dataset, val_dataset_call, evaluator, save_to_path,
+        val_dataset = self._get_dataset(evaluator.corpus, tokenizer, max_len)
+        return self._train_and_save(model, tokenizer, dataset, val_dataset, evaluator, save_to_path,
                                     self.save_steps, max_len, device)
 
     @abstractmethod

@@ -7,7 +7,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator
+from text_models.bert_tasks.evaluation import LossEvaluator, ValMetric
+
 
 class STSTask(AbstractTask):
     """
@@ -41,13 +42,12 @@ class STSTask(AbstractTask):
         eval_steps: int = 200,
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
-        eval_with_task: bool = False,
-        val_on_docs: bool = False,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
@@ -68,12 +68,11 @@ class STSTask(AbstractTask):
 
         dataset = self.__get_train_data_from_docs(corpus)
 
-        train_dataset, val_dataset = self._train_val_split(dataset, lambda: STSTask.ListDataset(evaluator.queries))
+        train_dataset, val_dataset = self._train_val_split(dataset)
         train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
 
         train_loss = losses.CosineSimilarityLoss(model)
-        if not self.eval_with_task:
-            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size)
+        evaluator = LossEvaluator(evaluator, train_loss, val_dataset, STSTask.ListDataset(evaluator.queries), self.metric_for_best_model, self.batch_size)
 
         warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")

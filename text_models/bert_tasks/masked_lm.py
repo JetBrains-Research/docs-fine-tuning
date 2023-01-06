@@ -2,11 +2,11 @@ import os.path
 from typing import Union
 
 from sentence_transformers import models, evaluation
-from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
+from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import IREvalTrainer
+from text_models.bert_tasks.evaluation import ValMetric
 from text_models.datasets import BertModelMLMDataset
 
 
@@ -32,13 +32,12 @@ class MaskedLMTask(AbstractTask):
         eval_steps: int = 200,
         n_examples: Union[int, str] = "all",
         val: float = 0.1,
-        eval_with_task: bool = False,
-        val_on_docs: bool = False,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: int = 5000,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, eval_with_task, val_on_docs, save_best_model)
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
         self.mask_probability = mask_probability
         self.save_steps = save_steps
 
@@ -59,13 +58,13 @@ class MaskedLMTask(AbstractTask):
 
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
-        val_dataset_call = lambda: BertModelMLMDataset(
+        val_dataset = BertModelMLMDataset(
             tokenizer(evaluator.queries, max_length=max_len, padding="max_length",
                       truncation=True, return_tensors="pt"),
             mask_probability=self.mask_probability, n_examples=self.n_examples
         )
 
-        return self._train_and_save(model, tokenizer, dataset, val_dataset_call, evaluator, save_to_path,
+        return self._train_and_save(model, tokenizer, dataset, val_dataset, evaluator, save_to_path,
                                     self.save_steps, max_len, device)
 
     def load(self, load_from_path) -> models.Transformer:

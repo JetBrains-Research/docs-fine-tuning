@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: data/logs/log_kt.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK', 'BUGS_TASK', 'PT_BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+model_types: ['DOC_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -16,8 +16,8 @@ evaluation:
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  models_path: text_models/saved/bert_base/kt_loss
-  results_path: ./results/kt_loss
+  models_path: text_models/saved/bert_base/kotlin
+  results_path: ./results/bert_base/kotlin
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -65,7 +65,7 @@ models:
     max_len: 512
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
-    pretrained_model: bert-base-uncased
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     evaluation_steps: 55
     val_size: 0.1
     tmp_file: null
@@ -73,7 +73,7 @@ models:
     start_train_from_task: false
     start_train_from_bugs: false
     seed: 42
-    save_to_path: text_models/saved/bert_base/kt_loss
+    save_to_path: text_models/saved/test
 
     evaluator_config:
       batch_size: 8
@@ -86,13 +86,12 @@ bert_tasks:
   mlm:
     epochs: 8
     batch_size: 8
-    eval_steps: 250
+    eval_steps: 10
     n_examples: all
     mask_probability: 0.15
-    save_steps: 250
+    save_steps: 10
     val: 0.1
-    eval_with_task: False
-    val_on_docs: False
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   nsp:
@@ -103,8 +102,7 @@ bert_tasks:
     forget_const: 10
     save_steps: 250
     val: 0.1
-    eval_with_task: False
-    val_on_docs: False
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sase:
@@ -114,8 +112,7 @@ bert_tasks:
     n_examples: all
     save_steps: 250
     val: 0.1
-    eval_with_task: False
-    val_on_docs: False
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   sts:
@@ -125,8 +122,7 @@ bert_tasks:
     n_examples: all
     forget_const: 10
     val: 0.1
-    eval_with_task: False
-    val_on_docs: False
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
 
   tsdae:
@@ -134,6 +130,6 @@ bert_tasks:
     batch_size: 8
     eval_steps: 250
     n_examples: all
-    eval_with_task: False
-    val_on_docs: False
+    val: 0.1
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.

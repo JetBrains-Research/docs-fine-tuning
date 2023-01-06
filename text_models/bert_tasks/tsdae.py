@@ -35,16 +35,16 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             self.n_examples = len(corpus)
 
         dataset = DenoisingAutoEncoderDataset(corpus[: int(self.n_examples)])
-        val_dataset_call = lambda: DenoisingAutoEncoderDataset(evaluator.queries)
+        val_task_dataset = DenoisingAutoEncoderDataset(evaluator.queries)
 
-        train_dataset, val_dataset = self._train_val_split(dataset, val_dataset_call)
+        train_dataset, val_dataset = self._train_val_split(dataset)
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
 
         train_loss = losses.DenoisingAutoEncoderLoss(
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True
         )
-        if val_dataset is not None:
-            evaluator = LossEvaluator(evaluator, train_loss, val_dataset, self.batch_size)
+
+        evaluator = LossEvaluator(evaluator, train_loss, val_dataset, val_task_dataset, self.metric_for_best_model, self.batch_size)
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")

@@ -1,2 +1,2 @@
-from text_models.bert_tasks.evaluation.eval_trainer import IREvalTrainer
+from text_models.bert_tasks.evaluation.eval_trainer import IREvalTrainer, ValMetric
 from text_models.bert_tasks.evaluation.loss_evaluator import LossEvaluator
