@@ -63,19 +63,23 @@ class IREvalTrainer(Trainer):
             if show_progress_bar:
                 loop = tqdm(loader, leave=True)
             for batch in loop:
-                input_ids = batch["input_ids"].to(self.device)
-                attention_mask = batch["attention_mask"].to(self.device)
+                batch = self.__batch_to_device(batch)
+                input_ids = batch["input_ids"]
+                attention_mask = batch["attention_mask"]
                 with torch.no_grad():
-                    model_output = self.model(input_ids, attention_mask=attention_mask)
+                    model_output = self.model(input_ids, attention_mask=attention_mask, return_dict=False)
 
-                sentence_embeddings = (
-                    self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
-                )
-                if normalize_embeddings:
-                    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-                if convert_to_numpy:
-                    sentence_embeddings = sentence_embeddings.cpu()
-                result += sentence_embeddings
+                    sentence_embeddings = (
+                        self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
+                    ).to(self.device)
+
+                    sentence_embeddings = sentence_embeddings.detach()
+
+                    if normalize_embeddings:
+                        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+                    if convert_to_numpy:
+                        sentence_embeddings = sentence_embeddings.cpu()
+                    result.extend(sentence_embeddings)
 
             if convert_to_tensor:
                 return torch.stack(result)
@@ -90,6 +94,12 @@ class IREvalTrainer(Trainer):
             return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
                 input_mask_expanded.sum(1), min=1e-9
             )
+
+        def __batch_to_device(self, batch):
+            for key in batch:
+                if isinstance(batch[key], torch.Tensor):
+                    batch[key] = batch[key].to(self.device)
+            return batch
 
     def set_env_vars(
         self,

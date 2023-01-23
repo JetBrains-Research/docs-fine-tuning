@@ -255,6 +255,7 @@ class BertSiameseModel(AbstractModel):
             relevant_docs,
             main_score_function="cos_sim",
             score_functions={"cos_sim": cos_sim},  # type: ignore
+            show_progress_bar=True,
             **self.evaluator_config,
         )
 
