@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Union, Tuple, Callable, Optional
+from typing import Union, Tuple, Optional
 
 from sentence_transformers import models, evaluation
 from torch.utils.data import random_split, Dataset
@@ -100,7 +100,7 @@ class AbstractTask(ABC):
         )
 
         trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
-        trainer.set_env_vars(evaluator, model.bert, tokenizer, self.name, val_task_dataset, max_len, device)
+        trainer.set_env_vars(evaluator, model.bert, tokenizer, val_task_dataset, max_len, device)
         trainer.train()
         # if self.save_best_model == True we will use best model
         output_path = os.path.join(save_to_path, "output_docs")

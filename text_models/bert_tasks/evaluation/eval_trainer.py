@@ -1,15 +1,13 @@
 import logging
-from typing import List, Union, Optional, Dict
+from typing import List, Optional, Dict
 
-import numpy as np
-import torch
+from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
-from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
+from torch import nn
+from torch.utils.data import Dataset
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
 
 from text_models.bert_tasks.evaluation.save_loss import write_csv_loss
-from text_models.datasets import BertModelDataset
 
 logger = logging.getLogger(__name__)
 
@@ -20,100 +18,49 @@ class ValMetric:
 
 
 class IREvalTrainer(Trainer):
-    class EvalModel:
-        def __init__(self, model: BertModel, tokenizer: PreTrainedTokenizerBase, task: str, max_len: int, device: str):
+    class EvalTransformer(nn.Module):
+        def __init__(self, model, tokenizer, max_len):
+            super(IREvalTrainer.EvalTransformer, self).__init__()
             self.model = model
             self.tokenizer = tokenizer
             self.max_len = max_len
-            self.device = torch.device(device)
-            self.task = task
 
-        def encode(
-            self,
-            sentences: Union[str, List[str]],
-            batch_size: int = 32,
-            show_progress_bar: bool = None,
-            output_value: str = "sentence_embedding",
-            convert_to_numpy: bool = True,
-            convert_to_tensor: bool = False,
-            device: str = None,
-            normalize_embeddings: bool = False,
-        ) -> Union[List[torch.Tensor], np.ndarray, torch.Tensor]:
-            self.model.eval()
+        def forward(self, features):
+            trans_features = {'input_ids': features['input_ids'], 'attention_mask': features['attention_mask']}
+            if 'token_type_ids' in features:
+                trans_features['token_type_ids'] = features['token_type_ids']
 
-            if device is not None:
-                self.device = torch.device(device)
+            output_states = self.model(**trans_features, return_dict=False)
+            output_tokens = output_states[0]
 
-            if convert_to_tensor:
-                convert_to_numpy = False
+            features.update({'token_embeddings': output_tokens, 'attention_mask': features['attention_mask']})
+            return features
 
-            if output_value != "sentence_embedding":
-                convert_to_tensor = False
-                convert_to_numpy = False
+        def get_word_embedding_dimension(self) -> int:
+            return self.model.config.hidden_size
 
-            encoded_input = self.tokenizer(
-                sentences, max_length=self.max_len, padding="max_length", truncation=True, return_tensors="pt"
-            )
-            dataset = BertModelDataset(encoded_input)
-            loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
-            result = []
-
-            loop = loader
-            if show_progress_bar:
-                loop = tqdm(loader, leave=True)
-            for batch in loop:
-                batch = self.__batch_to_device(batch)
-                input_ids = batch["input_ids"]
-                attention_mask = batch["attention_mask"]
-                with torch.no_grad():
-                    model_output = self.model(input_ids, attention_mask=attention_mask, return_dict=False)
-
-                    sentence_embeddings = (
-                        self.__mean_pooling(model_output, attention_mask) if self.task != "nsp" else model_output[1]
-                    ).to(self.device)
-
-                    sentence_embeddings = sentence_embeddings.detach()
-
-                    if normalize_embeddings:
-                        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-                    if convert_to_numpy:
-                        sentence_embeddings = sentence_embeddings.cpu()
-                    result.extend(sentence_embeddings)
-
-            if convert_to_tensor:
-                return torch.stack(result)
-            if convert_to_numpy:
-                return np.stack(result)
-            return result
-
-        @staticmethod
-        def __mean_pooling(model_output, attention_mask):
-            token_embeddings = model_output[0]
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-            return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
-                input_mask_expanded.sum(1), min=1e-9
-            )
-
-        def __batch_to_device(self, batch):
-            for key in batch:
-                if isinstance(batch[key], torch.Tensor):
-                    batch[key] = batch[key].to(self.device)
-            return batch
+        def tokenize(self, texts: List[str]):
+            output = {}
+            to_tokenize = [[str(s).strip() for s in col] for col in [texts]]
+            output.update(self.tokenizer(*to_tokenize, padding=True, truncation='longest_first', return_tensors="pt",
+                                         max_length=self.max_len))
+            return output
 
     def set_env_vars(
         self,
         evaluator: SentenceEvaluator,
         model: BertModel,
         tokenizer: PreTrainedTokenizerBase,
-        task: str,
         val_task_dataset: Dataset,
         max_len: int = 512,
         device: str = "cpu",
     ):
         self.evaluator = evaluator
         self.val_task_dataset = val_task_dataset
-        self.eval_model = IREvalTrainer.EvalModel(model, tokenizer, task, max_len, device)
+
+        transformer = IREvalTrainer.EvalTransformer(model, tokenizer, max_len)
+        pooling = models.Pooling(transformer.get_word_embedding_dimension())
+        self.eval_model = SentenceTransformer(modules=[transformer, pooling], device=device)
 
     def evaluate(
         self,
