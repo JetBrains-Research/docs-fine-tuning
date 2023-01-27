@@ -11,11 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class LossEvaluator(SentenceEvaluator):
-    def __init__(self, base_evaluator: SentenceEvaluator,
-                 loss: Module, eval_dataset: Dataset,
-                 eval_task_dataset: Dataset,
-                 metric_for_best_model: str = ValMetric.TASK,
-                 batch_size: int = 32):
+    def __init__(
+        self,
+        base_evaluator: SentenceEvaluator,
+        loss: Module,
+        eval_dataset: Dataset,
+        eval_task_dataset: Dataset,
+        metric_for_best_model: str = ValMetric.TASK,
+        batch_size: int = 32,
+    ):
         self.base_evaluator = base_evaluator
         self.loss = loss
         self.eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=batch_size)
@@ -39,15 +43,15 @@ class LossEvaluator(SentenceEvaluator):
         if self.metric_for_best_model == ValMetric.TASK:
             return base_metric
         if self.metric_for_best_model == ValMetric.LOSS_DOCS:
-            return -loss_value # return minus loss because of specific implementation of SBERT evaluation
+            return -loss_value  # return minus loss because of specific implementation of SBERT evaluation
         return -loss_task_value
 
     def __compute_loss(self, dataloader: DataLoader):
-        val_loss = 0.
+        val_loss = 0.0
         with torch.no_grad():
             for data in dataloader:
                 features, labels = data
                 val_loss += self.loss(features, labels)
 
         val_loss /= len(dataloader)
-        return val_loss.item() # type: ignore
+        return val_loss.item()  # type: ignore

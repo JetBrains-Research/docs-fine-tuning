@@ -1,5 +1,5 @@
 import os.path
-from typing import Union
+from typing import Union, Optional
 
 from sentence_transformers import models, evaluation
 from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig
@@ -29,17 +29,18 @@ class MaskedLMTask(AbstractTask):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,
         n_examples: Union[int, str] = "all",
         val: float = 0.1,
         metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         mask_probability: float = 0.15,
-        save_steps: int = 5000,
+        save_steps: Optional[int] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
+        super().__init__(
+            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+        )
         self.mask_probability = mask_probability
-        self.save_steps = save_steps
 
     def finetune_on_docs(
         self,
@@ -59,13 +60,16 @@ class MaskedLMTask(AbstractTask):
         inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
         dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
         val_dataset = BertModelMLMDataset(
-            tokenizer(evaluator.queries, max_length=max_len, padding="max_length",
-                      truncation=True, return_tensors="pt"),
-            mask_probability=self.mask_probability, n_examples=self.n_examples
+            tokenizer(
+                evaluator.queries, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt"
+            ),
+            mask_probability=self.mask_probability,
+            n_examples=self.n_examples,
         )
 
-        return self._train_and_save(model, tokenizer, dataset, val_dataset, evaluator, save_to_path,
-                                    self.save_steps, max_len, device)
+        return self._train_and_save(
+            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device
+        )
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

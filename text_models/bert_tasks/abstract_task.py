@@ -27,10 +27,11 @@ class AbstractTask(ABC):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,  # if None then epoch mode will be used
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         metric_for_best_model: str = ValMetric.TASK,
+        save_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_best_model: bool = False,
     ):
         self.epochs = epochs
@@ -40,6 +41,7 @@ class AbstractTask(ABC):
         self.save_best_model = save_best_model
         self.val = val
         self.metric_for_best_model = metric_for_best_model
+        self.save_steps = save_steps
 
     @abstractmethod
     def finetune_on_docs(
@@ -74,10 +76,18 @@ class AbstractTask(ABC):
         """
         raise NotImplementedError()
 
-    def _train_and_save(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, dataset: Dataset,
-               val_task_dataset: Dataset,
-               evaluator: evaluation.InformationRetrievalEvaluator, save_to_path: str,
-               save_steps: int, max_len: int, device: str) -> models.Transformer:
+    def _train_and_save(
+        self,
+        model: PreTrainedModel,
+        tokenizer: PreTrainedTokenizer,
+        dataset: Dataset,
+        val_task_dataset: Dataset,
+        evaluator: evaluation.InformationRetrievalEvaluator,
+        save_to_path: str,
+        save_steps: Optional[int],
+        max_len: int,
+        device: str,
+    ) -> models.Transformer:
 
         train_dataset, val_dataset = self._train_val_split(dataset)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
@@ -87,16 +97,15 @@ class AbstractTask(ABC):
             per_device_train_batch_size=self.batch_size,
             per_device_eval_batch_size=evaluator.batch_size,
             num_train_epochs=self.epochs,
-            save_strategy=IntervalStrategy.STEPS,
+            save_strategy=IntervalStrategy.EPOCH if self.save_steps is None else IntervalStrategy.STEPS,
             save_steps=save_steps,
-            save_total_limit=3,
-            evaluation_strategy=IntervalStrategy.STEPS,
+            evaluation_strategy=IntervalStrategy.EPOCH if self.eval_steps is None else IntervalStrategy.STEPS,
             eval_steps=self.eval_steps,
             load_best_model_at_end=self.save_best_model,
             metric_for_best_model=self.metric_for_best_model,
             greater_is_better=(self.metric_for_best_model == "task_map"),
             disable_tqdm=False,
-            do_eval=True
+            do_eval=True,
         )
 
         trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
@@ -109,10 +118,8 @@ class AbstractTask(ABC):
 
         return models.Transformer(output_path)
 
-    def _train_val_split(self, dataset: Dataset) -> Tuple[
-        Dataset, Optional[Dataset]]:
+    def _train_val_split(self, dataset: Dataset) -> Tuple[Dataset, Optional[Dataset]]:
         train_size = int((1 - self.val) * len(dataset))
         test_size = len(dataset) - train_size
         train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])
         return train_dataset, eval_dataset
-

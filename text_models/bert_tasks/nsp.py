@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
@@ -28,15 +28,17 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         forget_const: int = 10,
-        save_steps: int = 2000,
+        save_steps: Optional[int] = None,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model, save_steps)
+        super().__init__(
+            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+        )
         self.forget_const = forget_const
 
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:

@@ -44,7 +44,9 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True
         )
 
-        evaluator = LossEvaluator(evaluator, train_loss, val_dataset, val_task_dataset, self.metric_for_best_model, self.batch_size)
+        evaluator = LossEvaluator(
+            evaluator, train_loss, val_dataset, val_task_dataset, self.metric_for_best_model, self.batch_size
+        )
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")
@@ -56,10 +58,10 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             optimizer_params={"lr": 3e-5},
             show_progress_bar=True,
             evaluator=evaluator,
-            evaluation_steps=self.eval_steps,
+            evaluation_steps=0 if self.eval_steps is None else self.eval_steps,
             checkpoint_path=checkpoints_path,
             output_path=output_path,
-            checkpoint_save_total_limit=3,
+            checkpoint_save_steps=self.save_steps,
             save_best_model=self.save_best_model,
         )
 

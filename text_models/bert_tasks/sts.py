@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
@@ -39,15 +39,18 @@ class STSTask(AbstractTask):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,
         n_examples: Union[str, int] = "all",
         val: float = 0.1,
         metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
+        save_steps: Optional[int] = None,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
+        super().__init__(
+            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+        )
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
 
@@ -72,7 +75,14 @@ class STSTask(AbstractTask):
         train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
 
         train_loss = losses.CosineSimilarityLoss(model)
-        evaluator = LossEvaluator(evaluator, train_loss, val_dataset, STSTask.ListDataset(evaluator.queries), self.metric_for_best_model, self.batch_size)
+        evaluator = LossEvaluator(
+            evaluator,
+            train_loss,
+            val_dataset,
+            STSTask.ListDataset(evaluator.queries),
+            self.metric_for_best_model,
+            self.batch_size,
+        )
 
         warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
@@ -82,10 +92,10 @@ class STSTask(AbstractTask):
             epochs=self.epochs,
             warmup_steps=warmup,
             evaluator=evaluator,
-            evaluation_steps=self.eval_steps,
+            evaluation_steps=0 if self.eval_steps is None else self.eval_steps,
             checkpoint_path=checkpoints_path,
             output_path=output_path,
-            checkpoint_save_total_limit=3,
+            checkpoint_save_steps=self.save_steps,
             save_best_model=self.save_best_model,
         )
 
@@ -108,7 +118,7 @@ class STSTask(AbstractTask):
                 )
         n_examples = len(train_data) if self.n_examples == "all" else int(self.n_examples)
 
-        return STSTask.ListDataset(train_data[: n_examples])
+        return STSTask.ListDataset(train_data[:n_examples])
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

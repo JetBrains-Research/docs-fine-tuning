@@ -3,7 +3,7 @@ dataset: idea # you can configure datasets with configs/datasets.yml
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: null # data/logs/log_idea.txt # set null for stdout
+log_file: data/logs/log_test.txt # data/logs/log_idea.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
 model_types: ['DOC_TASK', 'PT_DOC_TASK'] # supported training/evaluation types
@@ -86,10 +86,10 @@ bert_tasks:
   mlm:
     epochs: 8
     batch_size: 8
-    eval_steps: 300
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     mask_probability: 0.15
-    save_steps: 300
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
@@ -97,10 +97,10 @@ bert_tasks:
   nsp:
     epochs: 2
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     forget_const: 10
-    save_steps: 250
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
@@ -108,9 +108,9 @@ bert_tasks:
   sase:
     epochs: 8
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
-    save_steps: 250
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
@@ -118,7 +118,8 @@ bert_tasks:
   sts:
     epochs: 2
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     forget_const: 10
     val: 0.1
@@ -128,7 +129,8 @@ bert_tasks:
   tsdae:
     epochs: 8
     batch_size: 8
-    eval_steps: 300
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'

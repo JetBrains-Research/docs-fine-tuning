@@ -1,6 +1,6 @@
 import os.path
 import tempfile
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Optional
 
 import numpy as np
 import torch.utils.data
@@ -60,7 +60,8 @@ class BertSiameseModel(AbstractModel):
         n_examples: Union[str, int] = "all",
         max_len: int = 512,
         warmup_rate: float = 0.1,
-        evaluation_steps: int = 500,
+        evaluation_steps: Optional[int] = None, # if None then epoch mode will be used
+        save_steps: Optional[int] = None, # if None then epoch mode will be used
         evaluator_config: Union[DictConfig, ListConfig] = None,
         val_size: float = 0.1,
         task_loss: str = "cossim",  # or 'triplet'
@@ -82,6 +83,7 @@ class BertSiameseModel(AbstractModel):
         self.max_len = max_len
         self.loss = task_loss
         self.evaluation_steps = evaluation_steps
+        self.save_steps = save_steps
         self.save_best_model = save_best_model
         self.evaluator_config = evaluator_config
         self.start_train_from_task = start_train_from_task
@@ -199,11 +201,11 @@ class BertSiameseModel(AbstractModel):
             epochs=self.epochs,
             warmup_steps=self.warmup_steps,
             evaluator=self.evaluator,
-            evaluation_steps=self.evaluation_steps,
+            evaluation_steps=0 if self.evaluation_steps is None else self.evaluation_steps,
             output_path=save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output"),
             checkpoint_path=os.path.join(save_to_dir, "checkpoints"),
             show_progress_bar=True,
-            checkpoint_save_total_limit=3,
+            checkpoint_save_steps=self.save_steps,
             save_best_model=self.save_best_model,
         )
 

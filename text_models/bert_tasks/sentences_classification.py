@@ -1,21 +1,19 @@
 import os
 from abc import abstractmethod
-from typing import Union
+from typing import Union, Optional
 
 from sentence_transformers import evaluation, models
 from torch.utils.data import Dataset
 from transformers import (
     AutoModelForNextSentencePrediction,
     AutoTokenizer,
-    TrainingArguments,
-    IntervalStrategy,
     AutoConfig,
     PreTrainedTokenizerBase,
 )
 
 from data_processing.util import Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import IREvalTrainer, ValMetric
+from text_models.bert_tasks.evaluation import ValMetric
 
 
 class SentencesClassificationTask(AbstractTask):
@@ -31,20 +29,6 @@ class SentencesClassificationTask(AbstractTask):
     """
 
     name = "abstract_sentence_classification"
-
-    def __init__(
-        self,
-        epochs: int = 2,
-        batch_size: int = 16,
-        eval_steps: int = 200,
-        n_examples: Union[str, int] = "all",
-        val: float = 0.1,
-        metric_for_best_model: str = ValMetric.TASK,
-        save_best_model: bool = False,
-        save_steps: int = 2000,
-    ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_best_model)
-        self.save_steps = save_steps
 
     def finetune_on_docs(
         self,
@@ -62,8 +46,9 @@ class SentencesClassificationTask(AbstractTask):
 
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
         val_dataset = self._get_dataset(evaluator.corpus, tokenizer, max_len)
-        return self._train_and_save(model, tokenizer, dataset, val_dataset, evaluator, save_to_path,
-                                    self.save_steps, max_len, device)
+        return self._train_and_save(
+            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device
+        )
 
     @abstractmethod
     def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
