@@ -1,11 +1,12 @@
 import logging
+from typing import Optional, Dict
+
 import torch
 from sentence_transformers.evaluation import SentenceEvaluator
 from torch.nn import Module
 from torch.utils.data import Dataset, DataLoader
 
-from text_models.bert_tasks.evaluation.save_loss import write_csv_loss
-from text_models.bert_tasks.evaluation import ValMetric
+from text_models.bert_tasks.evaluation.util import write_csv_loss, ValMetric
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +21,14 @@ class LossEvaluator(SentenceEvaluator):
         metric_for_best_model: str = ValMetric.TASK,
         batch_size: int = 32,
     ):
+        super(LossEvaluator, self).__init__()
         self.base_evaluator = base_evaluator
         self.loss = loss
         self.eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=batch_size)
         self.eval_task_dataloader = DataLoader(eval_task_dataset, shuffle=True, batch_size=batch_size)
         self.metric_for_best_model = metric_for_best_model
+
+        self.metrics: Optional[Dict[str, float]] = None
 
     def __call__(self, model, output_path: str = None, epoch: int = -1, steps: int = -1) -> float:
         self.eval_dataloader.collate_fn = model.smart_batching_collate
@@ -39,6 +43,8 @@ class LossEvaluator(SentenceEvaluator):
 
         base_metric = self.base_evaluator(model, output_path, epoch, steps)
         logger.info(f"Epoch: {epoch} Step: {steps} Base Metric: {base_metric}")
+
+        self.metrics = {ValMetric.TASK: base_metric, ValMetric.LOSS_TASK: loss_task_value, ValMetric.LOSS_DOCS: loss_value}
 
         if self.metric_for_best_model == ValMetric.TASK:
             return base_metric

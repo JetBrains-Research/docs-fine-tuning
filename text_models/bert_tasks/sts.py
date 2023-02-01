@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from data_processing.util import sections_to_sentences
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator, ValMetric
+from text_models.bert_tasks.evaluation import LossEvaluator, ValMetric, WandbLoggingEvaluator
 
 
 class STSTask(AbstractTask):
@@ -62,6 +62,7 @@ class STSTask(AbstractTask):
         max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
@@ -83,6 +84,8 @@ class STSTask(AbstractTask):
             self.metric_for_best_model,
             self.batch_size,
         )
+        if report_wandb:
+            evaluator = WandbLoggingEvaluator(evaluator, f"{self.name}/global_steps", len(train_dataloader))
 
         warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")

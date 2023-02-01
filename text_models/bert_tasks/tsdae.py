@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator
+from text_models.bert_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator
 
 
 class TSDenoisingAutoEncoderTask(AbstractTask):
@@ -24,6 +24,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
@@ -47,6 +48,9 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         evaluator = LossEvaluator(
             evaluator, train_loss, val_dataset, val_task_dataset, self.metric_for_best_model, self.batch_size
         )
+
+        if report_wandb:
+            evaluator = WandbLoggingEvaluator(evaluator, f"{self.name}/global_steps", len(train_dataloader))
 
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")

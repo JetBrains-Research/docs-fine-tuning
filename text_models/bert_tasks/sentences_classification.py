@@ -38,6 +38,7 @@ class SentencesClassificationTask(AbstractTask):
         max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
 
         config = AutoConfig.from_pretrained(pretrained_model)
@@ -47,7 +48,7 @@ class SentencesClassificationTask(AbstractTask):
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
         val_dataset = self._get_dataset(evaluator.corpus, tokenizer, max_len)
         return self._train_and_save(
-            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device
+            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device, report_wandb
         )
 
     @abstractmethod

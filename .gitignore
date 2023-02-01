@@ -12,3 +12,4 @@ data/logs
 results/
 
 .ipynb_checkpoints/
+wandb/

@@ -66,7 +66,8 @@ models:
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
-    evaluation_steps: 200
+    evaluation_steps: null
+    save_steps: null
     val_size: 0.1
     tmp_file: null
     device: cuda # 'cpu' or 'cuda'
@@ -74,6 +75,7 @@ models:
     start_train_from_bugs: false
     seed: 42
     save_to_path: text_models/saved/test
+    report_wandb: true
 
     evaluator_config:
       batch_size: 8

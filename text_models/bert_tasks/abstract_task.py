@@ -52,6 +52,7 @@ class AbstractTask(ABC):
         max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
         """
         Load, fine-tune and save model.
@@ -87,6 +88,7 @@ class AbstractTask(ABC):
         save_steps: Optional[int],
         max_len: int,
         device: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
 
         train_dataset, val_dataset = self._train_val_split(dataset)
@@ -106,10 +108,11 @@ class AbstractTask(ABC):
             greater_is_better=(self.metric_for_best_model == "task_map"),
             disable_tqdm=False,
             do_eval=True,
+            report_to="none",
         )
 
         trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
-        trainer.set_env_vars(evaluator, model.bert, tokenizer, val_task_dataset, max_len, device)
+        trainer.set_env_vars(evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb)
         trainer.train()
         # if self.save_best_model == True we will use best model
         output_path = os.path.join(save_to_path, "output_docs")

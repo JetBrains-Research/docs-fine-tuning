@@ -50,6 +50,7 @@ class MaskedLMTask(AbstractTask):
         max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
@@ -68,7 +69,7 @@ class MaskedLMTask(AbstractTask):
         )
 
         return self._train_and_save(
-            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device
+            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device, report_wandb
         )
 
     def load(self, load_from_path) -> models.Transformer:

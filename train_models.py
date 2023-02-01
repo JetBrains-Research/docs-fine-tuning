@@ -3,6 +3,7 @@ import logging
 import os
 import tempfile
 
+from datetime import datetime
 import pandas as pd
 
 from data_processing.util import flatten, get_corpus, get_docs_text, load_config
@@ -52,6 +53,7 @@ def main():
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
     if config.text_model == "siamese":
+        os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
         disc_ids = train["disc_id"].tolist()
         model = BertSiameseModel(train_corpus_sent, disc_ids, config.bert_tasks, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)

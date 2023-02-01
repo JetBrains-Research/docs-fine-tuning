@@ -1,5 +1,9 @@
 import os
 
+class ValMetric:
+    LOSS_DOCS = "loss"
+    LOSS_TASK = "loss_task"
+    TASK = "task_map"
 
 def write_csv_loss(loss_value: float, loss_task_value: float, output_path: str, epoch: float, steps: int):
     csv_path = os.path.join(output_path, "eval_loss.csv")

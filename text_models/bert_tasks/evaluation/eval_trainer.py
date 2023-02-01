@@ -7,15 +7,10 @@ from torch import nn
 from torch.utils.data import Dataset
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
 
-from text_models.bert_tasks.evaluation.save_loss import write_csv_loss
+from text_models.bert_tasks.evaluation.util import write_csv_loss, ValMetric
+from text_models.bert_tasks.evaluation.wandb_integration import WandbCallback
 
 logger = logging.getLogger(__name__)
-
-
-class ValMetric:
-    LOSS_DOCS = "loss"
-    LOSS_TASK = "loss_task"
-    TASK = "task_map"
 
 
 class IREvalTrainer(Trainer):
@@ -57,7 +52,9 @@ class IREvalTrainer(Trainer):
         tokenizer: PreTrainedTokenizerBase,
         val_task_dataset: Dataset,
         max_len: int = 512,
+        task: str = "mlm",
         device: str = "cpu",
+        report_wandb: bool = False,
     ):
         self.evaluator = evaluator
         self.val_task_dataset = val_task_dataset
@@ -65,6 +62,9 @@ class IREvalTrainer(Trainer):
         transformer = IREvalTrainer.EvalTransformer(model, tokenizer, max_len)
         pooling = models.Pooling(transformer.get_word_embedding_dimension())
         self.eval_model = SentenceTransformer(modules=[transformer, pooling], device=device)
+        self.wandb_integration_callback = None
+        if report_wandb:
+            self.wandb_integration_callback = WandbCallback(task)
 
     def evaluate(
         self,
@@ -97,4 +97,6 @@ class IREvalTrainer(Trainer):
             steps=self.state.global_step,
         )
         metrics[f"{metric_key_prefix}_{ValMetric.TASK}"] = map_value
+        if self.wandb_integration_callback is not None:
+            self.wandb_integration_callback.on_evaluate(self.state, metrics)
         return metrics
