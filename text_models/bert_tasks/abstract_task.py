@@ -2,9 +2,10 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union, Tuple, Optional
 
+from datasets import Dataset as HFDataset
 from sentence_transformers import models, evaluation
 from torch.utils.data import random_split, Dataset
-from transformers import IntervalStrategy, TrainingArguments, PreTrainedTokenizer, PreTrainedModel
+from transformers import IntervalStrategy, TrainingArguments, PreTrainedTokenizer, PreTrainedModel, DataCollator
 
 from data_processing.util import Corpus
 from text_models.bert_tasks.evaluation import IREvalTrainer, ValMetric
@@ -63,6 +64,7 @@ class AbstractTask(ABC):
         :param max_len: max_length parameter of tokenizer
         :param device: What device will be used for training. Possible values: "cpu", "cuda".
         :param save_to_path: Where the fine-tuned model should be saved
+        :param report_wandb: Whether report to wandb or not
         :return: fine-tuned transformer-based model
         """
         raise NotImplementedError()
@@ -81,14 +83,15 @@ class AbstractTask(ABC):
         self,
         model: PreTrainedModel,
         tokenizer: PreTrainedTokenizer,
-        dataset: Dataset,
-        val_task_dataset: Dataset,
+        dataset: Union[Dataset, HFDataset],
+        val_task_dataset: Union[Dataset, HFDataset],
         evaluator: evaluation.InformationRetrievalEvaluator,
         save_to_path: str,
         save_steps: Optional[int],
         max_len: int,
         device: str,
         report_wandb: bool = False,
+        data_collator: Optional[DataCollator] = None,
     ) -> models.Transformer:
 
         train_dataset, val_dataset = self._train_val_split(dataset)
@@ -111,8 +114,12 @@ class AbstractTask(ABC):
             report_to="none",
         )
 
-        trainer = IREvalTrainer(model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset)
-        trainer.set_env_vars(evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb)
+        trainer = IREvalTrainer(
+            model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset, data_collator=data_collator
+        )
+        trainer.set_env_vars(
+            evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb
+        )
         trainer.train()
         # if self.save_best_model == True we will use best model
         output_path = os.path.join(save_to_path, "output_docs")

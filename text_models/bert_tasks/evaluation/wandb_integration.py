@@ -15,7 +15,7 @@ def define_metric(group_name, step_metric):
 class WandbCallback:
     def __init__(self, task: str):
         self.step_metric = f"{task}/global_step"
-        self.group_name  = f"{task}/"
+        self.group_name = f"{task}/"
 
         define_metric(self.group_name, self.step_metric)
 

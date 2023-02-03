@@ -48,7 +48,16 @@ class SentencesClassificationTask(AbstractTask):
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
         val_dataset = self._get_dataset(evaluator.corpus, tokenizer, max_len)
         return self._train_and_save(
-            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device, report_wandb
+            model,
+            tokenizer,
+            dataset,
+            val_dataset,
+            evaluator,
+            save_to_path,
+            self.save_steps,
+            max_len,
+            device,
+            report_wandb,
         )
 
     @abstractmethod

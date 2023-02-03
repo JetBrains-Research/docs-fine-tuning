@@ -44,7 +44,11 @@ class LossEvaluator(SentenceEvaluator):
         base_metric = self.base_evaluator(model, output_path, epoch, steps)
         logger.info(f"Epoch: {epoch} Step: {steps} Base Metric: {base_metric}")
 
-        self.metrics = {ValMetric.TASK: base_metric, ValMetric.LOSS_TASK: loss_task_value, ValMetric.LOSS_DOCS: loss_value}
+        self.metrics = {
+            ValMetric.TASK: base_metric,
+            ValMetric.LOSS_TASK: loss_task_value,
+            ValMetric.LOSS_DOCS: loss_value,
+        }
 
         if self.metric_for_best_model == ValMetric.TASK:
             return base_metric

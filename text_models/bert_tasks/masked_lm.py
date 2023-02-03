@@ -2,12 +2,12 @@ import os.path
 from typing import Union, Optional
 
 from sentence_transformers import models, evaluation
-from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig
+from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig, DataCollatorForLanguageModeling
+from datasets import Dataset
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks.evaluation import ValMetric
-from text_models.datasets import BertModelMLMDataset
 
 
 class MaskedLMTask(AbstractTask):
@@ -58,18 +58,26 @@ class MaskedLMTask(AbstractTask):
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
-        dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
-        val_dataset = BertModelMLMDataset(
-            tokenizer(
-                evaluator.queries, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt"
-            ),
-            mask_probability=self.mask_probability,
-            n_examples=self.n_examples,
+        data_collator = DataCollatorForLanguageModeling(tokenizer, mlm_probability=self.mask_probability)
+
+        inputs = tokenizer(corpus, truncation=True)
+        dataset = Dataset.from_dict(inputs).select(
+            range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))
         )
+        val_dataset = Dataset.from_dict(tokenizer(evaluator.queries, truncation=True))
 
         return self._train_and_save(
-            model, tokenizer, dataset, val_dataset, evaluator, save_to_path, self.save_steps, max_len, device, report_wandb
+            model,
+            tokenizer,
+            dataset,
+            val_dataset,
+            evaluator,
+            save_to_path,
+            self.save_steps,
+            max_len,
+            device,
+            report_wandb,
+            data_collator,
         )
 
     def load(self, load_from_path) -> models.Transformer:

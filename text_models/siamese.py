@@ -70,7 +70,7 @@ class BertSiameseModel(AbstractModel):
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         evaluator_config: Union[DictConfig, ListConfig] = None,
         val_size: float = 0.1,
-        task_loss: str = "cossim",  # or 'triplet'
+        task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
         tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
         start_train_from_task: bool = False,
@@ -117,7 +117,7 @@ class BertSiameseModel(AbstractModel):
 
             self.tapt_data = corpus[:train_size]
 
-            self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
+            self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)  # type: ignore
             self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
 
         if cnf_tasks is not None:
@@ -142,7 +142,7 @@ class BertSiameseModel(AbstractModel):
         self.__train_siamese(
             word_embedding_model,
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK),
-            "pt_task/global_steps"
+            "pt_task/global_steps",
         )
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
