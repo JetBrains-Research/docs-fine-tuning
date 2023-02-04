@@ -46,7 +46,7 @@ class SentencesClassificationTask(AbstractTask):
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
         dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
-        val_dataset = self._get_dataset(evaluator.corpus, tokenizer, max_len)
+        val_dataset = self._get_dataset(evaluator.val_dataset, tokenizer, max_len)  # type: ignore
         return self._train_and_save(
             model,
             tokenizer,

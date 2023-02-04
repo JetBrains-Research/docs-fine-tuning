@@ -80,7 +80,7 @@ class STSTask(AbstractTask):
             evaluator,
             train_loss,
             val_dataset,
-            STSTask.ListDataset(evaluator.queries),
+            STSTask.ListDataset(evaluator.val_dataset),  # type: ignore
             self.metric_for_best_model,
             self.batch_size,
         )

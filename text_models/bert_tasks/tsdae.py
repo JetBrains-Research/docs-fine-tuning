@@ -36,7 +36,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             self.n_examples = len(corpus)
 
         dataset = DenoisingAutoEncoderDataset(corpus[: int(self.n_examples)])
-        val_task_dataset = DenoisingAutoEncoderDataset(evaluator.queries)
+        val_task_dataset = DenoisingAutoEncoderDataset(evaluator.val_dataset)  # type: ignore
 
         train_dataset, val_dataset = self._train_val_split(dataset)
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)

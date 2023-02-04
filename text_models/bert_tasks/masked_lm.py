@@ -64,13 +64,13 @@ class MaskedLMTask(AbstractTask):
         dataset = Dataset.from_dict(inputs).select(
             range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))
         )
-        val_dataset = Dataset.from_dict(tokenizer(evaluator.queries, truncation=True))
+        val_task_dataset = Dataset.from_dict(tokenizer(evaluator.val_dataset, truncation=True))  # type: ignore
 
         return self._train_and_save(
             model,
             tokenizer,
             dataset,
-            val_dataset,
+            val_task_dataset,
             evaluator,
             save_to_path,
             self.save_steps,

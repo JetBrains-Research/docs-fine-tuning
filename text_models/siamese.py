@@ -287,6 +287,7 @@ class BertSiameseModel(AbstractModel):
             **self.evaluator_config,
         )
         evaluator.metrics = None
+        evaluator.val_dataset = val_corpus
         return evaluator
 
     def __create_and_save_model_from_scratch(self) -> str:

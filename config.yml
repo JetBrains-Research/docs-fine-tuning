@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: data/logs/log_test.txt # data/logs/log_idea.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['DOC_TASK', 'PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['PT_DOC_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -75,7 +75,7 @@ models:
     start_train_from_bugs: false
     seed: 42
     save_to_path: text_models/saved/test
-    report_wandb: true
+    report_wandb: false
 
     evaluator_config:
       batch_size: 8
