@@ -36,9 +36,18 @@ class MaskedLMTask(AbstractTask):
         save_best_model: bool = False,
         mask_probability: float = 0.15,
         save_steps: Optional[int] = None,
+        do_eval_on_artefacts: bool = True,
     ):
         super().__init__(
-            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            val,
+            metric_for_best_model,
+            save_steps,
+            save_best_model,
+            do_eval_on_artefacts,
         )
         self.mask_probability = mask_probability
 
@@ -62,7 +71,7 @@ class MaskedLMTask(AbstractTask):
 
         inputs = tokenizer(corpus, truncation=True)
         dataset = Dataset.from_dict(inputs).select(
-            range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))
+            range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))  # type: ignore
         )
         val_task_dataset = Dataset.from_dict(tokenizer(evaluator.val_dataset, truncation=True))  # type: ignore
 
@@ -77,7 +86,7 @@ class MaskedLMTask(AbstractTask):
             max_len,
             device,
             report_wandb,
-            data_collator,
+            data_collator,  # type: ignore
         )
 
     def load(self, load_from_path) -> models.Transformer:

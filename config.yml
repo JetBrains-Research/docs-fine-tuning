@@ -57,7 +57,7 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 8
+    epochs: 12
     batch_size: 8
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
@@ -75,7 +75,7 @@ models:
     start_train_from_bugs: false
     seed: 42
     save_to_path: text_models/saved/test
-    report_wandb: false
+    report_wandb: true
 
     evaluator_config:
       batch_size: 8
@@ -86,7 +86,7 @@ models:
 
 bert_tasks:
   mlm:
-    epochs: 8
+    epochs: 12
     batch_size: 8
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
@@ -95,6 +95,7 @@ bert_tasks:
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
 
   nsp:
     epochs: 2
@@ -106,6 +107,7 @@ bert_tasks:
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
 
   sase:
     epochs: 8
@@ -116,6 +118,7 @@ bert_tasks:
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
 
   sts:
     epochs: 2
@@ -127,9 +130,10 @@ bert_tasks:
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
 
   tsdae:
-    epochs: 8
+    epochs: 12
     batch_size: 8
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
@@ -137,3 +141,4 @@ bert_tasks:
     val: 0.1
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true

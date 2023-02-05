@@ -35,9 +35,18 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         save_best_model: bool = False,
         forget_const: int = 10,
         save_steps: Optional[int] = None,
+        do_eval_on_artefacts: bool = True,
     ):
         super().__init__(
-            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            val,
+            metric_for_best_model,
+            save_steps,
+            save_best_model,
+            do_eval_on_artefacts,
         )
         self.forget_const = forget_const
 

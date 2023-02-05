@@ -21,7 +21,7 @@ class WandbCallback:
 
     def on_evaluate(self, state: TrainerState, metrics: Dict[str, float]):
         metrics = {self.group_name + metric_name: val for metric_name, val in metrics.items()}
-        wandb.log({**metrics, self.step_metric: state.global_step})
+        wandb.log({**metrics, self.step_metric: state.global_step})  # type: ignore
 
 
 class WandbLoggingEvaluator(SentenceEvaluator):
@@ -40,7 +40,11 @@ class WandbLoggingEvaluator(SentenceEvaluator):
         metrics = (
             {self.group_name + ValMetric.TASK: base_value}
             if self.base_evaluator.metrics is None
-            else {self.group_name + metric_name: val for metric_name, val in self.base_evaluator.metrics.items()}
+            else {
+                self.group_name + metric_name: val
+                for metric_name, val in self.base_evaluator.metrics.items()
+                if val != -1
+            }
         )
 
         cur_step = epoch * self.steps_per_epoch + (steps if steps != -1 else self.steps_per_epoch)

@@ -17,7 +17,7 @@ class LossEvaluator(SentenceEvaluator):
         self,
         base_evaluator: SentenceEvaluator,
         loss: Module,
-        eval_dataset: Dataset,
+        eval_dataset: Optional[Dataset],
         eval_task_dataset: Dataset,
         metric_for_best_model: str = ValMetric.TASK,
         batch_size: int = 32,
@@ -25,20 +25,27 @@ class LossEvaluator(SentenceEvaluator):
         super(LossEvaluator, self).__init__()
         self.base_evaluator = base_evaluator
         self.loss = loss
-        self.eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=batch_size)
+        self.eval_dataloader = (
+            DataLoader(eval_dataset, shuffle=True, batch_size=batch_size) if eval_dataset is not None else None
+        )
         self.eval_task_dataloader = DataLoader(eval_task_dataset, shuffle=True, batch_size=batch_size)
         self.metric_for_best_model = metric_for_best_model
 
         self.metrics: Optional[Dict[str, float]] = None
 
     def __call__(self, model, output_path: str = None, epoch: int = -1, steps: int = -1) -> float:
-        self.eval_dataloader.collate_fn = model.smart_batching_collate
-        self.eval_task_dataloader.collate_fn = model.smart_batching_collate
+        loss_value = -1
+        if self.eval_dataloader is not None:
+            self.eval_dataloader.collate_fn = model.smart_batching_collate
+            loss_value = self.__compute_loss(self.eval_dataloader)
 
-        loss_value = self.__compute_loss(self.eval_dataloader)
+        self.eval_task_dataloader.collate_fn = model.smart_batching_collate
         loss_task_value = self.__compute_loss(self.eval_task_dataloader)
 
-        logger.info(f"Epoch: {epoch} Step: {steps} Eval Loss: {loss_value} Eval Loss on Task Data: {loss_task_value}")
+        if loss_value != -1:
+            logger.info(
+                f"Epoch: {epoch} Step: {steps} Eval Loss: {loss_value} Eval Loss on Task Data: {loss_task_value}"
+            )
         if output_path is not None:
             write_csv_loss(loss_value, loss_task_value, output_path, epoch, steps)
 

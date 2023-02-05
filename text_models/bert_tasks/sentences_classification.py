@@ -1,6 +1,5 @@
 import os
 from abc import abstractmethod
-from typing import Union, Optional
 
 from sentence_transformers import evaluation, models
 from torch.utils.data import Dataset
@@ -13,19 +12,11 @@ from transformers import (
 
 from data_processing.util import Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import ValMetric
 
 
 class SentencesClassificationTask(AbstractTask):
     """
     Base class for all sentence classification tasks.
-
-    :param epochs: Number of fine-tuning epochs
-    :param batch_size: Batch size used for fine-tuning
-    :param eval_steps: Number of update steps between two evaluations
-    :param n_examples: Number of input examples that will be used for fine-tuning
-    :param save_best_model: Whether or not to save the best model found during training at the end of training
-    :param save_steps: Number of updates steps before two checkpoint saves
     """
 
     name = "abstract_sentence_classification"

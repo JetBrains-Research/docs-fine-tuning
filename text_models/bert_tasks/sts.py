@@ -45,11 +45,20 @@ class STSTask(AbstractTask):
         metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         save_steps: Optional[int] = None,
+        do_eval_on_artefacts: bool = True,
         warmup_steps: float = 0.1,
         forget_const: int = 10,
     ):
         super().__init__(
-            epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps, save_best_model
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            val,
+            metric_for_best_model,
+            save_steps,
+            save_best_model,
+            do_eval_on_artefacts,
         )
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
@@ -73,7 +82,7 @@ class STSTask(AbstractTask):
         dataset = self.__get_train_data_from_docs(corpus)
 
         train_dataset, val_dataset = self._train_val_split(dataset)
-        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
+        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)  # type: ignore
 
         train_loss = losses.CosineSimilarityLoss(model)
         evaluator = LossEvaluator(

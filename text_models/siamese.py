@@ -122,8 +122,8 @@ class BertSiameseModel(AbstractModel):
 
         if cnf_tasks is not None:
             self.finetuning_strategies = [
-                tasks[name](**cnf_tasks[name]) for name in finetuning_strategies
-            ]  # type: ignore
+                tasks[name](**cnf_tasks[name]) for name in finetuning_strategies  # type: ignore
+            ]
 
     name = "BERT_SIAMESE"
 
@@ -303,7 +303,7 @@ class BertSiameseModel(AbstractModel):
 
     @staticmethod
     def __init_wandb(name: str) -> Union[Run, RunDisabled, None]:
-        return wandb.init(project="INSERT_PROJECT_NAME", entity="INSERT_USER", name=name, reinit=True)
+        return wandb.init(project="docs-fine-tuning", entity="890readrid", name=name, reinit=True)
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         run = None
@@ -314,7 +314,7 @@ class BertSiameseModel(AbstractModel):
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.PT_TASK in model_types_to_train:
@@ -324,7 +324,7 @@ class BertSiameseModel(AbstractModel):
             self.logger.info(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK))
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.DOC_TASK in model_types_to_train:
@@ -332,7 +332,7 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.DOC_TASK)
             self.train_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
@@ -340,7 +340,7 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.PT_DOC_TASK)
             self.train_pt_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.BUGS_TASK in model_types_to_train:
@@ -348,7 +348,7 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.BUGS_TASK)
             self.train_bugs_task()
             self.logger.info(f"Train {TrainTypes.BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.PT_BUGS_TASK in model_types_to_train:
@@ -356,7 +356,7 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.PT_BUGS_TASK)
             self.train_pt_bugs_task()
             self.logger.info(f"Train {TrainTypes.PT_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.DOC_BUGS_TASK in model_types_to_train:
@@ -364,7 +364,7 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.DOC_BUGS_TASK)
             self.train_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
         if TrainTypes.PT_DOC_BUGS_TASK in model_types_to_train:
@@ -372,13 +372,13 @@ class BertSiameseModel(AbstractModel):
                 run = BertSiameseModel.__init_wandb(TrainTypes.PT_DOC_BUGS_TASK)
             self.train_pt_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.PT_DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
-            if self.report_wandb:
+            if self.report_wandb and run is not None:
                 run.finish()
 
     def get_embeddings(self, corpus: Section):
-        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(
+        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(  # type: ignore
             np.float32
-        )  # type: ignore
+        )
 
     def get_doc_embedding(self, doc: List[str]):
         return self.get_embeddings([doc])[0]

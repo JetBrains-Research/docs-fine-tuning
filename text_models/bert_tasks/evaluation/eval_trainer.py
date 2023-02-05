@@ -77,18 +77,19 @@ class IREvalTrainer(Trainer):
 
         if eval_dataset is not None or self.eval_dataset is not None:
             metrics = super().evaluate(self.eval_dataset, ignore_keys, metric_key_prefix)
-            loss_task_val = super().evaluate(self.val_task_dataset, ignore_keys, metric_key_prefix)[
-                f"{metric_key_prefix}_loss"
-            ]
-            metrics[f"{metric_key_prefix}_{ValMetric.LOSS_TASK}"] = loss_task_val
-            if self.args.output_dir is not None:
-                write_csv_loss(
-                    metrics[f"{metric_key_prefix}_loss"],
-                    loss_task_val,
-                    self.args.output_dir,
-                    epoch,
-                    self.state.global_step,
-                )
+
+        loss_task_val = super().evaluate(self.val_task_dataset, ignore_keys, metric_key_prefix)[
+            f"{metric_key_prefix}_loss"
+        ]
+        metrics[f"{metric_key_prefix}_{ValMetric.LOSS_TASK}"] = loss_task_val
+        if self.args.output_dir is not None:
+            write_csv_loss(
+                metrics.get(f"{metric_key_prefix}_loss", -1),
+                loss_task_val,
+                self.args.output_dir,
+                epoch,
+                self.state.global_step,
+            )
 
         map_value = self.evaluator(
             self.eval_model,

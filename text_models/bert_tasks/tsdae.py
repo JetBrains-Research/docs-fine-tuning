@@ -39,7 +39,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         val_task_dataset = DenoisingAutoEncoderDataset(evaluator.val_dataset)  # type: ignore
 
         train_dataset, val_dataset = self._train_val_split(dataset)
-        train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)  # type: ignore
 
         train_loss = losses.DenoisingAutoEncoderLoss(
             model, decoder_name_or_path=pretrained_model, tie_encoder_decoder=True

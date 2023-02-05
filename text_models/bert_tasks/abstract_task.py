@@ -34,6 +34,7 @@ class AbstractTask(ABC):
         metric_for_best_model: str = ValMetric.TASK,
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_best_model: bool = False,
+        do_eval_on_artefacts: bool = True,
     ):
         self.epochs = epochs
         self.batch_size = batch_size
@@ -43,6 +44,7 @@ class AbstractTask(ABC):
         self.val = val
         self.metric_for_best_model = metric_for_best_model
         self.save_steps = save_steps
+        self.do_eval_on_artefacts = do_eval_on_artefacts
 
     @abstractmethod
     def finetune_on_docs(
@@ -103,22 +105,26 @@ class AbstractTask(ABC):
             per_device_eval_batch_size=evaluator.batch_size,
             num_train_epochs=self.epochs,
             save_strategy=IntervalStrategy.EPOCH if self.save_steps is None else IntervalStrategy.STEPS,
-            save_steps=save_steps,
+            save_steps=save_steps,  # type: ignore
             evaluation_strategy=IntervalStrategy.EPOCH if self.eval_steps is None else IntervalStrategy.STEPS,
-            eval_steps=self.eval_steps,
+            eval_steps=self.eval_steps,  # type: ignore
             load_best_model_at_end=self.save_best_model,
             metric_for_best_model=self.metric_for_best_model,
             greater_is_better=(self.metric_for_best_model == "task_map"),
             disable_tqdm=False,
             do_eval=True,
-            report_to="none",
+            report_to="none",  # type: ignore
         )
 
         trainer = IREvalTrainer(
-            model=model, args=args, train_dataset=train_dataset, eval_dataset=val_dataset, data_collator=data_collator
+            model=model,
+            args=args,
+            train_dataset=train_dataset,  # type: ignore
+            eval_dataset=val_dataset,
+            data_collator=data_collator,
         )
         trainer.set_env_vars(
-            evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb
+            evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb  # type: ignore
         )
         trainer.train()
         # if self.save_best_model == True we will use best model
@@ -128,8 +134,12 @@ class AbstractTask(ABC):
 
         return models.Transformer(output_path)
 
-    def _train_val_split(self, dataset: Dataset) -> Tuple[Dataset, Optional[Dataset]]:
+    def _train_val_split(
+        self, dataset: Union[Dataset, HFDataset]
+    ) -> Tuple[Union[Dataset, HFDataset], Optional[Dataset]]:
+        if not self.do_eval_on_artefacts:
+            return dataset, None
         train_size = int((1 - self.val) * len(dataset))
         test_size = len(dataset) - train_size
-        train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])
+        train_dataset, eval_dataset = random_split(dataset, [train_size, test_size])  # type: ignore
         return train_dataset, eval_dataset
