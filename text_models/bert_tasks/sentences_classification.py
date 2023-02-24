@@ -26,7 +26,6 @@ class SentencesClassificationTask(AbstractTask):
         pretrained_model: str,
         docs_corpus: Corpus,
         evaluator: evaluation.InformationRetrievalEvaluator,
-        max_len: int,
         device: str,
         save_to_path: str,
         report_wandb: bool = False,
@@ -36,7 +35,7 @@ class SentencesClassificationTask(AbstractTask):
         model = AutoModelForNextSentencePrediction.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        dataset = self._get_dataset(docs_corpus, tokenizer, max_len)
+        dataset = self._get_dataset(docs_corpus, tokenizer, self.max_len)
         val_dataset = self._get_dataset(evaluator.val_dataset, tokenizer, max_len)  # type: ignore
         return self._train_and_save(
             model,
@@ -46,7 +45,6 @@ class SentencesClassificationTask(AbstractTask):
             evaluator,
             save_to_path,
             self.save_steps,
-            max_len,
             device,
             report_wandb,
         )

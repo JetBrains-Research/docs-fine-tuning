@@ -35,6 +35,7 @@ class AbstractTask(ABC):
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_best_model: bool = False,
         do_eval_on_artefacts: bool = True,
+        max_len: Optional[int] = None,
     ):
         self.epochs = epochs
         self.batch_size = batch_size
@@ -45,6 +46,7 @@ class AbstractTask(ABC):
         self.metric_for_best_model = metric_for_best_model
         self.save_steps = save_steps
         self.do_eval_on_artefacts = do_eval_on_artefacts
+        self.max_len = max_len
 
     @abstractmethod
     def finetune_on_docs(
@@ -52,7 +54,6 @@ class AbstractTask(ABC):
         pretrained_model: str,
         docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
-        max_len: int,
         device: str,
         save_to_path: str,
         report_wandb: bool = False,
@@ -63,7 +64,6 @@ class AbstractTask(ABC):
         :param pretrained_model: Path on disk or name of pre-trained model
         :param docs_corpus: Corpus of documentation sections
         :param evaluator: The Information Retrieval Evaluator for validation
-        :param max_len: max_length parameter of tokenizer
         :param device: What device will be used for training. Possible values: "cpu", "cuda".
         :param save_to_path: Where the fine-tuned model should be saved
         :param report_wandb: Whether report to wandb or not
@@ -90,7 +90,6 @@ class AbstractTask(ABC):
         evaluator: evaluation.InformationRetrievalEvaluator,
         save_to_path: str,
         save_steps: Optional[int],
-        max_len: int,
         device: str,
         report_wandb: bool = False,
         data_collator: Optional[DataCollator] = None,

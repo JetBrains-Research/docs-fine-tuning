@@ -36,6 +36,7 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         forget_const: int = 10,
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
+        max_len: Optional[int] = None,
     ):
         super().__init__(
             epochs,
@@ -47,6 +48,7 @@ class NextSentencePredictionTask(SentencesClassificationTask):
             save_steps,
             save_best_model,
             do_eval_on_artefacts,
+            max_len
         )
         self.forget_const = forget_const
 

@@ -47,6 +47,7 @@ class STSTask(AbstractTask):
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
         warmup_steps: float = 0.1,
+        max_len: Optional[int] = None,
         forget_const: int = 10,
     ):
         super().__init__(
@@ -59,6 +60,7 @@ class STSTask(AbstractTask):
             save_steps,
             save_best_model,
             do_eval_on_artefacts,
+            max_len,
         )
         self.forget_const = forget_const
         self.warmup_steps = warmup_steps
@@ -68,14 +70,13 @@ class STSTask(AbstractTask):
         pretrained_model: str,
         docs_corpus: List[List[List[str]]],
         evaluator: evaluation.InformationRetrievalEvaluator,
-        max_len: int,
         device: str,
         save_to_path: str,
         report_wandb: bool = False,
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
-        word_embedding_model = models.Transformer(pretrained_model, max_seq_length=max_len)
+        word_embedding_model = models.Transformer(pretrained_model, max_seq_length=self.max_len)
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 

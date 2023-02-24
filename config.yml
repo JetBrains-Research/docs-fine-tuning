@@ -1,12 +1,12 @@
-dataset: idea # you can configure datasets with configs/datasets.yml
+dataset: kotlin # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: data/logs/log_test.txt # data/logs/log_idea.txt # set null for stdout
+log_file: null # data/logs/log_idea.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['DOC_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -17,7 +17,7 @@ evaluation:
   save_results: true
   save_graph: true
   models_path: text_models/saved/bert_base/idea
-  results_path: ./results/bert_base/idea
+  results_path: ./results/test
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -75,7 +75,7 @@ models:
     start_train_from_bugs: false
     seed: 42
     save_to_path: text_models/saved/test
-    report_wandb: true
+    report_wandb: false
 
     evaluator_config:
       batch_size: 8
@@ -86,8 +86,8 @@ models:
 
 bert_tasks:
   mlm:
-    epochs: 12
-    batch_size: 8
+    epochs: 20
+    batch_size: 32
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
     n_examples: all
@@ -96,6 +96,7 @@ bert_tasks:
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
 
   nsp:
     epochs: 2
@@ -108,6 +109,7 @@ bert_tasks:
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
 
   sase:
     epochs: 8
@@ -119,6 +121,7 @@ bert_tasks:
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
 
   sts:
     epochs: 2
@@ -131,10 +134,11 @@ bert_tasks:
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
 
   tsdae:
-    epochs: 12
-    batch_size: 8
+    epochs: 20
+    batch_size: 32
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
     n_examples: all
@@ -142,3 +146,4 @@ bert_tasks:
     metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used

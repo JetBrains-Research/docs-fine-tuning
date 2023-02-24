@@ -1,9 +1,9 @@
 import os.path
 from typing import Union, Optional
 
+from datasets import Dataset
 from sentence_transformers import models, evaluation
 from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig, DataCollatorForLanguageModeling
-from datasets import Dataset
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
@@ -37,6 +37,7 @@ class MaskedLMTask(AbstractTask):
         mask_probability: float = 0.15,
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
+        max_len: Optional[int] = None,
     ):
         super().__init__(
             epochs,
@@ -48,6 +49,7 @@ class MaskedLMTask(AbstractTask):
             save_steps,
             save_best_model,
             do_eval_on_artefacts,
+            max_len
         )
         self.mask_probability = mask_probability
 
@@ -56,7 +58,6 @@ class MaskedLMTask(AbstractTask):
         pretrained_model: str,
         docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
-        max_len: int,
         device: str,
         save_to_path: str,
         report_wandb: bool = False,
@@ -69,11 +70,11 @@ class MaskedLMTask(AbstractTask):
 
         data_collator = DataCollatorForLanguageModeling(tokenizer, mlm_probability=self.mask_probability)
 
-        inputs = tokenizer(corpus, truncation=True)
+        inputs = tokenizer(corpus, truncation=True, max_length=self.max_len)
         dataset = Dataset.from_dict(inputs).select(
             range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))  # type: ignore
         )
-        val_task_dataset = Dataset.from_dict(tokenizer(evaluator.val_dataset, truncation=True))  # type: ignore
+        val_task_dataset = Dataset.from_dict(tokenizer(evaluator.val_dataset, truncation=True, max_length=self.max_len))  # type: ignore
 
         return self._train_and_save(
             model,
@@ -83,7 +84,6 @@ class MaskedLMTask(AbstractTask):
             evaluator,
             save_to_path,
             self.save_steps,
-            max_len,
             device,
             report_wandb,
             data_collator,  # type: ignore

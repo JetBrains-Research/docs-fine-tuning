@@ -64,7 +64,7 @@ class BertSiameseModel(AbstractModel):
         epochs: int = 5,
         batch_size: int = 16,
         n_examples: Union[str, int] = "all",
-        max_len: int = 512,
+        max_len: int = None,
         warmup_rate: float = 0.1,
         evaluation_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
@@ -130,7 +130,7 @@ class BertSiameseModel(AbstractModel):
     def train_task(self, corpus: Section):
         dumb_model_name = self.__create_and_save_model_from_scratch()
 
-        word_embedding_model = models.Transformer(dumb_model_name)
+        word_embedding_model = models.Transformer(dumb_model_name, max_seq_length=self.max_len)
         self.__train_siamese(
             word_embedding_model,
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK),
@@ -138,7 +138,7 @@ class BertSiameseModel(AbstractModel):
         )
 
     def train_pt_task(self, corpus: Section):
-        word_embedding_model = models.Transformer(self.pretrained_model)
+        word_embedding_model = models.Transformer(self.pretrained_model, max_seq_length=self.max_len)
         self.__train_siamese(
             word_embedding_model,
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK),
@@ -197,6 +197,7 @@ class BertSiameseModel(AbstractModel):
     def __train_siamese(
         self, word_embedding_model: models.Transformer, save_to_dir: str, step_metric: Optional[str] = None
     ):
+        word_embedding_model.max_seq_length = self.max_len
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         dense_model = models.Dense(
             in_features=pooling_model.get_sentence_embedding_dimension(),
@@ -248,7 +249,6 @@ class BertSiameseModel(AbstractModel):
                 pretrained_model,
                 extra_corpus,
                 self.evaluator,
-                self.max_len,
                 self.device,
                 save_to_dir,
                 self.report_wandb,
@@ -303,7 +303,7 @@ class BertSiameseModel(AbstractModel):
 
     @staticmethod
     def __init_wandb(name: str) -> Union[Run, RunDisabled, None]:
-        return wandb.init(project="docs-fine-tuning", entity="890readrid", name=name, reinit=True)
+        return wandb.init(project="docs-fine-tuning", entity="jbr-docs-fine-tuning", name=name, reinit=True)
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         run = None
