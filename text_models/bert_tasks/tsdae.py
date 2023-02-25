@@ -29,7 +29,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model, max_seq_length=self.max_len)
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode='cls')
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
         if self.n_examples == "all":

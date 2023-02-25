@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: null # data/logs/log_idea.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['DOC_TASK'] # supported training/evaluation types
+model_types: ['PT_DOC_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -70,7 +70,6 @@ models:
     evaluation_steps: null
     save_steps: null
     val_size: 0.1
-    tmp_file: null
     device: cuda # 'cpu' or 'cuda'
     start_train_from_task: false
     start_train_from_bugs: false
@@ -88,7 +87,7 @@ models:
 bert_tasks:
   mlm:
     epochs: 20
-    batch_size: 32
+    batch_size: 64
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
     n_examples: all
@@ -147,7 +146,7 @@ bert_tasks:
 
   tsdae:
     epochs: 20
-    batch_size: 32
+    batch_size: 64
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
     n_examples: all

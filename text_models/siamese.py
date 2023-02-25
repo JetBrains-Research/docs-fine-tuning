@@ -5,7 +5,6 @@ from typing import List, Union, Callable, Optional
 import numpy as np
 import torch.utils.data
 import wandb
-from gensim.test.utils import get_tmpfile
 from omegaconf import DictConfig, ListConfig
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import models, losses
@@ -73,7 +72,6 @@ class BertSiameseModel(AbstractModel):
         val_size: float = 0.1,
         task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
-        tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
         start_train_from_task: bool = False,
         start_train_from_bugs: bool = False,
         device: str = "cpu",  # or 'cuda'
@@ -86,7 +84,6 @@ class BertSiameseModel(AbstractModel):
         if finetuning_strategies is None:
             finetuning_strategies = ["mlm"]
         self.device = device
-        self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
         self.max_len = max_len
         self.loss = task_loss
