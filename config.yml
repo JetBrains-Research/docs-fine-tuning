@@ -67,6 +67,7 @@ models:
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    pooling_mode: mean # mean/max/cls
     evaluation_steps: null
     save_steps: null
     val_size: 0.1
@@ -143,6 +144,7 @@ bert_tasks:
     max_len: 128 # if null then default max supported seq length by model will be used
     warmup_ratio: 0.0
     weight_decay: 0.0
+    pooling_mode: mean # mean/max/cls
 
   tsdae:
     epochs: 20
@@ -157,3 +159,4 @@ bert_tasks:
     max_len: 128 # if null then default max supported seq length by model will be used
     warmup_ratio: 0.0
     weight_decay: 0.0
+    pooling_mode: mean # mean/max/cls

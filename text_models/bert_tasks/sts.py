@@ -49,6 +49,7 @@ class STSTask(AbstractTask):
         warmup_ratio: float = 0.,
         weight_decay: float = 0.,
         forget_const: int = 10,
+        pooling_mode: str = 'mean',
     ):
         super().__init__(
             epochs,
@@ -65,6 +66,7 @@ class STSTask(AbstractTask):
             weight_decay
         )
         self.forget_const = forget_const
+        self.pooling_mode = pooling_mode
 
     def finetune_on_docs(
         self,
@@ -78,7 +80,7 @@ class STSTask(AbstractTask):
         corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model, max_seq_length=self.max_len)
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode)
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
         dataset = self.__get_train_data_from_docs(corpus)

@@ -45,6 +45,7 @@ class BertSiameseModel(AbstractModel):
     :param val_size: Ratio of total training examples used for validation dataset
     :param task_loss: The loss function for SNN. Possible values: "cossim", "triplet"
     :param pretrained_model: The name of pretrained text model
+    :param pooling_mode: Can be a string: mean/max/cls
     :param start_train_from_task: If True then fine-tuning on docs step will be skipped and fine-tuned model
                                   from save_to_path will be used to train SNN as pre-trained model.
     :param device: What device will be used for training. Possible values: "cpu", "cuda".
@@ -72,6 +73,7 @@ class BertSiameseModel(AbstractModel):
         val_size: float = 0.1,
         task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
+        pooling_mode: str = 'mean',
         start_train_from_task: bool = False,
         start_train_from_bugs: bool = False,
         device: str = "cpu",  # or 'cuda'
@@ -87,6 +89,7 @@ class BertSiameseModel(AbstractModel):
         self.batch_size = batch_size
         self.max_len = max_len
         self.loss = task_loss
+        self.pooling_mode = pooling_mode
         self.evaluation_steps = evaluation_steps
         self.save_steps = save_steps
         self.save_best_model = save_best_model
@@ -197,7 +200,7 @@ class BertSiameseModel(AbstractModel):
         self, word_embedding_model: models.Transformer, save_to_dir: str, step_metric: Optional[str] = None
     ):
         word_embedding_model.max_seq_length = self.max_len
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode)
         dense_model = models.Dense(
             in_features=pooling_model.get_sentence_embedding_dimension(),
             out_features=self.vector_size,

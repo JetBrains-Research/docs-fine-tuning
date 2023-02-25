@@ -1,4 +1,5 @@
 import os.path
+from typing import Union, Optional
 
 import numpy as np
 from sentence_transformers import models, losses, SentenceTransformer, evaluation
@@ -7,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator
+from text_models.bert_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator, ValMetric
 
 
 class TSDenoisingAutoEncoderTask(AbstractTask):
@@ -16,6 +17,15 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
     """
 
     name = "tsdae"
+
+    def __init__(self, epochs: int = 2, batch_size: int = 16, eval_steps: Optional[int] = None,
+                 n_examples: Union[str, int] = "all", val: float = 0.1, metric_for_best_model: str = ValMetric.TASK,
+                 save_steps: Optional[int] = None, save_best_model: bool = False, do_eval_on_artefacts: bool = True,
+                 max_len: Optional[int] = None, warmup_ratio: float = 0., weight_decay: float = 0., pooling_mode: str = 'mean'):
+
+        super().__init__(epochs, batch_size, eval_steps, n_examples, val, metric_for_best_model, save_steps,
+                         save_best_model, do_eval_on_artefacts, max_len, warmup_ratio, weight_decay)
+        self.pooling_mode = pooling_mode
 
     def finetune_on_docs(
         self,
@@ -29,7 +39,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         corpus = sections_to_sentences(docs_corpus)
 
         word_embedding_model = models.Transformer(pretrained_model, max_seq_length=self.max_len)
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode)
         model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
         if self.n_examples == "all":
