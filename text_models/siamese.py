@@ -20,7 +20,7 @@ from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
-from text_models.bert_tasks.evaluation import WandbLoggingEvaluator
+from text_models.bert_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
@@ -117,6 +117,7 @@ class BertSiameseModel(AbstractModel):
 
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
+            self.eval_task_dataset = self.__get_dataset(val_corpus, val_disc_ids, "all")
 
             self.tapt_data = corpus[:train_size]
 
@@ -217,10 +218,12 @@ class BertSiameseModel(AbstractModel):
             )
         )
 
+        evaluator = LossEvaluator(self.evaluator, train_loss, None, self.eval_task_dataset, batch_size=self.evaluator.batch_size)
+
         evaluator = (
-            WandbLoggingEvaluator(self.evaluator, step_metric, len(train_dataloader))
+            WandbLoggingEvaluator(evaluator, step_metric, len(train_dataloader))
             if self.report_wandb and step_metric is not None
-            else self.evaluator
+            else evaluator
         )
 
         self.model.fit(
