@@ -2,9 +2,9 @@ import os.path
 import tempfile
 from typing import List, Union, Callable, Optional
 
-import wandb
 import numpy as np
 import torch.utils.data
+import wandb
 from gensim.test.utils import get_tmpfile
 from omegaconf import DictConfig, ListConfig
 from sentence_transformers import SentenceTransformer
@@ -21,8 +21,8 @@ from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
-from text_models.datasets import CosineSimilarityDataset, TripletDataset
 from text_models.bert_tasks.evaluation import WandbLoggingEvaluator
+from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
 class BertSiameseModel(AbstractModel):
@@ -40,7 +40,7 @@ class BertSiameseModel(AbstractModel):
     :param batch_size: Batch size used for SNN training
     :param n_examples: Number of bug report pairs that will be used for SNN training
     :param max_len: max_length parameter of tokenizer
-    :param warmup_rate: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
+    :param warmup_ratio: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
     :param evaluation_steps: Number of update steps between two evaluations
     :param evaluator_config: Configuration for the evaluator
     :param val_size: Ratio of total training examples used for validation dataset
@@ -65,7 +65,8 @@ class BertSiameseModel(AbstractModel):
         batch_size: int = 16,
         n_examples: Union[str, int] = "all",
         max_len: int = None,
-        warmup_rate: float = 0.1,
+        warmup_ratio: float = 0.1,
+        weight_decay: float = 0.01,
         evaluation_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         evaluator_config: Union[DictConfig, ListConfig] = None,
@@ -96,6 +97,8 @@ class BertSiameseModel(AbstractModel):
         self.start_train_from_task = start_train_from_task
         self.start_train_from_bugs = start_train_from_bugs
         self.report_wandb = report_wandb
+        self.weight_decay = weight_decay
+        self.warmup_ratio = warmup_ratio
 
         self.vocab_size = None
         self.tokenizer = None
@@ -118,7 +121,6 @@ class BertSiameseModel(AbstractModel):
             self.tapt_data = corpus[:train_size]
 
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)  # type: ignore
-            self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
 
         if cnf_tasks is not None:
             self.finetuning_strategies = [
@@ -224,7 +226,8 @@ class BertSiameseModel(AbstractModel):
         self.model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            warmup_steps=self.warmup_steps,
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),
+            weight_decay=self.weight_decay,
             evaluator=evaluator,
             evaluation_steps=0 if self.evaluation_steps is None else self.evaluation_steps,
             output_path=save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output"),

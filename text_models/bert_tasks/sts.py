@@ -19,7 +19,6 @@ class STSTask(AbstractTask):
     :param eval_steps: Number of update steps between two evaluations
     :param n_examples: Number of input examples that will be used for fine-tuning
     :param save_best_model: Whether or not to save the best model found during training at the end of training
-    :param warmup_steps: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
     :param forget_const: Negative example is chosen as a random sentence in range [(i + forget_const)..len(corpus))
     """
 
@@ -46,8 +45,9 @@ class STSTask(AbstractTask):
         save_best_model: bool = False,
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
-        warmup_steps: float = 0.1,
         max_len: Optional[int] = None,
+        warmup_ratio: float = 0.,
+        weight_decay: float = 0.,
         forget_const: int = 10,
     ):
         super().__init__(
@@ -61,9 +61,10 @@ class STSTask(AbstractTask):
             save_best_model,
             do_eval_on_artefacts,
             max_len,
+            warmup_ratio,
+            weight_decay
         )
         self.forget_const = forget_const
-        self.warmup_steps = warmup_steps
 
     def finetune_on_docs(
         self,
@@ -97,13 +98,13 @@ class STSTask(AbstractTask):
         if report_wandb:
             evaluator = WandbLoggingEvaluator(evaluator, f"{self.name}/global_steps", len(train_dataloader))
 
-        warmup = int(len(train_dataloader) * self.epochs * self.warmup_steps)
         checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
         output_path = os.path.join(save_to_path, "output_docs")
         model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            warmup_steps=warmup,
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),
+            weight_decay=self.weight_decay,
             evaluator=evaluator,
             evaluation_steps=0 if self.eval_steps is None else self.eval_steps,
             checkpoint_path=checkpoints_path,

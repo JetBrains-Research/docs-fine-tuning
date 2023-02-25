@@ -1,5 +1,6 @@
 import os.path
 
+import numpy as np
 from sentence_transformers import models, losses, SentenceTransformer, evaluation
 from sentence_transformers.datasets import DenoisingAutoEncoderDataset
 from torch.utils.data import DataLoader
@@ -56,7 +57,8 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            weight_decay=0,
+            weight_decay=self.weight_decay,
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),
             scheduler="constantlr",
             optimizer_params={"lr": 3e-5},
             show_progress_bar=True,

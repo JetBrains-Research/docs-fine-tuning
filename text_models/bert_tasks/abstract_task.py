@@ -20,6 +20,7 @@ class AbstractTask(ABC):
     :param eval_steps: Number of update steps between two evaluations
     :param n_examples: Number of input examples that will be used for fine-tuning
     :param save_best_model: Whether to save the best model found during training at the end of training.
+    :param warmup_ratio: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
     """
 
     name = "abstract"
@@ -36,6 +37,8 @@ class AbstractTask(ABC):
         save_best_model: bool = False,
         do_eval_on_artefacts: bool = True,
         max_len: Optional[int] = None,
+        warmup_ratio: float = 0.,
+        weight_decay: float = 0.
     ):
         self.epochs = epochs
         self.batch_size = batch_size
@@ -47,6 +50,8 @@ class AbstractTask(ABC):
         self.save_steps = save_steps
         self.do_eval_on_artefacts = do_eval_on_artefacts
         self.max_len = max_len
+        self.warmup_ratio = warmup_ratio
+        self.weight_decay = weight_decay
 
     @abstractmethod
     def finetune_on_docs(
@@ -110,6 +115,8 @@ class AbstractTask(ABC):
             load_best_model_at_end=self.save_best_model,
             metric_for_best_model=self.metric_for_best_model,
             greater_is_better=(self.metric_for_best_model == "task_map"),
+            warmup_ratio=self.warmup_ratio,
+            weight_decay=self.weight_decay,
             disable_tqdm=False,
             do_eval=True,
             report_to="none",  # type: ignore
@@ -123,7 +130,7 @@ class AbstractTask(ABC):
             data_collator=data_collator,
         )
         trainer.set_env_vars(
-            evaluator, model.bert, tokenizer, val_task_dataset, max_len, self.name, device, report_wandb  # type: ignore
+            evaluator, model.bert, tokenizer, val_task_dataset, self.max_len, self.name, device, report_wandb  # type: ignore
         )
         trainer.train()
         # if self.save_best_model == True we will use best model

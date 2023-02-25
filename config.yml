@@ -61,7 +61,8 @@ models:
     batch_size: 8
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    warmup_rate: 0.1 # percent of training data
+    warmup_ratio: 0.05 # percent of training data
+    weight_decay: 0.01
     max_len: 512
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
@@ -97,6 +98,8 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.05
+    weight_decay: 0.01
 
   nsp:
     epochs: 2
@@ -110,6 +113,8 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
 
   sase:
     epochs: 8
@@ -122,6 +127,8 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
 
   sts:
     epochs: 2
@@ -135,6 +142,8 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
 
   tsdae:
     epochs: 20
@@ -147,3 +156,5 @@ bert_tasks:
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
