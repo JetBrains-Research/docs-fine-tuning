@@ -67,6 +67,7 @@ class BertSiameseModel(AbstractModel):
         max_len: int = None,
         warmup_ratio: float = 0.1,
         weight_decay: float = 0.01,
+        learning_rate: float = 2e-5,
         evaluation_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         evaluator_config: Union[DictConfig, ListConfig] = None,
@@ -81,6 +82,7 @@ class BertSiameseModel(AbstractModel):
         seed: int = 42,
         save_to_path: str = "./",
         report_wandb: bool = False,
+        hp_search_mode: bool = False,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         if finetuning_strategies is None:
@@ -99,6 +101,8 @@ class BertSiameseModel(AbstractModel):
         self.report_wandb = report_wandb
         self.weight_decay = weight_decay
         self.warmup_ratio = warmup_ratio
+        self.learning_rate = learning_rate
+        self.hp_search_mode = hp_search_mode
 
         self.vocab_size = None
         self.tokenizer = None
@@ -226,15 +230,19 @@ class BertSiameseModel(AbstractModel):
             else evaluator
         )
 
+        output_path = save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output")
+        checkpoint_path = os.path.join(save_to_dir, "checkpoints")
+
         self.model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio), # TODO len(train_dataloader)
             weight_decay=self.weight_decay,
+            optimizer_params= {'lr': self.learning_rate},
             evaluator=evaluator,
             evaluation_steps=0 if self.evaluation_steps is None else self.evaluation_steps,
-            output_path=save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output"),
-            checkpoint_path=os.path.join(save_to_dir, "checkpoints"),
+            output_path=None if self.hp_search_mode else output_path,
+            checkpoint_path=None if self.hp_search_mode else checkpoint_path,
             show_progress_bar=True,
             checkpoint_save_steps=self.save_steps,
             save_best_model=self.save_best_model,
@@ -289,7 +297,6 @@ class BertSiameseModel(AbstractModel):
             relevant_docs,
             main_score_function="cos_sim",
             score_functions={"cos_sim": cos_sim},  # type: ignore
-            show_progress_bar=True,
             **self.evaluator_config,
         )
         evaluator.metrics = None

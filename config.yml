@@ -3,10 +3,10 @@ dataset: kotlin # you can configure datasets with configs/datasets.yml
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: null # data/logs/log_idea.txt # set null for stdout
+log_file: data/logs/log_kt.txt # data/logs/log_idea.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['PT_DOC_TASK', 'PT_BUGS_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -57,13 +57,14 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 12
-    batch_size: 8
+    epochs: 6
+    batch_size: 16
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    warmup_ratio: 0.05 # percent of training data
-    weight_decay: 0.01
-    max_len: 512
+    warmup_ratio: 0.1 # percent of training data
+    weight_decay: 0.001
+    learning_rate: 4e-5
+    max_len: 256
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
@@ -75,19 +76,19 @@ models:
     start_train_from_task: false
     start_train_from_bugs: false
     seed: 42
-    save_to_path: text_models/saved/test
-    report_wandb: false
+    save_to_path: text_models/saved/last/kotlin/bert_so
+    report_wandb: true
 
     evaluator_config:
-      batch_size: 8
-      precision_recall_at_k: [1, 5, 10, 15, 20]
+      batch_size: 16
+      precision_recall_at_k: [5]
       accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
       map_at_k: [5, 10] # validation metric
 
 
 bert_tasks:
   mlm:
-    epochs: 20
+    epochs: 23
     batch_size: 64
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
@@ -147,7 +148,7 @@ bert_tasks:
     pooling_mode: mean # mean/max/cls
 
   tsdae:
-    epochs: 20
+    epochs: 23
     batch_size: 64
     eval_steps: null # if null then epoch mode will be used
     save_steps: null # if null then epoch mode will be used
