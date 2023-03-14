@@ -76,7 +76,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
             evaluation_steps=0 if self.eval_steps is None else self.eval_steps,
             checkpoint_path=checkpoints_path,
             output_path=output_path,
-            checkpoint_save_steps=self.save_steps,
+            checkpoint_save_steps=self.save_steps if self.save_steps is not None else len(train_dataloader),
             save_best_model=self.save_best_model,
         )
 

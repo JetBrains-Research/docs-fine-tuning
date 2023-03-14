@@ -232,6 +232,7 @@ class BertSiameseModel(AbstractModel):
 
         output_path = save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output")
         checkpoint_path = os.path.join(save_to_dir, "checkpoints")
+        checkpoint_save_steps = len(train_dataloader) if self.save_steps is None else self.save_steps
 
         self.model.fit(
             train_objectives=[(train_dataloader, train_loss)],
@@ -244,7 +245,7 @@ class BertSiameseModel(AbstractModel):
             output_path=None if self.hp_search_mode else output_path,
             checkpoint_path=None if self.hp_search_mode else checkpoint_path,
             show_progress_bar=True,
-            checkpoint_save_steps=self.save_steps,
+            checkpoint_save_steps=None if self.hp_search_mode else checkpoint_save_steps,
             save_best_model=self.save_best_model,
         )
 
