@@ -8,7 +8,12 @@ import numpy as np
 import pandas as pd
 
 from data_processing.util import get_corpus
-from text_models import AbstractModel, TrainTypes
+from text_models import AbstractModel
+
+
+class Metric:
+    Acc = "Acc@k"
+    MAP = "MAP@K"
 
 
 class AbstractApproach(ABC):
@@ -36,12 +41,12 @@ class AbstractApproach(ABC):
         self.true_positive_at_k: Optional[np.ndarray] = None
 
     def evaluate_all(
-        self,
-        model_types: List[str],
-        model_class: Type[AbstractModel],
-        models_directory: str,
-        topns: List[int],
-        verbose: bool = True,
+            self,
+            model_types: List[str],
+            model_class: Type[AbstractModel],
+            models_directory: str,
+            topns: List[int],
+            verbose: bool = True,
     ):
         """
         Evaluate all models trained in different ways.
@@ -81,8 +86,8 @@ class AbstractApproach(ABC):
 
         self.results.to_csv(os.path.join(save_to_path, model_name + ".csv"))
         if plot:
-            self.__plot_metric("SuccessRate@k", model_name, save_to_path)
-            self.__plot_metric("MAP@k", model_name, save_to_path)
+            self.__plot_metric(Metric.Acc, model_name, save_to_path)
+            self.__plot_metric(Metric.MAP, model_name, save_to_path)
 
     def __plot_metric(self, metric_name, model_name, save_to_path):
         metric_results = self.results.loc[:, self.results.columns.str.endswith(metric_name)].copy()
@@ -105,7 +110,7 @@ class AbstractApproach(ABC):
 
         :param model: Evaluation model
         :param topks: What number of the most similar bug reports according to the model will be used in the evaluation
-        :return: SuccessRate@n for all topns from topns parameter.
+        :return: Acc@n for all topns from topns parameter.
         """
         self.embeddings = model.get_embeddings(self.train_corpus)
         self.test_embs = model.get_embeddings(self.test_corpus)
@@ -119,7 +124,7 @@ class AbstractApproach(ABC):
 
         def eval_sample(query_report):
             if (
-                query_report.id != query_report.disc_id and self.relevant_reports_num[query_report.id] > 0
+                    query_report.id != query_report.disc_id and self.relevant_reports_num[query_report.id] > 0
             ):  # is duplicate
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topks))
                 for i, topk in enumerate(topks):
@@ -145,8 +150,8 @@ class AbstractApproach(ABC):
         self.test.apply(eval_sample, axis=1)
 
         metrics = {
-            "SuccessRate@k": self.true_positive_at_k / self.test_size,
-            "MAP@k": self.avg_precision_at_k / self.test_size,
+            Metric.Acc: self.true_positive_at_k / self.test_size,
+            Metric.MAP: self.avg_precision_at_k / self.test_size,
         }
         return metrics
 
@@ -163,7 +168,7 @@ class AbstractApproach(ABC):
         raise NotImplementedError()
 
     def _load_models(
-        self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
+            self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
     ) -> Dict[str, AbstractModel]:
         return {
             train_type: model_class.load(os.path.join(models_directory, model_class.name + "_" + train_type))
