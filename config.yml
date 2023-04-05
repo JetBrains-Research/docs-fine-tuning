@@ -1,12 +1,12 @@
-dataset: kotlin # you can configure datasets with configs/datasets.yml
+dataset: idea # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: data/logs/log_kt.txt # data/logs/log_idea.txt # set null for stdout
+log_file: null # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['PT_DOC_TASK', 'PT_BUGS_TASK'] # supported training/evaluation types
+model_types: ['TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 
@@ -16,8 +16,8 @@ evaluation:
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  models_path: text_models/saved/bert_base/idea
-  results_path: ./results/test
+  models_path: text_models/saved/test
+  results_path: ./results/last/idea/bert_so
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -57,13 +57,13 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 6
+    epochs: 3
     batch_size: 16
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_ratio: 0.1 # percent of training data
     weight_decay: 0.001
-    learning_rate: 4e-5
+    learning_rate: 1e-5
     max_len: 256
     task_loss: triplet # 'triplet' or 'cossim'
     finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
@@ -73,11 +73,14 @@ models:
     save_steps: null
     val_size: 0.1
     device: cuda # 'cpu' or 'cuda'
-    start_train_from_task: false
-    start_train_from_bugs: false
+    start_train_from: null # bugs / task / null
     seed: 42
-    save_to_path: text_models/saved/last/kotlin/bert_so
+    save_to_path: text_models/saved/test
     report_wandb: true
+
+    wandb_config:
+      project: null # insert your project
+      entity: null # insert entity
 
     evaluator_config:
       batch_size: 16
@@ -95,7 +98,7 @@ bert_tasks:
     n_examples: all
     mask_probability: 0.15
     val: 0.1
-    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
+    metric_for_best_model: loss # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used
@@ -154,7 +157,7 @@ bert_tasks:
     save_steps: null # if null then epoch mode will be used
     n_examples: all
     val: 0.1
-    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
+    metric_for_best_model: loss # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     do_eval_on_artefacts: true
     max_len: 128 # if null then default max supported seq length by model will be used

@@ -53,7 +53,7 @@ def main():
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
     if config.text_model == "siamese":
-        os.environ["WANDB_RUN_GROUP"] = config.dataset + "-so-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
+        os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
         disc_ids = train["disc_id"].tolist()
         model = BertSiameseModel(train_corpus_sent, disc_ids, config.bert_tasks, **config.models.siamese)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)

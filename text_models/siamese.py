@@ -20,7 +20,7 @@ from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
-from text_models.bert_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator
+from text_models.bert_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator, ValMetric
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
@@ -75,13 +75,13 @@ class BertSiameseModel(AbstractModel):
         task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
         pooling_mode: str = 'mean',
-        start_train_from_task: bool = False,
-        start_train_from_bugs: bool = False,
+        start_train_from: Optional[str] = None, # 'bugs'/'task'/None
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
         seed: int = 42,
         save_to_path: str = "./",
         report_wandb: bool = False,
+        wandb_config: Union[DictConfig, ListConfig] = None,
         hp_search_mode: bool = False,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
@@ -96,9 +96,9 @@ class BertSiameseModel(AbstractModel):
         self.save_steps = save_steps
         self.save_best_model = save_best_model
         self.evaluator_config = evaluator_config
-        self.start_train_from_task = start_train_from_task
-        self.start_train_from_bugs = start_train_from_bugs
+        self.start_train_from = start_train_from
         self.report_wandb = report_wandb
+        self.wandb_config = wandb_config
         self.weight_decay = weight_decay
         self.warmup_ratio = warmup_ratio
         self.learning_rate = learning_rate
@@ -107,6 +107,7 @@ class BertSiameseModel(AbstractModel):
         self.vocab_size = None
         self.tokenizer = None
         self.tapt_data: Corpus = [[[]]]
+        self.best_metric = 0.
 
         if corpus is not None and disc_ids is not None:
             sentences = [" ".join(doc) for doc in list(map(flatten, corpus))]
@@ -168,7 +169,7 @@ class BertSiameseModel(AbstractModel):
 
     def train_doc_bugs_task(self, extra_corpus: Corpus):
         pretraining_model_supplier = lambda x: self.__create_and_save_model_from_scratch()
-        if not self.start_train_from_task and self.start_train_from_bugs:
+        if self.start_train_from == "bugs":
             pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
             extra_corpus = self.tapt_data
         else:
@@ -178,7 +179,7 @@ class BertSiameseModel(AbstractModel):
 
     def train_pt_doc_bugs_task(self, extra_corpus: Corpus):
         pretraining_model_supplier = lambda x: self.pretrained_model
-        if not self.start_train_from_task and self.start_train_from_bugs:
+        if self.start_train_from == "bugs":
             pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
             extra_corpus = self.tapt_data
         else:
@@ -199,6 +200,9 @@ class BertSiameseModel(AbstractModel):
             self.__train_finetuned_on_task(
                 extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type
             )
+            if self.hp_search_mode:
+                self.best_metric += (self.model.best_score / len(self.finetuning_strategies))
+                wandb.log({"best_" + finetuning_task.name + "_" + ValMetric.TASK: self.model.best_score})
             self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
 
     def __train_siamese(
@@ -268,7 +272,7 @@ class BertSiameseModel(AbstractModel):
                 save_to_dir,
                 self.report_wandb,
             )
-            if not self.start_train_from_task
+            if self.start_train_from != "task" # not self.start_train_from_task
             else finetuning_task.load(save_to_dir)
         )
 
@@ -315,15 +319,14 @@ class BertSiameseModel(AbstractModel):
 
         return dumb_model_name
 
-    @staticmethod
-    def __init_wandb(name: str) -> Union[Run, RunDisabled, None]:
-        return wandb.init(project="docs-fine-tuning", entity="jbr-docs-fine-tuning", name=name, reinit=True)
+    def __init_wandb(self, name: str) -> Union[Run, RunDisabled, None]:
+        return wandb.init(name=name, reinit=True, **self.wandb_config)
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         run = None
         if TrainTypes.TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.TASK)
+                run = self.__init_wandb(TrainTypes.TASK)
             self.train_task(base_corpus)
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
@@ -333,7 +336,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.PT_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.PT_TASK)
+                run = self.__init_wandb(TrainTypes.PT_TASK)
             self.train_pt_task(base_corpus)
             self.logger.info(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
@@ -343,7 +346,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.DOC_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.DOC_TASK)
+                run = self.__init_wandb(TrainTypes.DOC_TASK)
             self.train_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
             if self.report_wandb and run is not None:
@@ -351,7 +354,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.PT_DOC_TASK)
+                run = self.__init_wandb(TrainTypes.PT_DOC_TASK)
             self.train_pt_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
             if self.report_wandb and run is not None:
@@ -359,7 +362,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.BUGS_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.BUGS_TASK)
+                run = self.__init_wandb(TrainTypes.BUGS_TASK)
             self.train_bugs_task()
             self.logger.info(f"Train {TrainTypes.BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
             if self.report_wandb and run is not None:
@@ -367,7 +370,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.PT_BUGS_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.PT_BUGS_TASK)
+                run = self.__init_wandb(TrainTypes.PT_BUGS_TASK)
             self.train_pt_bugs_task()
             self.logger.info(f"Train {TrainTypes.PT_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
             if self.report_wandb and run is not None:
@@ -375,7 +378,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.DOC_BUGS_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.DOC_BUGS_TASK)
+                run = self.__init_wandb(TrainTypes.DOC_BUGS_TASK)
             self.train_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
             if self.report_wandb and run is not None:
@@ -383,7 +386,7 @@ class BertSiameseModel(AbstractModel):
 
         if TrainTypes.PT_DOC_BUGS_TASK in model_types_to_train:
             if self.report_wandb:
-                run = BertSiameseModel.__init_wandb(TrainTypes.PT_DOC_BUGS_TASK)
+                run = self.__init_wandb(TrainTypes.PT_DOC_BUGS_TASK)
             self.train_pt_doc_bugs_task(extra_corpus)
             self.logger.info(f"Train {TrainTypes.PT_DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
             if self.report_wandb and run is not None:
