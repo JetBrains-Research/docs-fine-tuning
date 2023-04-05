@@ -46,8 +46,7 @@ class BertSiameseModel(AbstractModel):
     :param task_loss: The loss function for SNN. Possible values: "cossim", "triplet"
     :param pretrained_model: The name of pretrained text model
     :param pooling_mode: Can be a string: mean/max/cls
-    :param start_train_from_task: If True then fine-tuning on docs step will be skipped and fine-tuned model
-                                  from save_to_path will be used to train SNN as pre-trained model.
+    :param start_train_from: Can be: bugs/task/None
     :param device: What device will be used for training. Possible values: "cpu", "cuda".
     :param save_best_model: Whether or not to save the best model found during training at the end of training.
     :param seed: Random seed
@@ -75,7 +74,7 @@ class BertSiameseModel(AbstractModel):
         task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
         pooling_mode: str = 'mean',
-        start_train_from: Optional[str] = None, # 'bugs'/'task'/None
+        start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
         seed: int = 42,
@@ -144,6 +143,8 @@ class BertSiameseModel(AbstractModel):
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK),
             "task/global_steps",
         )
+        if self.hp_search_mode:
+            self.best_metric = self.model.best_score
 
     def train_pt_task(self, corpus: Section):
         word_embedding_model = models.Transformer(self.pretrained_model, max_seq_length=self.max_len)
@@ -152,6 +153,8 @@ class BertSiameseModel(AbstractModel):
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK),
             "pt_task/global_steps",
         )
+        if self.hp_search_mode:
+            self.best_metric = self.model.best_score
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
         self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_TASK, lambda x: self.__create_and_save_model_from_scratch())
@@ -393,7 +396,7 @@ class BertSiameseModel(AbstractModel):
                 run.finish()
 
     def get_embeddings(self, corpus: Section):
-        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(  # type: ignore
+        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(   # type: ignore
             np.float32
         )
 
