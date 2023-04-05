@@ -41,12 +41,12 @@ class AbstractApproach(ABC):
         self.true_positive_at_k: Optional[np.ndarray] = None
 
     def evaluate_all(
-            self,
-            model_types: List[str],
-            model_class: Type[AbstractModel],
-            models_directory: str,
-            topns: List[int],
-            verbose: bool = True,
+        self,
+        model_types: List[str],
+        model_class: Type[AbstractModel],
+        models_directory: str,
+        topns: List[int],
+        verbose: bool = True,
     ):
         """
         Evaluate all models trained in different ways.
@@ -124,7 +124,7 @@ class AbstractApproach(ABC):
 
         def eval_sample(query_report):
             if (
-                    query_report.id != query_report.disc_id and self.relevant_reports_num[query_report.id] > 0
+                query_report.id != query_report.disc_id and self.relevant_reports_num[query_report.id] > 0
             ):  # is duplicate
                 dupl_ids = self.get_duplicated_ids(query_report.id_num, max(topks))
                 for i, topk in enumerate(topks):
@@ -168,7 +168,7 @@ class AbstractApproach(ABC):
         raise NotImplementedError()
 
     def _load_models(
-            self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
+        self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
     ) -> Dict[str, AbstractModel]:
         return {
             train_type: model_class.load(os.path.join(models_directory, model_class.name + "_" + train_type))

@@ -35,8 +35,8 @@ class SentencesClassificationTask(AbstractTask):
         model = AutoModelForNextSentencePrediction.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        dataset = self._get_dataset(docs_corpus, tokenizer, self.max_len)
-        val_dataset = self._get_dataset(evaluator.val_dataset, tokenizer, max_len)  # type: ignore
+        dataset = self._get_dataset(docs_corpus, tokenizer)
+        val_dataset = self._get_dataset(evaluator.val_dataset, tokenizer)  # type: ignore
         return self._train_and_save(
             model,
             tokenizer,
@@ -50,7 +50,7 @@ class SentencesClassificationTask(AbstractTask):
         )
 
     @abstractmethod
-    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase) -> Dataset:
         raise NotImplementedError()
 
     def load(self, load_from_path) -> models.Transformer:

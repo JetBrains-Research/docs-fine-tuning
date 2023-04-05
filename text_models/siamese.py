@@ -73,7 +73,7 @@ class BertSiameseModel(AbstractModel):
         val_size: float = 0.1,
         task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
-        pooling_mode: str = 'mean',
+        pooling_mode: str = "mean",
         start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
@@ -106,7 +106,7 @@ class BertSiameseModel(AbstractModel):
         self.vocab_size = None
         self.tokenizer = None
         self.tapt_data: Corpus = [[[]]]
-        self.best_metric = 0.
+        self.best_metric = 0.0
 
         if corpus is not None and disc_ids is not None:
             sentences = [" ".join(doc) for doc in list(map(flatten, corpus))]
@@ -144,7 +144,7 @@ class BertSiameseModel(AbstractModel):
             "task/global_steps",
         )
         if self.hp_search_mode:
-            self.best_metric = self.model.best_score
+            self.best_metric = self.model.best_score  # type: ignore
 
     def train_pt_task(self, corpus: Section):
         word_embedding_model = models.Transformer(self.pretrained_model, max_seq_length=self.max_len)
@@ -154,7 +154,7 @@ class BertSiameseModel(AbstractModel):
             "pt_task/global_steps",
         )
         if self.hp_search_mode:
-            self.best_metric = self.model.best_score
+            self.best_metric = self.model.best_score  # type: ignore
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
         self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_TASK, lambda x: self.__create_and_save_model_from_scratch())
@@ -204,15 +204,17 @@ class BertSiameseModel(AbstractModel):
                 extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type
             )
             if self.hp_search_mode:
-                self.best_metric += (self.model.best_score / len(self.finetuning_strategies))
-                wandb.log({"best_" + finetuning_task.name + "_" + ValMetric.TASK: self.model.best_score})
+                self.best_metric += self.model.best_score / len(self.finetuning_strategies)  # type: ignore
+                wandb.log({"best_" + finetuning_task.name + "_" + ValMetric.TASK: self.model.best_score})  # type: ignore
             self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
 
     def __train_siamese(
         self, word_embedding_model: models.Transformer, save_to_dir: str, step_metric: Optional[str] = None
     ):
         word_embedding_model.max_seq_length = self.max_len
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode)
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode
+        )
         dense_model = models.Dense(
             in_features=pooling_model.get_sentence_embedding_dimension(),
             out_features=self.vector_size,
@@ -229,10 +231,12 @@ class BertSiameseModel(AbstractModel):
             )
         )
 
-        evaluator = LossEvaluator(self.evaluator, train_loss, None, self.eval_task_dataset, batch_size=self.evaluator.batch_size)
+        evaluator = LossEvaluator(
+            self.evaluator, train_loss, None, self.eval_task_dataset, batch_size=self.evaluator.batch_size
+        )
 
         evaluator = (
-            WandbLoggingEvaluator(evaluator, step_metric, len(train_dataloader))
+            WandbLoggingEvaluator(evaluator, step_metric, len(train_dataloader))  # type: ignore
             if self.report_wandb and step_metric is not None
             else evaluator
         )
@@ -244,9 +248,9 @@ class BertSiameseModel(AbstractModel):
         self.model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio), # TODO len(train_dataloader)
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),  # TODO len(train_dataloader)
             weight_decay=self.weight_decay,
-            optimizer_params= {'lr': self.learning_rate},
+            optimizer_params={"lr": self.learning_rate},
             evaluator=evaluator,
             evaluation_steps=0 if self.evaluation_steps is None else self.evaluation_steps,
             output_path=None if self.hp_search_mode else output_path,
@@ -275,7 +279,7 @@ class BertSiameseModel(AbstractModel):
                 save_to_dir,
                 self.report_wandb,
             )
-            if self.start_train_from != "task" # not self.start_train_from_task
+            if self.start_train_from != "task"  # not self.start_train_from_task
             else finetuning_task.load(save_to_dir)
         )
 
@@ -323,7 +327,7 @@ class BertSiameseModel(AbstractModel):
         return dumb_model_name
 
     def __init_wandb(self, name: str) -> Union[Run, RunDisabled, None]:
-        return wandb.init(name=name, reinit=True, **self.wandb_config)
+        return wandb.init(name=name, reinit=True, **self.wandb_config)  # type: ignore
 
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
         run = None
@@ -396,7 +400,7 @@ class BertSiameseModel(AbstractModel):
                 run.finish()
 
     def get_embeddings(self, corpus: Section):
-        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(   # type: ignore
+        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(  # type: ignore
             np.float32
         )
 

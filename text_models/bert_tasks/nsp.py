@@ -36,9 +36,9 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         forget_const: int = 10,
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
-        max_len: Optional[int] = None,
-        warmup_ratio: float = 0.,
-        weight_decay: float = 0.
+        max_len: int = 512,
+        warmup_ratio: float = 0.0,
+        weight_decay: float = 0.0,
     ):
         super().__init__(
             epochs,
@@ -52,10 +52,10 @@ class NextSentencePredictionTask(SentencesClassificationTask):
             do_eval_on_artefacts,
             max_len,
             warmup_ratio,
-            weight_decay
+            weight_decay,
         )
         self.forget_const = forget_const
 
-    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase) -> Dataset:
         sentences = sections_to_sentences(corpus)
-        return NextSentenceDataset(sentences, tokenizer, self.n_examples, max_len, self.forget_const)
+        return NextSentenceDataset(sentences, tokenizer, self.n_examples, self.max_len, self.forget_const)

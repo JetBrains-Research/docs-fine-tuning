@@ -36,9 +36,9 @@ class AbstractTask(ABC):
         save_steps: Optional[int] = None,  # if None then epoch mode will be used
         save_best_model: bool = False,
         do_eval_on_artefacts: bool = True,
-        max_len: Optional[int] = None,
-        warmup_ratio: float = 0.,
-        weight_decay: float = 0.
+        max_len: int = 512,
+        warmup_ratio: float = 0.0,
+        weight_decay: float = 0.0,
     ):
         self.epochs = epochs
         self.batch_size = batch_size

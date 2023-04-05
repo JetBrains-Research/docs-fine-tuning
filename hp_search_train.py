@@ -37,7 +37,8 @@ def train():
 
     logging.basicConfig(
         filename=os.path.join("data", "logs", "hp_" + siamese_config.dataset + "_" + config["model_type"] + ".txt"),
-        level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(levelname)s: %(message)s",
     )
 
     siamese_config.models.siamese["learning_rate"] = config["learning_rate"]
@@ -50,14 +51,13 @@ def train():
     siamese_config.models.siamese["report_wandb"] = True
     siamese_config.models.siamese["hp_search_mode"] = True
     siamese_config.models.siamese["start_train_from_task"] = True
-    
+
     model_type = config["model_type"]
 
     if model_type == TrainTypes.DOC_TASK or model_type == TrainTypes.BUGS_TASK:
         siamese_config.models.siamese["finetuning_strategies"] = ["mlm"]
 
-    model = BertSiameseModel(train_corpus_sent, disc_ids, siamese_config.bert_tasks,
-                             **siamese_config.models.siamese)
+    model = BertSiameseModel(train_corpus_sent, disc_ids, siamese_config.bert_tasks, **siamese_config.models.siamese)
 
     if model_type == TrainTypes.DOC_TASK:
         model.train_doc_task([], [])
@@ -81,5 +81,5 @@ def train():
     torch.cuda.empty_cache()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     train()

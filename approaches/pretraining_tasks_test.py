@@ -21,14 +21,16 @@ class PretrainingTasksTest(AbstractApproach):
         self.pretraining_tasks = pretraining_tasks
 
     def _load_models(
-            self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
+        self, model_types: List[str], model_class: Type[AbstractModel], models_directory: str
     ) -> Dict[str, AbstractModel]:
         res = {}
         for train_type in model_types:
             if "DOC" in train_type or "BUG" in train_type:
-                pretraining_tasks = self.pretraining_tasks if train_type not in [TrainTypes.DOC_TASK,
-                                                                                 TrainTypes.BUGS_TASK,
-                                                                                 TrainTypes.DOC_BUGS_TASK] else ['mlm']
+                pretraining_tasks = (
+                    self.pretraining_tasks
+                    if train_type not in [TrainTypes.DOC_TASK, TrainTypes.BUGS_TASK, TrainTypes.DOC_BUGS_TASK]
+                    else ["mlm"]
+                )
                 for task in pretraining_tasks:
                     res[task + "_" + train_type] = model_class.load(
                         os.path.join(models_directory, model_class.name + "_" + task + "_" + train_type)

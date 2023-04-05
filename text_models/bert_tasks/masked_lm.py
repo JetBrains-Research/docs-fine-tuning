@@ -37,9 +37,9 @@ class MaskedLMTask(AbstractTask):
         mask_probability: float = 0.15,
         save_steps: Optional[int] = None,
         do_eval_on_artefacts: bool = True,
-        max_len: Optional[int] = None,
-        warmup_ratio: float = 0.,
-        weight_decay: float = 0.
+        max_len: int = 512,
+        warmup_ratio: float = 0.0,
+        weight_decay: float = 0.0,
     ):
         super().__init__(
             epochs,
@@ -53,7 +53,7 @@ class MaskedLMTask(AbstractTask):
             do_eval_on_artefacts,
             max_len,
             warmup_ratio,
-            weight_decay
+            weight_decay,
         )
         self.mask_probability = mask_probability
 
