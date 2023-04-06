@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: null # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK'] # supported training/evaluation types
+model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
 
 text_model: siamese # see available text models in the corresponding section
 

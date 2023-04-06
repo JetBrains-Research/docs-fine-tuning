@@ -35,19 +35,23 @@ $ python data_processing/preprocess_docs.py --docs <doc_path> [<doc_path> ...]
 
 ## Training
 
-There are 4 training approaches available:
+There are 8 training approaches available:
 
 * **TASK**: train from scratch on the task of finding duplicate bug reports
 * **PT+TASK**: train **TASK** using a pre-trained text model
 * **DOC+TASK**: train from scratch on docs and then train on the task of finding duplicate bug reports
+* **BUGS+TASK**: train from scratch on bugs descriptions and then train on the task of finding duplicate bug reports
+* **DOC+BUGS+TASK**: train from scratch on docs and bugs descriptions and then train on the task of finding duplicate bug reports
 * **PT+DOC+TASK**: train **DOC+TASK** using a pre-trained text model
+* **PT+BUGS+TASK**: train **BUGS+TASK** using a pre-trained text model
+* **PT+DOC+BUGS+TASK**: train **DOC+BUGS+TASK** using a pre-trained text model
 
 You can configure training approaches and models with [`config.yml`](config.yml).
 
 To run training, use this command:
 
 ```shell
-$ python train_models.py <text-model-type> --docs <processed-doc-path> [<processed-doc-path> ...]
+$ python train_models.py --gpu-id <id>
 ```
 
 ## Evaluation
@@ -55,7 +59,21 @@ $ python train_models.py <text-model-type> --docs <processed-doc-path> [<process
 To calculate quality metrics, use this command:
 
 ```shell
-$ python evaluation.py
+$ python evaluation.py --gpu-id <id>
 ```
 
-You can configure the results' path with [`config.yml`](config.yml). 
+You can configure the results' path with [`config.yml`](config.yml).
+
+## Tune Hyperparameters
+
+To tune the hyperparameters of the siamese model for a specific TASK, you can use [wandb sweeps](https://docs.wandb.ai/guides/sweeps). Follow the steps below:
+
+1. Configure the model to tune and its parameters with the [`sweep_config.yaml`](sweep_config.yaml) file.
+2. Run the following command to start the sweep
+   ```shell
+   $ wandb sweep sweep_config.yaml
+   ```
+3. You will see a <sweep_id> in the output. Copy this ID and run the following command:
+   ```shell
+   $ CUDA_VISIBLE_DEVICES=<gpu_id> wandb agent --count <runs_number> <sweep_id>
+   ```
