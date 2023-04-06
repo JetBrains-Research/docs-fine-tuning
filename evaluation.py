@@ -6,14 +6,13 @@ import warnings
 
 import pandas as pd
 
-from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, FinetuningTasksTest
+from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, PretrainingTasksTest
 from data_processing.util import get_corpus, load_config
 from text_models import (
     W2VModel,
     FastTextModel,
     RandomEmbeddingModel,
     BertSiameseModel,
-    TrainTypes,
 )
 
 warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
@@ -26,7 +25,7 @@ def parse_arguments():
         dest="gpu_id",
         action="store",
         type=str,
-        default="0",
+        default=None,
         help="GPU id for CUDA_VISIBLE_DEVICES environment param",
     )
     return parser.parse_args()
@@ -61,12 +60,8 @@ def main():
     else:
         raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
-    if cnf_eval.is_tasks_test and cnf_eval.text_model == "siamese":
-        evaluator = FinetuningTasksTest(
-            evaluator,
-            config.models.siamese.finetuning_strategies,
-            config.models_directory,
-        )
+    if cnf_eval.is_tasks_test and config.text_model == "siamese":
+        evaluator = PretrainingTasksTest(evaluator, config.models.siamese.finetuning_strategies)
 
     if cnf_eval.approach == "intersection":
         logger.info(
@@ -74,47 +69,23 @@ def main():
         )
         return
 
-    if cnf_eval.text_model == "random":
+    if config.text_model == "random":
         model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
         logger.info(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
         return
 
-    if cnf_eval.text_model == "word2vec":
-        model_type = W2VModel
-    elif cnf_eval.text_model == "fasttext":
-        model_type = FastTextModel
-    elif cnf_eval.text_model == "siamese":
-        model_type = BertSiameseModel
+    if config.text_model == "word2vec":
+        model_class = W2VModel
+    elif config.text_model == "fasttext":
+        model_class = FastTextModel
+    elif config.text_model == "siamese":
+        model_class = BertSiameseModel
     else:
-        raise ValueError(f"Text model ${cnf_eval.text_model} is not supported")
+        raise ValueError(f"Text model ${config.text_model} is not supported")
 
-    model_task = None
-    model_pt_task = None
-    model_doc_task = None
-    model_pt_doc_task = None
-
-    if TrainTypes.TASK in config.model_types:
-        model_task = model_type.load(os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.TASK))
-
-    if TrainTypes.PT_TASK in config.model_types:
-        model_pt_task = model_type.load(
-            os.path.join(config.models_directory, model_type.name + "_" + TrainTypes.PT_TASK)
-        )
-
-    task_name = "" if cnf_eval.text_model != "siamese" else "_" + config.models.siamese.finetuning_strategies[0]
-    if TrainTypes.DOC_TASK in config.model_types:
-        model_doc_task = model_type.load(
-            os.path.join(config.models_directory, model_type.name + task_name + "_" + TrainTypes.DOC_TASK)
-        )
-
-    if TrainTypes.PT_DOC_TASK in config.model_types:
-        model_pt_doc_task = model_type.load(
-            os.path.join(config.models_directory, model_type.name + task_name + "_" + TrainTypes.PT_DOC_TASK)
-        )
-
-    evaluator.evaluate_all(model_task, model_pt_task, model_doc_task, model_pt_doc_task, cnf_eval.topns)
+    evaluator.evaluate_all(config.model_types, model_class, cnf_eval.models_path, cnf_eval.topns)
     if cnf_eval.save_results:
-        evaluator.save_results(cnf_eval.results_path, model_type.name, plot=cnf_eval.save_graph)
+        evaluator.save_results(cnf_eval.results_path, model_class.name, plot=cnf_eval.save_graph)
 
 
 if __name__ == "__main__":

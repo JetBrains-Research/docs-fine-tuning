@@ -13,6 +13,10 @@ class TrainTypes:
     PT_TASK = "PT_TASK"
     DOC_TASK = "DOC_TASK"
     PT_DOC_TASK = "PT_DOC_TASK"
+    BUGS_TASK = "BUGS_TASK"
+    PT_BUGS_TASK = "PT_BUGS_TASK"
+    DOC_BUGS_TASK = "DOC_BUGS_TASK"
+    PT_DOC_BUGS_TASK = "PT_DOC_BUGS_TASK"
 
 
 class AbstractModel(ABC):

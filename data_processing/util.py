@@ -23,12 +23,12 @@ Corpus = List[Section]
 NumpyNaN = float
 
 
-def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Section:
+def get_corpus(data: pd.DataFrame, sentences: bool = False) -> Union[Corpus, Section]:
     def parse_list(str_list):
         return [] if isinstance(str_list, float) else ast.literal_eval(str_list)
 
     corpus = [parse_list(summ) + parse_list(descr) for summ, descr in zip(data.summary, data.description)]
-    return flatten(corpus) if sentences else list(map(flatten, corpus))
+    return corpus if sentences else list(map(flatten, corpus))
 
 
 def flatten(matrix: List[List[Any]]) -> List[Any]:

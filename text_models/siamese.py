@@ -1,10 +1,10 @@
 import os.path
 import tempfile
-from typing import List, Union
+from typing import List, Union, Callable, Optional
 
 import numpy as np
 import torch.utils.data
-from gensim.test.utils import get_tmpfile
+import wandb
 from omegaconf import DictConfig, ListConfig
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import models, losses
@@ -13,17 +13,21 @@ from sentence_transformers.util import cos_sim
 from torch import nn
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, AutoTokenizer
+from wandb.sdk.lib import RunDisabled
+from wandb.sdk.wandb_run import Run
 
-from data_processing.util import Section, Corpus
+from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
 from text_models.bert_tasks import AbstractTask
 from text_models.bert_tasks import tasks
+from text_models.bert_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator, ValMetric
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
 class BertSiameseModel(AbstractModel):
     """
-    Text Transformer-Based model, that can be fine-tuned on docs through various tasks and can also be used to map sentences / text to embeddings.
+    Text Transformer-Based model, that can be fine-tuned on docs through various tasks
+    and can also be used to map sentences / text to embeddings.
     Model uses Siamese Neural Network (SNN) architecture for the task of finding duplicate bug reports.
 
     :param corpus: Corpus of bug descriptions for dataset building
@@ -35,13 +39,14 @@ class BertSiameseModel(AbstractModel):
     :param batch_size: Batch size used for SNN training
     :param n_examples: Number of bug report pairs that will be used for SNN training
     :param max_len: max_length parameter of tokenizer
-    :param warmup_rate: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
+    :param warmup_ratio: Ratio of total training steps used for a linear warmup from 0 to learning_rate.
     :param evaluation_steps: Number of update steps between two evaluations
-    :param evaluation_config: Configuration for the evaluator
+    :param evaluator_config: Configuration for the evaluator
     :param val_size: Ratio of total training examples used for validation dataset
     :param task_loss: The loss function for SNN. Possible values: "cossim", "triplet"
     :param pretrained_model: The name of pretrained text model
-    :param start_train_from_task: If True then fine-tuning on docs step will be skipped and fine-tuned model from save_to_path will be used to train SNN as pre-trained model.
+    :param pooling_mode: Can be a string: mean/max/cls
+    :param start_train_from: Can be: bugs/task/None
     :param device: What device will be used for training. Possible values: "cpu", "cuda".
     :param save_best_model: Whether or not to save the best model found during training at the end of training.
     :param seed: Random seed
@@ -50,7 +55,7 @@ class BertSiameseModel(AbstractModel):
 
     def __init__(
         self,
-        corpus: Section = None,
+        corpus: Corpus = None,
         disc_ids: List[str] = None,
         cnf_tasks: Union[DictConfig, ListConfig] = None,
         finetuning_strategies: List[str] = None,
@@ -58,39 +63,54 @@ class BertSiameseModel(AbstractModel):
         epochs: int = 5,
         batch_size: int = 16,
         n_examples: Union[str, int] = "all",
-        max_len: int = 512,
-        warmup_rate: float = 0.1,
-        evaluation_steps: int = 500,
+        max_len: int = None,
+        warmup_ratio: float = 0.1,
+        weight_decay: float = 0.01,
+        learning_rate: float = 2e-5,
+        evaluation_steps: Optional[int] = None,  # if None then epoch mode will be used
+        save_steps: Optional[int] = None,  # if None then epoch mode will be used
         evaluator_config: Union[DictConfig, ListConfig] = None,
         val_size: float = 0.1,
-        task_loss: str = "cossim",  # or 'triplet'
+        task_loss: str = "cossim",  # or 'triкplet'
         pretrained_model: str = "bert-base-uncased",
-        tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
-        start_train_from_task: bool = False,
+        pooling_mode: str = "mean",
+        start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
         device: str = "cpu",  # or 'cuda'
         save_best_model: bool = False,
         seed: int = 42,
         save_to_path: str = "./",
+        report_wandb: bool = False,
+        wandb_config: Union[DictConfig, ListConfig] = None,
+        hp_search_mode: bool = False,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
         if finetuning_strategies is None:
             finetuning_strategies = ["mlm"]
         self.device = device
-        self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.batch_size = batch_size
         self.max_len = max_len
         self.loss = task_loss
+        self.pooling_mode = pooling_mode
         self.evaluation_steps = evaluation_steps
+        self.save_steps = save_steps
         self.save_best_model = save_best_model
         self.evaluator_config = evaluator_config
-        self.start_train_from_task = start_train_from_task
+        self.start_train_from = start_train_from
+        self.report_wandb = report_wandb
+        self.wandb_config = wandb_config
+        self.weight_decay = weight_decay
+        self.warmup_ratio = warmup_ratio
+        self.learning_rate = learning_rate
+        self.hp_search_mode = hp_search_mode
 
         self.vocab_size = None
         self.tokenizer = None
+        self.tapt_data: Corpus = [[[]]]
+        self.best_metric = 0.0
 
         if corpus is not None and disc_ids is not None:
-            sentences = [" ".join(doc) for doc in corpus]
-            train_size = int(len(corpus) * (1 - val_size))
+            sentences = [" ".join(doc) for doc in list(map(flatten, corpus))]
+            train_size = int(len(sentences) * (1 - val_size))
             train_corpus = sentences[:train_size]
             train_disc_ids = disc_ids[:train_size]
 
@@ -101,42 +121,100 @@ class BertSiameseModel(AbstractModel):
 
             self.evaluator = self.__get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
             self.task_dataset = self.__get_dataset(train_corpus, train_disc_ids, n_examples)
+            self.eval_task_dataset = self.__get_dataset(val_corpus, val_disc_ids, "all")
 
-            self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)
-            self.warmup_steps = np.ceil(self.n_examples * self.epochs * warmup_rate)
+            self.tapt_data = corpus[:train_size]
+
+            self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)  # type: ignore
 
         if cnf_tasks is not None:
-            self.finetuning_strategies = [tasks[name](**cnf_tasks[name]) for name in finetuning_strategies]  # type: ignore
+            self.finetuning_strategies = [
+                tasks[name](**cnf_tasks[name]) for name in finetuning_strategies  # type: ignore
+            ]
 
     name = "BERT_SIAMESE"
 
     def train_task(self, corpus: Section):
         dumb_model_name = self.__create_and_save_model_from_scratch()
 
-        word_embedding_model = models.Transformer(dumb_model_name)
-        self.__train_siamese(word_embedding_model, os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
+        word_embedding_model = models.Transformer(dumb_model_name, max_seq_length=self.max_len)
+        self.__train_siamese(
+            word_embedding_model,
+            os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK),
+            "task/global_steps",
+        )
+        if self.hp_search_mode:
+            self.best_metric = self.model.best_score  # type: ignore
 
     def train_pt_task(self, corpus: Section):
-        word_embedding_model = models.Transformer(self.pretrained_model)
+        word_embedding_model = models.Transformer(self.pretrained_model, max_seq_length=self.max_len)
         self.__train_siamese(
-            word_embedding_model, os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK)
+            word_embedding_model,
+            os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK),
+            "pt_task/global_steps",
         )
+        if self.hp_search_mode:
+            self.best_metric = self.model.best_score  # type: ignore
 
     def train_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
-        for finetuning_task in self.finetuning_strategies:
-            self.logger.info(f"Start pretraining with {finetuning_task.name} task")
-            dumb_model_name = self.__create_and_save_model_from_scratch()
-            self.__train_finetuned_on_task(extra_corpus, finetuning_task, dumb_model_name, TrainTypes.DOC_TASK)
-            self.logger.info(f"Train DOC+TASK with {finetuning_task.name} complete")
+        self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_TASK, lambda x: self.__create_and_save_model_from_scratch())
 
     def train_pt_doc_task(self, base_corpus: Section, extra_corpus: Corpus):
-        for finetuning_task in self.finetuning_strategies:
-            self.logger.info(f"Start fine-tuning with {finetuning_task.name} task")
-            self.__train_finetuned_on_task(extra_corpus, finetuning_task, self.pretrained_model, TrainTypes.PT_DOC_TASK)
-            self.logger.info(f"Train with {finetuning_task.name} complete")
+        self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_TASK, lambda x: self.pretrained_model)
 
-    def __train_siamese(self, word_embedding_model: models.Transformer, save_to_dir: str):
-        pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+    def train_bugs_task(self):
+        self.__adapt_to_domain(
+            self.tapt_data, TrainTypes.BUGS_TASK, lambda x: self.__create_and_save_model_from_scratch()
+        )
+
+    def train_pt_bugs_task(self):
+        self.__adapt_to_domain(self.tapt_data, TrainTypes.PT_BUGS_TASK, lambda x: self.pretrained_model)
+
+    def train_doc_bugs_task(self, extra_corpus: Corpus):
+        pretraining_model_supplier = lambda x: self.__create_and_save_model_from_scratch()
+        if self.start_train_from == "bugs":
+            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
+            extra_corpus = self.tapt_data
+        else:
+            extra_corpus += self.tapt_data
+
+        self.__adapt_to_domain(extra_corpus, TrainTypes.DOC_BUGS_TASK, pretraining_model_supplier)
+
+    def train_pt_doc_bugs_task(self, extra_corpus: Corpus):
+        pretraining_model_supplier = lambda x: self.pretrained_model
+        if self.start_train_from == "bugs":
+            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
+            extra_corpus = self.tapt_data
+        else:
+            extra_corpus += self.tapt_data
+
+        self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
+
+    def __get_doc_model_name(self, training_type: str, finetuning_task_name: str):
+        return os.path.join(
+            self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "output_docs"
+        )
+
+    def __adapt_to_domain(
+        self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]
+    ):
+        for finetuning_task in self.finetuning_strategies:
+            self.logger.info(f"Start pre-training with {finetuning_task.name} task")
+            self.__train_finetuned_on_task(
+                extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type
+            )
+            if self.hp_search_mode:
+                self.best_metric += self.model.best_score / len(self.finetuning_strategies)  # type: ignore
+                wandb.log({"best_" + finetuning_task.name + "_" + ValMetric.TASK: self.model.best_score})  # type: ignore
+            self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
+
+    def __train_siamese(
+        self, word_embedding_model: models.Transformer, save_to_dir: str, step_metric: Optional[str] = None
+    ):
+        word_embedding_model.max_seq_length = self.max_len
+        pooling_model = models.Pooling(
+            word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.pooling_mode
+        )
         dense_model = models.Dense(
             in_features=pooling_model.get_sentence_embedding_dimension(),
             out_features=self.vector_size,
@@ -153,16 +231,32 @@ class BertSiameseModel(AbstractModel):
             )
         )
 
+        evaluator = LossEvaluator(
+            self.evaluator, train_loss, None, self.eval_task_dataset, batch_size=self.evaluator.batch_size
+        )
+
+        evaluator = (
+            WandbLoggingEvaluator(evaluator, step_metric, len(train_dataloader))  # type: ignore
+            if self.report_wandb and step_metric is not None
+            else evaluator
+        )
+
+        output_path = save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output")
+        checkpoint_path = os.path.join(save_to_dir, "checkpoints")
+        checkpoint_save_steps = len(train_dataloader) if self.save_steps is None else self.save_steps
+
         self.model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=self.epochs,
-            warmup_steps=self.warmup_steps,
-            evaluator=self.evaluator,
-            evaluation_steps=self.evaluation_steps,
-            output_path=save_to_dir if self.save_best_model else os.path.join(save_to_dir, "output"),
-            checkpoint_path=os.path.join(save_to_dir, "checkpoints"),
+            warmup_steps=np.ceil(len(train_dataloader) * self.epochs * self.warmup_ratio),  # TODO len(train_dataloader)
+            weight_decay=self.weight_decay,
+            optimizer_params={"lr": self.learning_rate},
+            evaluator=evaluator,
+            evaluation_steps=0 if self.evaluation_steps is None else self.evaluation_steps,
+            output_path=None if self.hp_search_mode else output_path,
+            checkpoint_path=None if self.hp_search_mode else checkpoint_path,
             show_progress_bar=True,
-            checkpoint_save_total_limit=3,
+            checkpoint_save_steps=None if self.hp_search_mode else checkpoint_save_steps,
             save_best_model=self.save_best_model,
         )
 
@@ -181,14 +275,15 @@ class BertSiameseModel(AbstractModel):
                 pretrained_model,
                 extra_corpus,
                 self.evaluator,
-                self.max_len,
                 self.device,
                 save_to_dir,
+                self.report_wandb,
             )
-            if not self.start_train_from_task
+            if self.start_train_from != "task"  # not self.start_train_from_task
             else finetuning_task.load(save_to_dir)
         )
-        self.__train_siamese(word_embedding_model, save_to_dir)
+
+        self.__train_siamese(word_embedding_model, save_to_dir, f"{finetuning_task.name}_task/global_steps")
         if not self.save_best_model:
             self.save(save_to_dir)
 
@@ -208,7 +303,7 @@ class BertSiameseModel(AbstractModel):
             qid: {cid for cid in corpus.keys() if train_disc_ids[cid] == val_disc_ids[qid]} for qid in queries.keys()
         }
 
-        return InformationRetrievalEvaluator(
+        evaluator = InformationRetrievalEvaluator(
             queries,
             corpus,
             relevant_docs,
@@ -216,10 +311,13 @@ class BertSiameseModel(AbstractModel):
             score_functions={"cos_sim": cos_sim},  # type: ignore
             **self.evaluator_config,
         )
+        evaluator.metrics = None
+        evaluator.val_dataset = val_corpus
+        return evaluator
 
     def __create_and_save_model_from_scratch(self) -> str:
         tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model)
-        bert_config = BertConfig(vocab_size=tokenizer.vocab_size, max_position_embeddings=self.max_len + 2)
+        bert_config = BertConfig(vocab_size=tokenizer.vocab_size, max_position_embeddings=self.max_len)
         dumb_model = BertModel(bert_config)
 
         dumb_model_name = tempfile.mkdtemp()
@@ -228,29 +326,83 @@ class BertSiameseModel(AbstractModel):
 
         return dumb_model_name
 
+    def __init_wandb(self, name: str) -> Union[Run, RunDisabled, None]:
+        return wandb.init(name=name, reinit=True, **self.wandb_config)  # type: ignore
+
     def train_and_save_all(self, base_corpus: Section, extra_corpus: Corpus, model_types_to_train: List[str]):
+        run = None
         if TrainTypes.TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.TASK)
             self.train_task(base_corpus)
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
+            if self.report_wandb and run is not None:
+                run.finish()
 
         if TrainTypes.PT_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.PT_TASK)
             self.train_pt_task(base_corpus)
             self.logger.info(f"Train pretrained {self.name} SUCCESS")
             if not self.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK))
+            if self.report_wandb and run is not None:
+                run.finish()
 
         if TrainTypes.DOC_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.DOC_TASK)
             self.train_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train DOC+TASK {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
 
         if TrainTypes.PT_DOC_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.PT_DOC_TASK)
             self.train_pt_doc_task(base_corpus, extra_corpus)
             self.logger.info(f"Train fine-tuned {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
+
+        if TrainTypes.BUGS_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.BUGS_TASK)
+            self.train_bugs_task()
+            self.logger.info(f"Train {TrainTypes.BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
+
+        if TrainTypes.PT_BUGS_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.PT_BUGS_TASK)
+            self.train_pt_bugs_task()
+            self.logger.info(f"Train {TrainTypes.PT_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
+
+        if TrainTypes.DOC_BUGS_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.DOC_BUGS_TASK)
+            self.train_doc_bugs_task(extra_corpus)
+            self.logger.info(f"Train {TrainTypes.DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
+
+        if TrainTypes.PT_DOC_BUGS_TASK in model_types_to_train:
+            if self.report_wandb:
+                run = self.__init_wandb(TrainTypes.PT_DOC_BUGS_TASK)
+            self.train_pt_doc_bugs_task(extra_corpus)
+            self.logger.info(f"Train {TrainTypes.PT_DOC_BUGS_TASK.replace('_', '+')} {self.name} SUCCESS")
+            if self.report_wandb and run is not None:
+                run.finish()
 
     def get_embeddings(self, corpus: Section):
-        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(np.float32)  # type: ignore
+        return self.model.encode([" ".join(report) for report in corpus], show_progress_bar=True).astype(  # type: ignore
+            np.float32
+        )
 
     def get_doc_embedding(self, doc: List[str]):
         return self.get_embeddings([doc])[0]

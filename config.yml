@@ -1,22 +1,23 @@
-dataset: kotlin # you can configure datasets with configs/datasets.yml
+dataset: idea # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: data/logs/log.txt # set null for stdout
-models_directory: text_models/saved
+log_file: null # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+
+text_model: siamese # see available text models in the corresponding section
 
 
 evaluation:
-  text_model: siamese # see available text models in the corresponding section
   approach: simple # see available approaches in the corresponding section
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  results_path: ./results
+  models_path: text_models/saved/test
+  results_path: ./results/last/idea/bert_so
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -56,68 +57,110 @@ models:
     
   siamese:
     vector_size: 300
-    epochs: 8
-    batch_size: 8
+    epochs: 3
+    batch_size: 16
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
-    warmup_rate: 0.1 # percent of training data
-    max_len: 512
-    task_loss: triplet  # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'tsdae', 'sase'] # see available strategies in 'bert_tasks' section
-    pretrained_model: bert-base-uncased
-    evaluation_steps: 55
+    warmup_ratio: 0.1 # percent of training data
+    weight_decay: 0.001
+    learning_rate: 1e-5
+    max_len: 256
+    task_loss: triplet # 'triplet' or 'cossim'
+    finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    pooling_mode: mean # mean/max/cls
+    evaluation_steps: null
+    save_steps: null
     val_size: 0.1
-    tmp_file: null
     device: cuda # 'cpu' or 'cuda'
-    start_train_from_task: false
+    start_train_from: null # bugs / task / null
     seed: 42
-    save_to_path: text_models/saved
+    save_to_path: text_models/saved/test
+    report_wandb: true
+
+    wandb_config:
+      project: null # insert your project
+      entity: null # insert entity
 
     evaluator_config:
-      batch_size: 8
-      precision_recall_at_k: [1, 5, 10, 15, 20]
+      batch_size: 16
+      precision_recall_at_k: [5]
       accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
       map_at_k: [5, 10] # validation metric
 
 
 bert_tasks:
   mlm:
-    epochs: 8
-    batch_size: 8
-    eval_steps: 250
+    epochs: 23
+    batch_size: 64
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     mask_probability: 0.15
-    save_steps: 250
+    val: 0.1
+    metric_for_best_model: loss # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.05
+    weight_decay: 0.01
 
   nsp:
     epochs: 2
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     forget_const: 10
-    save_steps: 250
+    val: 0.1
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
 
   sase:
     epochs: 8
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
-    save_steps: 250
+    val: 0.1
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
 
   sts:
     epochs: 2
     batch_size: 8
-    eval_steps: 250
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
     forget_const: 10
+    val: 0.1
+    metric_for_best_model: task_map # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
+    pooling_mode: mean # mean/max/cls
 
   tsdae:
-    epochs: 8
-    batch_size: 8
-    eval_steps: 250
+    epochs: 23
+    batch_size: 64
+    eval_steps: null # if null then epoch mode will be used
+    save_steps: null # if null then epoch mode will be used
     n_examples: all
+    val: 0.1
+    metric_for_best_model: loss # 'task_map' or 'loss' or 'loss_task'
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    do_eval_on_artefacts: true
+    max_len: 128 # if null then default max supported seq length by model will be used
+    warmup_ratio: 0.0
+    weight_decay: 0.0
+    pooling_mode: mean # mean/max/cls

@@ -15,6 +15,6 @@ class SameSectionTask(SentencesClassificationTask):
 
     name = "sase"
 
-    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase) -> Dataset:
         sections = [[" ".join(sentence) for sentence in section] for section in corpus]
-        return SameSectionDataset(sections, tokenizer, self.n_examples, max_len)
+        return SameSectionDataset(sections, tokenizer, self.n_examples, self.max_len)

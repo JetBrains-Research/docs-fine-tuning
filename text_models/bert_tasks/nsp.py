@@ -1,9 +1,10 @@
-from typing import Union
+from typing import Union, Optional
 
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from data_processing.util import sections_to_sentences, Corpus
+from text_models.bert_tasks.evaluation import ValMetric
 from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import NextSentenceDataset
 
@@ -27,15 +28,34 @@ class NextSentencePredictionTask(SentencesClassificationTask):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,
         n_examples: Union[str, int] = "all",
+        val: float = 0.1,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         forget_const: int = 10,
-        save_steps: int = 2000,
+        save_steps: Optional[int] = None,
+        do_eval_on_artefacts: bool = True,
+        max_len: int = 512,
+        warmup_ratio: float = 0.0,
+        weight_decay: float = 0.0,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model, save_steps)
+        super().__init__(
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            val,
+            metric_for_best_model,
+            save_steps,
+            save_best_model,
+            do_eval_on_artefacts,
+            max_len,
+            warmup_ratio,
+            weight_decay,
+        )
         self.forget_const = forget_const
 
-    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase, max_len: int) -> Dataset:
+    def _get_dataset(self, corpus: Corpus, tokenizer: PreTrainedTokenizerBase) -> Dataset:
         sentences = sections_to_sentences(corpus)
-        return NextSentenceDataset(sentences, tokenizer, self.n_examples, max_len, self.forget_const)
+        return NextSentenceDataset(sentences, tokenizer, self.n_examples, self.max_len, self.forget_const)

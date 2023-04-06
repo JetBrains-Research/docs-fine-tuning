@@ -1,0 +1,24 @@
+program: hp_search_train.py
+method: bayes
+metric:
+  goal: maximize
+  name: best_task_map
+parameters:
+  learning_rate:
+    distribution: categorical
+    values: [7e-6, 5e-6, 3e-6, 1e-6, 8e-7, 5e-7]
+  warmup_ratio:
+    values: [0.1, 0.15, 0.2]
+  weight_decay:
+    distribution: categorical
+    values: [0.001, 0.0001, 0.00001]
+  epochs:
+    value: 3
+  dataset:
+    value: idea
+  load_path:
+    value: text_models/saved/test
+  finetuning_strategies:
+    value: ['mlm', 'tsdae']
+  model_type:
+    value: PT_DOC_TASK

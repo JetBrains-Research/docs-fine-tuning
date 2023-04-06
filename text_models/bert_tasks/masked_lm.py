@@ -1,13 +1,13 @@
 import os.path
-from typing import Union
+from typing import Union, Optional
 
+from datasets import Dataset
 from sentence_transformers import models, evaluation
-from transformers import TrainingArguments, AutoModelForMaskedLM, AutoTokenizer, IntervalStrategy, AutoConfig
+from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig, DataCollatorForLanguageModeling
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.eval_trainer import IREvalTrainer
-from text_models.datasets import BertModelMLMDataset
+from text_models.bert_tasks.evaluation import ValMetric
 
 
 class MaskedLMTask(AbstractTask):
@@ -29,24 +29,42 @@ class MaskedLMTask(AbstractTask):
         self,
         epochs: int = 2,
         batch_size: int = 16,
-        eval_steps: int = 200,
+        eval_steps: Optional[int] = None,
         n_examples: Union[int, str] = "all",
+        val: float = 0.1,
+        metric_for_best_model: str = ValMetric.TASK,
         save_best_model: bool = False,
         mask_probability: float = 0.15,
-        save_steps: int = 5000,
+        save_steps: Optional[int] = None,
+        do_eval_on_artefacts: bool = True,
+        max_len: int = 512,
+        warmup_ratio: float = 0.0,
+        weight_decay: float = 0.0,
     ):
-        super().__init__(epochs, batch_size, eval_steps, n_examples, save_best_model)
+        super().__init__(
+            epochs,
+            batch_size,
+            eval_steps,
+            n_examples,
+            val,
+            metric_for_best_model,
+            save_steps,
+            save_best_model,
+            do_eval_on_artefacts,
+            max_len,
+            warmup_ratio,
+            weight_decay,
+        )
         self.mask_probability = mask_probability
-        self.save_steps = save_steps
 
     def finetune_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
         evaluator: evaluation.InformationRetrievalEvaluator,
-        max_len: int,
         device: str,
         save_to_path: str,
+        report_wandb: bool = False,
     ) -> models.Transformer:
         corpus = sections_to_sentences(docs_corpus)
 
@@ -54,36 +72,26 @@ class MaskedLMTask(AbstractTask):
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model, config=config)
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
 
-        inputs = tokenizer(corpus, max_length=max_len, padding="max_length", truncation=True, return_tensors="pt")
-        dataset = BertModelMLMDataset(inputs, mask_probability=self.mask_probability, n_examples=self.n_examples)
+        data_collator = DataCollatorForLanguageModeling(tokenizer, mlm_probability=self.mask_probability)
 
-        checkpoints_path = os.path.join(save_to_path, "checkpoints_docs")
-        output_path = os.path.join(save_to_path, "output_docs")
-
-        args = TrainingArguments(
-            output_dir=checkpoints_path,
-            per_device_train_batch_size=self.batch_size,
-            num_train_epochs=self.epochs,
-            save_strategy=IntervalStrategy.STEPS,
-            save_steps=self.save_steps,
-            save_total_limit=3,
-            evaluation_strategy=IntervalStrategy.STEPS,
-            eval_steps=self.eval_steps,
-            load_best_model_at_end=self.save_best_model,
-            metric_for_best_model=f"MAP@{max(evaluator.map_at_k)}",
-            greater_is_better=True,
-            disable_tqdm=False,
+        inputs = tokenizer(corpus, truncation=True, max_length=self.max_len)
+        dataset = Dataset.from_dict(inputs).select(
+            range(self.n_examples if self.n_examples != "all" and self.n_examples < len(corpus) else len(corpus))  # type: ignore
         )
+        val_task_dataset = Dataset.from_dict(tokenizer(evaluator.val_dataset, truncation=True, max_length=self.max_len))  # type: ignore
 
-        trainer = IREvalTrainer(model=model, args=args, train_dataset=dataset)
-        trainer.set_env_vars(evaluator, model, tokenizer, self.name, max_len, device)
-        trainer.train()
-
-        # if self.save_best_model == True we will use best model
-        model.save_pretrained(output_path)
-        tokenizer.save_pretrained(output_path)
-
-        return models.Transformer(output_path)
+        return self._train_and_save(
+            model,
+            tokenizer,
+            dataset,
+            val_task_dataset,
+            evaluator,
+            save_to_path,
+            self.save_steps,
+            device,
+            report_wandb,
+            data_collator,  # type: ignore
+        )
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")
