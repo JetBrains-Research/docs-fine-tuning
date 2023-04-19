@@ -6,11 +6,11 @@ from sentence_transformers import models, InputExample, losses, SentenceTransfor
 from torch.utils.data import DataLoader, Dataset
 
 from data_processing.util import sections_to_sentences
-from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator, ValMetric, WandbLoggingEvaluator
+from text_models.dapt_tasks import AbstractPreTrainingTask
+from text_models.dapt_tasks.evaluation import LossEvaluator, ValMetric, WandbLoggingEvaluator
 
 
-class STSTask(AbstractTask):
+class STSTask(AbstractPreTrainingTask):
     """
     Semantic Textual Similarity Task. We assume that two adjacent sentences are similar in meaning.
 
@@ -68,7 +68,7 @@ class STSTask(AbstractTask):
         self.forget_const = forget_const
         self.pooling_mode = pooling_mode
 
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: List[List[List[str]]],

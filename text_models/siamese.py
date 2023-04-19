@@ -18,9 +18,9 @@ from wandb.sdk.wandb_run import Run
 
 from data_processing.util import Section, Corpus, flatten
 from text_models import AbstractModel, TrainTypes
-from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks import tasks
-from text_models.bert_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator, ValMetric
+from text_models.dapt_tasks import AbstractPreTrainingTask
+from text_models.dapt_tasks import tasks
+from text_models.dapt_tasks.evaluation import WandbLoggingEvaluator, LossEvaluator, ValMetric
 from text_models.datasets import CosineSimilarityDataset, TripletDataset
 
 
@@ -32,7 +32,7 @@ class BertSiameseModel(AbstractModel):
 
     :param corpus: Corpus of bug descriptions for dataset building
     :param disc_ids: List where position i is the id of the oldest bug report that is a duplicate of i-th bug report
-    :param finetuning_strategies: List of fine-tuning tasks that will be used for fine-tuning on docs
+    :param domain_adaptation_tasks: List of fine-tuning tasks that will be used for fine-tuning on docs
     :param cnf_tasks: Configuration for fine-tuning tasks
     :param vector_size: The size of embedding vector
     :param epochs: Number of train epochs
@@ -58,7 +58,7 @@ class BertSiameseModel(AbstractModel):
         corpus: Corpus = None,
         disc_ids: List[str] = None,
         cnf_tasks: Union[DictConfig, ListConfig] = None,
-        finetuning_strategies: List[str] = None,
+        domain_adaptation_tasks: List[str] = None,
         vector_size: int = 384,
         epochs: int = 5,
         batch_size: int = 16,
@@ -84,8 +84,8 @@ class BertSiameseModel(AbstractModel):
         hp_search_mode: bool = False,
     ):
         super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
-        if finetuning_strategies is None:
-            finetuning_strategies = ["mlm"]
+        if domain_adaptation_tasks is None:
+            domain_adaptation_tasks = ["mlm"]
         self.device = device
         self.batch_size = batch_size
         self.max_len = max_len
@@ -128,8 +128,8 @@ class BertSiameseModel(AbstractModel):
             self.n_examples = len(self.task_dataset) if n_examples == "all" else int(n_examples)  # type: ignore
 
         if cnf_tasks is not None:
-            self.finetuning_strategies = [
-                tasks[name](**cnf_tasks[name]) for name in finetuning_strategies  # type: ignore
+            self.domain_adaptation_tasks = [
+                tasks[name](**cnf_tasks[name]) for name in domain_adaptation_tasks  # type: ignore
             ]
 
     name = "BERT_SIAMESE"
@@ -190,23 +190,23 @@ class BertSiameseModel(AbstractModel):
 
         self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
 
-    def __get_doc_model_name(self, training_type: str, finetuning_task_name: str):
+    def __get_doc_model_name(self, training_type: str, dapt_task_name: str):
         return os.path.join(
-            self.save_to_path, self.name + "_" + finetuning_task_name + "_" + training_type, "output_docs"
+            self.save_to_path, self.name + "_" + dapt_task_name + "_" + training_type, "output_docs"
         )
 
     def __adapt_to_domain(
         self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]
     ):
-        for finetuning_task in self.finetuning_strategies:
-            self.logger.info(f"Start pre-training with {finetuning_task.name} task")
-            self.__train_finetuned_on_task(
-                extra_corpus, finetuning_task, pretrained_model_supplier(finetuning_task.name), training_type
+        for dapt_task in self.domain_adaptation_tasks:
+            self.logger.info(f"Start pre-training with {dapt_task.name} task")
+            self.__do_adapt_to_domain(
+                extra_corpus, dapt_task, pretrained_model_supplier(dapt_task.name), training_type
             )
             if self.hp_search_mode:
-                self.best_metric += self.model.best_score / len(self.finetuning_strategies)  # type: ignore
-                wandb.log({"best_" + finetuning_task.name + "_" + ValMetric.TASK: self.model.best_score})  # type: ignore
-            self.logger.info(f"Train {training_type.replace('_', '+')} with {finetuning_task.name} complete")
+                self.best_metric += self.model.best_score / len(self.domain_adaptation_tasks)  # type: ignore
+                wandb.log({"best_" + dapt_task.name + "_" + ValMetric.TASK: self.model.best_score})  # type: ignore
+            self.logger.info(f"Train {training_type.replace('_', '+')} with {dapt_task.name} complete")
 
     def __train_siamese(
         self, word_embedding_model: models.Transformer, save_to_dir: str, step_metric: Optional[str] = None
@@ -260,18 +260,18 @@ class BertSiameseModel(AbstractModel):
             save_best_model=self.save_best_model,
         )
 
-    def __train_finetuned_on_task(
+    def __do_adapt_to_domain(
         self,
         extra_corpus: Corpus,
-        finetuning_task: AbstractTask,
+        dapt_task: AbstractPreTrainingTask,
         pretrained_model: str,
         save_to_path_suffix: str,
     ):
         save_to_dir = os.path.join(
-            self.save_to_path, self.name + "_" + finetuning_task.name + "_" + save_to_path_suffix
+            self.save_to_path, self.name + "_" + dapt_task.name + "_" + save_to_path_suffix
         )
         word_embedding_model = (
-            finetuning_task.finetune_on_docs(
+            dapt_task.train_on_docs(
                 pretrained_model,
                 extra_corpus,
                 self.evaluator,
@@ -280,10 +280,10 @@ class BertSiameseModel(AbstractModel):
                 self.report_wandb,
             )
             if self.start_train_from != "task"  # not self.start_train_from_task
-            else finetuning_task.load(save_to_dir)
+            else dapt_task.load(save_to_dir)
         )
 
-        self.__train_siamese(word_embedding_model, save_to_dir, f"{finetuning_task.name}_task/global_steps")
+        self.__train_siamese(word_embedding_model, save_to_dir, f"{dapt_task.name}_task/global_steps")
         if not self.save_best_model:
             self.save(save_to_dir)
 

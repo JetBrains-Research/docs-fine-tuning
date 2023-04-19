@@ -66,7 +66,7 @@ models:
     learning_rate: 1e-5
     max_len: 256
     task_loss: triplet # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     pooling_mode: mean # mean/max/cls
     evaluation_steps: null

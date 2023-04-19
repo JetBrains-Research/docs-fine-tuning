@@ -2,12 +2,12 @@
 venv/
 __pycache__/
 
-text_models/saved
-text_models/pretrained
+text_models/saved/
+text_models/pretrained/
 
-data/docs
-data/csv
-data/logs
+data/docs/
+data/csv/
+data/logs/
 
 results/
 

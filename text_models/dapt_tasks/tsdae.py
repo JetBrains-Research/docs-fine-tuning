@@ -7,11 +7,11 @@ from sentence_transformers.datasets import DenoisingAutoEncoderDataset
 from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences, Corpus
-from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator, ValMetric
+from text_models.dapt_tasks import AbstractPreTrainingTask
+from text_models.dapt_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator, ValMetric
 
 
-class TSDenoisingAutoEncoderTask(AbstractTask):
+class TSDenoisingAutoEncoderTask(AbstractPreTrainingTask):
     """
     Transformer-based Denoising AutoEncoder.
     """
@@ -51,7 +51,7 @@ class TSDenoisingAutoEncoderTask(AbstractTask):
         )
         self.pooling_mode = pooling_mode
 
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: Corpus,

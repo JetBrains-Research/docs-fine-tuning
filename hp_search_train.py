@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 import wandb
 from data_processing.util import load_config, get_corpus
 from text_models import BertSiameseModel, TrainTypes
-from text_models.bert_tasks.evaluation import ValMetric
+from text_models.dapt_tasks.evaluation import ValMetric
 
 hyperparameter_defaults = dict(
     learning_rate=2e-5,
@@ -46,7 +46,7 @@ def train():
     siamese_config.models.siamese["warmup_ratio"] = config["warmup_ratio"]
     siamese_config.models.siamese["weight_decay"] = config["weight_decay"]
     siamese_config.models.siamese["epochs"] = config["epochs"]
-    siamese_config.models.siamese["finetuning_strategies"] = config["finetuning_strategies"]
+    siamese_config.models.siamese["domain_adaptation_tasks"] = config["domain_adaptation_tasks"]
 
     siamese_config.models.siamese["report_wandb"] = True
     siamese_config.models.siamese["hp_search_mode"] = True
@@ -55,7 +55,7 @@ def train():
     model_type = config["model_type"]
 
     if model_type == TrainTypes.DOC_TASK or model_type == TrainTypes.BUGS_TASK:
-        siamese_config.models.siamese["finetuning_strategies"] = ["mlm"]
+        siamese_config.models.siamese["domain_adaptation_tasks"] = ["mlm"]
 
     model = BertSiameseModel(train_corpus_sent, disc_ids, siamese_config.bert_tasks, **siamese_config.models.siamese)
 

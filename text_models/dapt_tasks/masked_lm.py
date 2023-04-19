@@ -6,11 +6,11 @@ from sentence_transformers import models, evaluation
 from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig, DataCollatorForLanguageModeling
 
 from data_processing.util import sections_to_sentences, Corpus
-from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import ValMetric
+from text_models.dapt_tasks import AbstractPreTrainingTask
+from text_models.dapt_tasks.evaluation import ValMetric
 
 
-class MaskedLMTask(AbstractTask):
+class MaskedLMTask(AbstractPreTrainingTask):
     """
     Masked Language Modeling task.
 
@@ -57,7 +57,7 @@ class MaskedLMTask(AbstractTask):
         )
         self.mask_probability = mask_probability
 
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)

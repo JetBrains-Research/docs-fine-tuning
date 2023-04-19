@@ -61,7 +61,7 @@ def main():
         raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
     if cnf_eval.is_tasks_test and config.text_model == "siamese":
-        evaluator = PretrainingTasksTest(evaluator, config.models.siamese.finetuning_strategies)
+        evaluator = PretrainingTasksTest(evaluator, config.models.siamese.domain_adaptation_tasks)
 
     if cnf_eval.approach == "intersection":
         logger.info(

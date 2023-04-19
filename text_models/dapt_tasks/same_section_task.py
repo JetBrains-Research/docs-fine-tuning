@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from data_processing.util import Corpus
-from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
+from text_models.dapt_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import SameSectionDataset
 
 
