@@ -12,7 +12,7 @@ from text_models import (
     W2VModel,
     FastTextModel,
     RandomEmbeddingModel,
-    BertSiameseModel,
+    BertDomainModel,
 )
 
 warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
@@ -79,7 +79,7 @@ def main():
     elif config.text_model == "fasttext":
         model_class = FastTextModel
     elif config.text_model == "siamese":
-        model_class = BertSiameseModel
+        model_class = BertDomainModel
     else:
         raise ValueError(f"Text model ${config.text_model} is not supported")
 

@@ -7,8 +7,8 @@ from torch import nn
 from torch.utils.data import Dataset
 from transformers import Trainer, BertModel, PreTrainedTokenizerBase
 
-from text_models.bert_tasks.evaluation.util import write_csv_loss, ValMetric
-from text_models.bert_tasks.evaluation.wandb_integration import WandbCallback
+from text_models.dapt_tasks.evaluation.util import write_csv_loss, ValMetric
+from text_models.dapt_tasks.evaluation.wandb_integration import WandbCallback
 
 logger = logging.getLogger(__name__)
 

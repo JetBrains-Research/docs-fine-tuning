@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 
 import wandb
 from data_processing.util import load_config, get_corpus
-from text_models import BertSiameseModel, TrainTypes
+from text_models import BertDomainModel, TrainTypes
 from text_models.dapt_tasks.evaluation import ValMetric
 
 hyperparameter_defaults = dict(
@@ -57,7 +57,7 @@ def train():
     if model_type == TrainTypes.DOC_TASK or model_type == TrainTypes.BUGS_TASK:
         siamese_config.models.siamese["domain_adaptation_tasks"] = ["mlm"]
 
-    model = BertSiameseModel(train_corpus_sent, disc_ids, siamese_config.bert_tasks, **siamese_config.models.siamese)
+    model = BertDomainModel(train_corpus_sent, disc_ids, siamese_config.dapt_tasks, **siamese_config.models.siamese)
 
     if model_type == TrainTypes.DOC_TASK:
         model.train_doc_task([], [])

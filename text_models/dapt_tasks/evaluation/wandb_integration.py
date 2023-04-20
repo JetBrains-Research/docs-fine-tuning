@@ -4,7 +4,7 @@ import wandb
 from sentence_transformers.evaluation import SentenceEvaluator
 from transformers.trainer_callback import TrainerState
 
-from text_models.bert_tasks.evaluation.util import ValMetric
+from text_models.dapt_tasks.evaluation.util import ValMetric
 
 
 def define_metric(group_name, step_metric):

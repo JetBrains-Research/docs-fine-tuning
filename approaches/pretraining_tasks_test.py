@@ -9,7 +9,7 @@ from text_models import AbstractModel, TrainTypes
 
 class PretrainingTasksTest(AbstractApproach):
     """
-    The approach to evaluate all fine-tuning tasks for a transformer-based model (BertSiameseModel).
+    The approach to evaluate all fine-tuning tasks for a transformer-based model (BertDomainModel).
 
     :param approach: Base approach
     :param pretraining_tasks: Tasks to evaluate

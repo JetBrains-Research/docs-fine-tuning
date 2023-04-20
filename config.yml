@@ -6,9 +6,10 @@ tmpdir: null # if null default tmp directory will be used
 log_file: null # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+model_types: ['PT_TASK'] # supported training/evaluation types
 
-text_model: siamese # see available text models in the corresponding section
+text_model: bert # see available text models in the corresponding section
+target_task: "duplicates_detection" # see available tasks in 'target_tasks' section
 
 
 evaluation:
@@ -55,7 +56,21 @@ models:
     seed: 42
     save_to_path: text_models/saved
     
-  siamese:
+  bert:
+    domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    start_train_from: null # bugs / task / null
+    seed: 42
+    save_to_path: text_models/saved/test
+    report_wandb: false
+
+    wandb_config:
+      project: null # insert your project
+      entity: null # insert entity
+
+
+target_tasks:
+  duplicates_detection:
     vector_size: 300
     epochs: 3
     batch_size: 16
@@ -65,31 +80,21 @@ models:
     weight_decay: 0.001
     learning_rate: 1e-5
     max_len: 256
-    task_loss: triplet # 'triplet' or 'cossim'
-    domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
-    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    loss: triplet # 'triplet' or 'cossim'
     pooling_mode: mean # mean/max/cls
-    evaluation_steps: null
+    evaluation_steps: 2
     save_steps: null
     val_size: 0.1
-    device: cuda # 'cpu' or 'cuda'
-    start_train_from: null # bugs / task / null
-    seed: 42
-    save_to_path: text_models/saved/test
-    report_wandb: true
-
-    wandb_config:
-      project: null # insert your project
-      entity: null # insert entity
+    device: cpu # 'cpu' or 'cuda'
 
     evaluator_config:
       batch_size: 16
-      precision_recall_at_k: [5]
-      accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
-      map_at_k: [5, 10] # validation metric
+      precision_recall_at_k: [ 5 ]
+      accuracy_at_k: [ 1, 5, 10, 15, 20 ] # success rate like metric
+      map_at_k: [ 5, 10 ] # validation metric
 
 
-bert_tasks:
+dapt_tasks:
   mlm:
     epochs: 23
     batch_size: 64

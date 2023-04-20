@@ -6,7 +6,7 @@ from sentence_transformers.evaluation import SentenceEvaluator
 from torch.nn import Module
 from torch.utils.data import Dataset, DataLoader
 
-from text_models.bert_tasks.evaluation.util import write_csv_loss, ValMetric
+from text_models.dapt_tasks.evaluation.util import write_csv_loss, ValMetric
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)

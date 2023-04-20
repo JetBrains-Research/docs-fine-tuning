@@ -5,7 +5,7 @@ from text_models.dapt_tasks.masked_lm import MaskedLMTask
 from text_models.dapt_tasks.sts import STSTask
 from text_models.dapt_tasks.tsdae import TSDenoisingAutoEncoderTask
 
-tasks = {
+dapt_tasks = {
     MaskedLMTask.name: MaskedLMTask,
     STSTask.name: STSTask,
     NextSentencePredictionTask.name: NextSentencePredictionTask,
