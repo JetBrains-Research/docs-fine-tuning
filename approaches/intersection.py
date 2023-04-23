@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 from nltk import FreqDist
 
-from approaches import AbstractApproach
+from approaches import DuplicatesDetectionApproach
 from text_models import AbstractModel
 
 
-class IntersectionApproach(AbstractApproach):
+class IntersectionApproach(DuplicatesDetectionApproach):
     """
     Bug reports are considered most similar if they have the highest number of identical words.
 

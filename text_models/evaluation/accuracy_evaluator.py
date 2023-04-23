@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sentence_transformers.evaluation import SentenceEvaluator
 import torch
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class AccuracyEvaluator(SentenceEvaluator):
 
-    def __init__(self, dataset: Dataset, val_corpus: List[str], batch_size=16, write_csv: bool = True):
+    def __init__(self, dataset: Dataset, val_corpus: Optional[List[str]]=None, batch_size=16, write_csv: bool = True):
         self.dataset = dataset
         self.val_dataset = val_corpus
         self.batch_size = batch_size

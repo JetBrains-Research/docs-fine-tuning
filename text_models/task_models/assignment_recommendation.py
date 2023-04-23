@@ -48,14 +48,14 @@ class AssignmentRecommendationTask(AbstractTask):
 
     def _get_dataset(self, corpus: List[str], labels: List[str], n_examples: Union[str, int]) -> Dataset:
         return ListDataset([InputExample(texts=[bug_description], label=label) for bug_description, label in
-                            zip(corpus, AssignmentRecommendationTask.__numerate_labels(labels))])
+                            zip(corpus, AssignmentRecommendationTask.numerate_labels(labels))])
 
     def _get_evaluator(self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str],
                        val_labels: List[str]) -> SentenceEvaluator:
         return AccuracyEvaluator(self.eval_dataset, val_corpus, **self.config.evaluator_config)
 
     @staticmethod
-    def __numerate_labels(labels: List[str]) -> List[int]:
+    def numerate_labels(labels: List[str]) -> List[int]:
         d = {label: i for i, label in enumerate(set(labels))}
         return [d[label] for label in labels]
 

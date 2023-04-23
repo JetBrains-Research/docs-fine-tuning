@@ -13,7 +13,7 @@ target_task: assignment_recommendation # see available tasks in 'target_tasks' s
 
 
 evaluation:
-  approach: simple # see available approaches in the corresponding section
+  approach: assignment # see available approaches in the corresponding section
   topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
