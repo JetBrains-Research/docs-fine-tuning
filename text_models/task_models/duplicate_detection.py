@@ -68,5 +68,5 @@ class DuplicatesDetection(AbstractTask):
     @classmethod
     def load(cls, data: pd.DataFrame, config):
         corpus = get_corpus(data, sentences=True)
-        labels = data["disc_ids"].tolist()
+        labels = data["disc_id"].tolist()
         return DuplicatesDetection(corpus, labels, config)

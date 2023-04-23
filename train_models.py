@@ -56,7 +56,7 @@ def main():
     if config.text_model == "bert":
         os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
         target_task = finetuning_tasks[config.target_task].load(train, config.target_tasks[config.target_task])
-        model = BertDomainModel(target_task, **config.models.bert)
+        model = BertDomainModel(target_task, config.dapt_tasks, **config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
 

@@ -35,8 +35,8 @@ class BertDomainModel(AbstractModel):
     def __init__(
             self,
             target_task: AbstractTask = None,
-            domain_adaptation_tasks: List[str] = None,
             cnf_dapt_tasks: Union[DictConfig, ListConfig] = None,
+            domain_adaptation_tasks: List[str] = None,
             pretrained_model: str = "bert-base-uncased",
             start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
             seed: int = 42,

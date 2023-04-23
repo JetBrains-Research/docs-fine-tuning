@@ -22,3 +22,5 @@ parameters:
     value: ['mlm', 'tsdae']
   model_type:
     value: PT_DOC_TASK
+  task:
+    value: duplicates_detection

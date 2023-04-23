@@ -1,6 +1,8 @@
+from typing import List
+
 from sentence_transformers.evaluation import SentenceEvaluator
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 import logging
 from sentence_transformers.util import batch_to_device
 import os
@@ -11,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 class AccuracyEvaluator(SentenceEvaluator):
 
-    def __init__(self, dataloader: DataLoader, write_csv: bool = True):
-        self.dataloader = dataloader
+    def __init__(self, dataset: Dataset, val_corpus: List[str], batch_size=16, write_csv: bool = True):
+        self.dataset = dataset
+        self.val_dataset = val_corpus
+        self.batch_size = batch_size
 
         self.write_csv = write_csv
         self.csv_file = "accuracy_evaluation_results.csv"
@@ -32,8 +36,9 @@ class AccuracyEvaluator(SentenceEvaluator):
             out_txt = ":"
 
         logger.info("Evaluation " + out_txt)
-        self.dataloader.collate_fn = model.smart_batching_collate
-        for step, batch in enumerate(self.dataloader):
+        dataloader = DataLoader(self.dataset, batch_size=self.batch_size)
+        dataloader.collate_fn = model.smart_batching_collate
+        for step, batch in enumerate(dataloader):
             features, label_ids = batch
             for idx in range(len(features)):
                 features[idx] = batch_to_device(features[idx], model.device)

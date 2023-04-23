@@ -4,8 +4,8 @@ import pandas as pd
 from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.readers import InputExample
-from torch.utils.data import Dataset, DataLoader
 from torch import nn, Tensor
+from torch.utils.data import Dataset
 
 from data_processing.util import get_corpus, Corpus
 from text_models.evaluation import ListDataset, AccuracyEvaluator
@@ -48,14 +48,14 @@ class AssignmentRecommendationTask(AbstractTask):
 
     def _get_dataset(self, corpus: List[str], labels: List[str], n_examples: Union[str, int]) -> Dataset:
         return ListDataset([InputExample(texts=[bug_description], label=label) for bug_description, label in
-                            zip(corpus, self.__numerate_labels(labels))])
+                            zip(corpus, AssignmentRecommendationTask.__numerate_labels(labels))])
 
     def _get_evaluator(self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str],
                        val_labels: List[str]) -> SentenceEvaluator:
-        eval_dataloader = DataLoader(self.eval_dataset, shuffle=True, **self.config.evaluator_config)
-        return AccuracyEvaluator(eval_dataloader)
+        return AccuracyEvaluator(self.eval_dataset, val_corpus, **self.config.evaluator_config)
 
-    def __numerate_labels(self, labels: List[str]) -> List[int]:
+    @staticmethod
+    def __numerate_labels(labels: List[str]) -> List[int]:
         d = {label: i for i, label in enumerate(set(labels))}
         return [d[label] for label in labels]
 
