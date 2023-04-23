@@ -7,7 +7,7 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer, AutoConfig, DataCo
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.dapt_tasks import AbstractPreTrainingTask
-from text_models.dapt_tasks.evaluation import ValMetric
+from text_models.evaluation import ValMetric
 
 
 class MaskedLMTask(AbstractPreTrainingTask):

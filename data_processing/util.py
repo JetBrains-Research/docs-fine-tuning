@@ -46,7 +46,8 @@ def get_docs_text(docs_names: List[str], sections: bool = False) -> Union[Sectio
 def get_doc_sections(text: str) -> Corpus:
     sections = text.split(sep="]], [[")
     sections = (
-        [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + ["[[" + sections[-1][:-1]]
+            [sections[0][1:] + "]]"] + ["[[" + section + "]]" for section in sections[1:-1]] + [
+        "[[" + sections[-1][:-1]]
     )
     return [get_doc_sentences(section) for section in sections]
 

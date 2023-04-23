@@ -11,22 +11,19 @@ from transformers import BertConfig, BertModel, AutoTokenizer
 from wandb.sdk.lib import RunDisabled
 from wandb.sdk.wandb_run import Run
 
-from data_processing.util import Section, Corpus, flatten
+from data_processing.util import Section, Corpus
 from text_models import AbstractModel, TrainTypes
 from text_models.dapt_tasks import AbstractPreTrainingTask
 from text_models.dapt_tasks import dapt_tasks
-from text_models.dapt_tasks.evaluation import ValMetric
-from text_models.task_models import finetuning_tasks, AbstractTask
+from text_models.evaluation import ValMetric
+from text_models.task_models import AbstractTask
 
 
 class BertDomainModel(AbstractModel):
     """
     Text Transformer-Based model, that can be fine-tuned on docs through various tasks
     and can also be used to map sentences / text to embeddings.
-    Model uses Siamese Neural Network (SNN) architecture for the task of finding duplicate bug reports.
 
-    :param corpus: Corpus of bug descriptions for dataset building
-    :param labels: List where position i is the id of the oldest bug report that is a duplicate of i-th bug report
     :param domain_adaptation_tasks: List of fine-tuning tasks that will be used for fine-tuning on docs
     :param cnf_dapt_tasks: Configuration for fine-tuning tasks
     :param pretrained_model: The name of pretrained text model
@@ -37,10 +34,7 @@ class BertDomainModel(AbstractModel):
 
     def __init__(
             self,
-            corpus: Corpus = None,
-            labels: List[str] = None,
-            target_task: str = "duplicates_detection",
-            cnf_task: Union[DictConfig, ListConfig] = None,
+            target_task: AbstractTask = None,
             domain_adaptation_tasks: List[str] = None,
             cnf_dapt_tasks: Union[DictConfig, ListConfig] = None,
             pretrained_model: str = "bert-base-uncased",
@@ -51,26 +45,24 @@ class BertDomainModel(AbstractModel):
             wandb_config: Union[DictConfig, ListConfig] = None,
             hp_search_mode: bool = False,
     ):
-        super().__init__(cnf_task.vector_size, cnf_task.epochs, pretrained_model, seed, save_to_path)
+        super().__init__(pretrained_model=pretrained_model, seed=seed, save_to_path=save_to_path)
+
+        if target_task is not None:
+            self.task = target_task
+            self.tapt_data = self.task.tapt_data
+            self.epochs = self.task.config.epochs
+
         if domain_adaptation_tasks is None:
             domain_adaptation_tasks = ["mlm"]
 
         self.start_train_from = start_train_from
-        self.save_best_model = cnf_task.save_best_model
         self.report_wandb = report_wandb
         self.wandb_config = wandb_config
         self.hp_search_mode = hp_search_mode
 
         self.vocab_size = None
         self.tokenizer = None
-        self.tapt_data: Corpus = [[[]]]
         self.best_metric = 0.0
-
-        if corpus is not None and labels is not None:
-            sentences = [" ".join(doc) for doc in list(map(flatten, corpus))]
-            train_size = int(len(sentences) * (1 - cnf_task.val_size))
-            self.task: AbstractTask = finetuning_tasks[target_task](sentences, labels, cnf_task)
-            self.tapt_data = corpus[:train_size]
 
         if cnf_dapt_tasks is not None:
             self.domain_adaptation_tasks = [
@@ -203,7 +195,7 @@ class BertDomainModel(AbstractModel):
                 run = self.__init_wandb(TrainTypes.TASK)
             self.train_task(base_corpus)
             self.logger.info(f"Train from scratch {self.name} SUCCESS")
-            if not self.save_best_model:
+            if not self.task.config.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK))
             if self.report_wandb and run is not None:
                 run.finish()
@@ -213,7 +205,7 @@ class BertDomainModel(AbstractModel):
                 run = self.__init_wandb(TrainTypes.PT_TASK)
             self.train_pt_task(base_corpus)
             self.logger.info(f"Train pretrained {self.name} SUCCESS")
-            if not self.save_best_model:
+            if not self.task.config.save_best_model:
                 self.save(os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK))
             if self.report_wandb and run is not None:
                 run.finish()

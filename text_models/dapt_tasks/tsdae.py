@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences, Corpus
 from text_models.dapt_tasks import AbstractPreTrainingTask
-from text_models.dapt_tasks.evaluation import LossEvaluator, WandbLoggingEvaluator, ValMetric
+from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator, ValMetric
 
 
 class TSDenoisingAutoEncoderTask(AbstractPreTrainingTask):

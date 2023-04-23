@@ -8,7 +8,7 @@ import pandas as pd
 
 from data_processing.util import flatten, get_corpus, get_docs_text, load_config
 from text_models import W2VModel, FastTextModel, BertDomainModel
-from text_models.task_models import finetuning_tasks, DuplicatesDetection
+from text_models.task_models import finetuning_tasks
 
 
 def parse_arguments():
@@ -55,8 +55,8 @@ def main():
 
     if config.text_model == "bert":
         os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
-        disc_ids = train["disc_id"].tolist()
-        model = BertDomainModel(train_corpus_sent, disc_ids, config.target_task, config.target_tasks[config.target_task], **config.models.bert)
+        target_task = finetuning_tasks[config.target_task].load(train, config.target_tasks[config.target_task])
+        model = BertDomainModel(target_task, **config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
 

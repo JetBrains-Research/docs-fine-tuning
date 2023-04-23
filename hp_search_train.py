@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 import wandb
 from data_processing.util import load_config, get_corpus
 from text_models import BertDomainModel, TrainTypes
-from text_models.dapt_tasks.evaluation import ValMetric
+from text_models.evaluation import ValMetric
 
 hyperparameter_defaults = dict(
     learning_rate=2e-5,

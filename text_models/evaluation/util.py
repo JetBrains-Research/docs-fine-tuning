@@ -1,5 +1,7 @@
 import os
 
+from torch.utils.data import Dataset
+
 
 class ValMetric:
     LOSS_DOCS = "loss"
@@ -20,3 +22,13 @@ def write_csv_loss(loss_value: float, loss_task_value: float, output_path: str, 
     fOut.write(",".join(map(str, output_data)))
     fOut.write("\n")
     fOut.close()
+
+class ListDataset(Dataset):
+    def __init__(self, data_list: list):
+        self.data = data_list
+
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __len__(self):
+        return len(self.data)

@@ -8,7 +8,7 @@ from torch.utils.data import random_split, Dataset
 from transformers import IntervalStrategy, TrainingArguments, PreTrainedTokenizer, PreTrainedModel, DataCollator
 
 from data_processing.util import Corpus
-from text_models.dapt_tasks.evaluation import IREvalTrainer, ValMetric
+from text_models.evaluation import IREvalTrainer, ValMetric
 
 
 class AbstractPreTrainingTask(ABC):
