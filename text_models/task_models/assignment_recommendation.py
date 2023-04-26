@@ -8,7 +8,7 @@ from torch import nn, Tensor
 from torch.utils.data import Dataset
 
 from data_processing.util import get_corpus, Corpus
-from text_models.evaluation import ListDataset, AccuracyEvaluator
+from text_models.evaluation import ListDataset, AssignmentEvaluator
 from text_models.task_models import AbstractTask
 
 
@@ -30,8 +30,8 @@ class SoftmaxClassifier(nn.Module):
 class AssignmentRecommendationTask(AbstractTask):
 
     def __init__(self, corpus: Corpus, labels: List[str], config):
-        super().__init__(corpus, labels, config)
         self.num_labels = len(set(labels))
+        super().__init__(corpus, labels, config)
 
     name = "assignment_recommendation"
 
@@ -52,7 +52,7 @@ class AssignmentRecommendationTask(AbstractTask):
 
     def _get_evaluator(self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str],
                        val_labels: List[str]) -> SentenceEvaluator:
-        return AccuracyEvaluator(self.eval_dataset, val_corpus, **self.config.evaluator_config)
+        return AssignmentEvaluator(self.eval_dataset, self.num_labels, val_corpus, **self.config.evaluator_config)
 
     @staticmethod
     def numerate_labels(labels: List[str]) -> List[int]:
