@@ -48,7 +48,6 @@ class LossEvaluator(SentenceEvaluator):
             )
         if output_path is not None:
             write_csv_loss(loss_value, loss_task_value, output_path, epoch, steps)
-
         base_metric = self.base_evaluator(model, output_path, epoch, steps)
         logger.info(f"Epoch: {epoch} Step: {steps} Base Metric: {base_metric}")
 

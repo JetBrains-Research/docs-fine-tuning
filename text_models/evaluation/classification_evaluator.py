@@ -6,6 +6,7 @@ from typing import List, Optional, Dict
 import torch
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.util import batch_to_device
+from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional.classification import multiclass_f1_score, multiclass_precision, multiclass_recall
 
@@ -33,26 +34,20 @@ class AssignmentEvaluator(SentenceEvaluator):
         self.csv_headers = ["epoch", "steps", "accuracy", AssigneeMetrics.WAF1, AssigneeMetrics.WP,
                             AssigneeMetrics.WR, AssigneeMetrics.ACC]
 
+        self.softmax_model: Optional[nn.Module] = None
+
     def __call__(self, model, output_path: str = None, epoch: int = -1, steps: int = -1) -> float:
 
-        if epoch != -1:
-            if steps == -1:
-                out_txt = "after epoch {}:".format(epoch)
-            else:
-                out_txt = "in epoch {} after {} steps:".format(epoch, steps)
-        else:
-            out_txt = ":"
-
-        logger.info("Evaluation " + out_txt)
         metrics = self.compute_metrics(model)
+
         f1 = metrics[AssigneeMetrics.WAF1]
         precision = metrics[AssigneeMetrics.WP]
         recall = metrics[AssigneeMetrics.WR]
         accuracy = metrics[AssigneeMetrics.ACC]
 
-        logger.info("Weighted average f1-score: {:.4f} \n".format(f1))
-        logger.info("Weighted average precision: {:.4f} \n".format(precision))
-        logger.info("Weighted average recall: {:.4f} \n".format(recall))
+        logger.info("Weighted average f1-score: {:.4f}".format(f1))
+        logger.info("Weighted average precision: {:.4f}".format(precision))
+        logger.info("Weighted average recall: {:.4f}".format(recall))
         logger.info("Accuracy: {:.4f} \n".format(accuracy))
 
         if output_path is not None and self.write_csv:
@@ -83,16 +78,17 @@ class AssignmentEvaluator(SentenceEvaluator):
                 features[idx] = batch_to_device(features[idx], model.device)
             label_ids = label_ids.to(model.device)
             with torch.no_grad():
-                _, prediction = model(features, labels=None)
+                _, prediction = self.softmax_model(features, labels=None)
 
             preds.append(torch.argmax(prediction, dim=1).to(model.device))
             labels.append(label_ids)
 
         preds = torch.cat(preds).to(model.device)
         labels = torch.cat(labels).to(model.device)
+        total = preds.size(0)
 
         metrics = {
-            AssigneeMetrics.ACC: preds.eq(labels).mean().item(),
+            AssigneeMetrics.ACC: preds.eq(labels).sum().item() / total,
             AssigneeMetrics.WAF1: multiclass_f1_score(preds, labels, self.num_labels, average="weighted").item(),
             AssigneeMetrics.WP: multiclass_precision(preds, labels, self.num_labels, average="weighted").item(),
             AssigneeMetrics.WR: multiclass_recall(preds, labels, self.num_labels, average="weighted").item()

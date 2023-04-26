@@ -44,7 +44,9 @@ class AssignmentRecommendationTask(AbstractTask):
                                    device=self.config.device)
 
     def _get_loss(self, model: SentenceTransformer):
-        return SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels)
+        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels)
+        self.evaluator.softmax_model = loss
+        return loss
 
     def _get_dataset(self, corpus: List[str], labels: List[str], n_examples: Union[str, int]) -> Dataset:
         return ListDataset([InputExample(texts=[bug_description], label=label) for bug_description, label in

@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: null # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['PT_DOC_TASK'] # supported training/evaluation types
+model_types: ['PT_TASK'] # supported training/evaluation types
 
 text_model: bert # see available text models in the corresponding section
 target_task: assignment_recommendation # see available tasks in 'target_tasks' section
@@ -86,7 +86,7 @@ target_tasks:
     save_steps: null
     val_size: 0.1
     seed: 42
-    device: cpu # 'cpu' or 'cuda'
+    device: cuda # 'cpu' or 'cuda'
 
     evaluator_config:
       batch_size: 16
@@ -109,7 +109,7 @@ target_tasks:
     save_steps: null
     val_size: 0.1
     seed: 42
-    device: cpu # 'cpu' or 'cuda'
+    device: cuda # 'cpu' or 'cuda'
     evaluator_config:
       batch_size: 16
 
