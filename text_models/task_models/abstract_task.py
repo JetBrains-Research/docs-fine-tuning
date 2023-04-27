@@ -63,6 +63,7 @@ class AbstractTask(ABC):
             warmup_steps=np.ceil(len(train_dataloader) * self.config.epochs * self.config.warmup_ratio),
             weight_decay=self.config.weight_decay,
             optimizer_params={"lr": self.config.learning_rate},
+            scheduler=self.config.scheduler,
             evaluator=evaluator,
             evaluation_steps=0 if self.config.evaluation_steps is None else self.config.evaluation_steps,
             output_path=None if hp_search_mode else output_path,

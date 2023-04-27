@@ -1,4 +1,4 @@
-dataset: idea # you can configure datasets with configs/datasets.yml
+dataset: kotlin # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
@@ -61,7 +61,7 @@ models:
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     start_train_from: null # bugs / task / null
     seed: 42
-    save_to_path: text_models/saved/test
+    save_to_path: text_models/saved/test/assignment
     report_wandb: false
 
     wandb_config:
@@ -80,6 +80,7 @@ target_tasks:
     weight_decay: 0.001
     learning_rate: 1e-5
     max_len: 256
+    scheduler: WarmupLinear # constantlr / warmupconstant / warmuplinear / warmupcosine / warmupcosinewithhardrestarts
     loss: triplet # 'triplet' or 'cossim'
     pooling_mode: mean # mean/max/cls
     evaluation_steps: null
@@ -95,15 +96,16 @@ target_tasks:
       map_at_k: [ 5, 10 ] # validation metric
 
   assignment_recommendation:
-    epochs: 3
+    epochs: 20
     batch_size: 16
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_ratio: 0.1 # percent of training data
-    weight_decay: 0.001
+    weight_decay: 0.0001
     learning_rate: 1e-5
     dropout_ratio: 0.5
     max_len: 256
+    scheduler: warmuplinear # constantlr / warmupconstant / warmuplinear / warmupcosine / warmupcosinewithhardrestarts
     pooling_mode: mean # mean/max/cls
     evaluation_steps: null
     save_steps: null
@@ -112,6 +114,10 @@ target_tasks:
     device: cuda # 'cpu' or 'cuda'
     evaluator_config:
       batch_size: 16
+      acc_at_k: [1, 5, 10]
+      f1_at_k: [1, 5, 10]
+      recall_at_k: [1, 5, 10]
+      precision_at_k: [1, 5, 10]
 
 
 dapt_tasks:
