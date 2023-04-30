@@ -36,6 +36,7 @@ class DuplicatesDetectionApproach(AbstractApproach, ABC):
 
         self.test_size: Optional[int] = None
         self.true_positive_at_k: Optional[np.ndarray] = None
+        self.embeddings: Optional[np.ndarray] = None
 
     def evaluate(self, model: AbstractModel, topks: List[int]) -> Dict[str, np.ndarray]:
         """

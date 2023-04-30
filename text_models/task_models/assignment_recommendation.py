@@ -20,7 +20,7 @@ class SoftmaxClassifier(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
-        embeddings = self.model(sentence_features[0])['sentence_embedding']
+        embeddings = self.model(sentence_features[0])["sentence_embedding"]  # type: ignore
         output = self.classifier(embeddings)
         if labels is not None:
             return self.loss_fn(output, labels.view(-1))
@@ -28,7 +28,6 @@ class SoftmaxClassifier(nn.Module):
 
 
 class AssignmentRecommendationTask(AbstractTask):
-
     def __init__(self, corpus: Corpus, labels: List[str], config):
         self.num_labels = len(set(labels))
         super().__init__(corpus, labels, config)
@@ -40,8 +39,7 @@ class AssignmentRecommendationTask(AbstractTask):
             word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.config.pooling_mode
         )
         dropout = models.Dropout(dropout=self.config.dropout_ratio)
-        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout],
-                                   device=self.config.device)
+        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout], device=self.config.device)
 
     def _get_loss(self, model: SentenceTransformer):
         loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels)
@@ -49,11 +47,16 @@ class AssignmentRecommendationTask(AbstractTask):
         return loss
 
     def _get_dataset(self, corpus: List[str], labels: List[str], n_examples: Union[str, int]) -> Dataset:
-        return ListDataset([InputExample(texts=[bug_description], label=label) for bug_description, label in
-                            zip(corpus, AssignmentRecommendationTask.numerate_labels(labels))])
+        return ListDataset(
+            [
+                InputExample(texts=[bug_description], label=label)
+                for bug_description, label in zip(corpus, AssignmentRecommendationTask.numerate_labels(labels))
+            ]
+        )
 
-    def _get_evaluator(self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str],
-                       val_labels: List[str]) -> SentenceEvaluator:
+    def _get_evaluator(
+        self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
+    ) -> SentenceEvaluator:
         return AssignmentEvaluator(self.eval_dataset, self.num_labels, val_corpus, **self.config.evaluator_config)
 
     @staticmethod
@@ -65,4 +68,4 @@ class AssignmentRecommendationTask(AbstractTask):
     def load(cls, data: pd.DataFrame, config):
         corpus = get_corpus(data, sentences=True)
         labels = data["assignee"].tolist()
-        return AssignmentRecommendationTask(corpus, labels, config)
+        return AssignmentRecommendationTask(corpus, labels, config)  # type: ignore

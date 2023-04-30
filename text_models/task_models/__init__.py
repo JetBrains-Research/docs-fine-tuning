@@ -4,5 +4,5 @@ from text_models.task_models.assignment_recommendation import AssignmentRecommen
 
 finetuning_tasks = {
     DuplicatesDetection.name: DuplicatesDetection,
-    AssignmentRecommendationTask.name: AssignmentRecommendationTask
+    AssignmentRecommendationTask.name: AssignmentRecommendationTask,
 }

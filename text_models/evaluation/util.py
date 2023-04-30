@@ -23,6 +23,7 @@ def write_csv_loss(loss_value: float, loss_task_value: float, output_path: str, 
     fOut.write("\n")
     fOut.close()
 
+
 class ListDataset(Dataset):
     def __init__(self, data_list: list):
         self.data = data_list

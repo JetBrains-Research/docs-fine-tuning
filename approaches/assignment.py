@@ -10,16 +10,27 @@ from text_models.task_models import AssignmentRecommendationTask
 
 class AssignmentApproach(AbstractApproach):
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
-        super().__init__(train, test, [AssigneeMetrics.ACC, AssigneeMetrics.PRECISION, AssigneeMetrics.W_PRECISION,
-                                       AssigneeMetrics.RECALL, AssigneeMetrics.F1, AssigneeMetrics.WAF1])
+        super().__init__(
+            train,
+            test,
+            [
+                AssigneeMetrics.ACC,
+                AssigneeMetrics.PRECISION,
+                AssigneeMetrics.W_PRECISION,
+                AssigneeMetrics.RECALL,
+                AssigneeMetrics.F1,
+                AssigneeMetrics.WAF1,
+            ],
+        )
         fix_random_seed(42)
 
         num_labels = len(set(train.assignee.tolist() + test.assignee.tolist()))
 
-        corpus = [" ".join(doc) for doc in list(map(flatten, get_corpus(test, sentences=True)))]
+        corpus = [" ".join(doc) for doc in list(map(flatten, get_corpus(test, sentences=True)))]  # type: ignore
         labels = AssignmentRecommendationTask.numerate_labels(test["assignee"].tolist())
         self.dataset = ListDataset(
-            [InputExample(texts=[sentence], label=label) for sentence, label in zip(corpus, labels)])
+            [InputExample(texts=[sentence], label=label) for sentence, label in zip(corpus, labels)]
+        )
 
         self.evaluator = AssignmentEvaluator(self.dataset, num_labels, write_csv=False)
 

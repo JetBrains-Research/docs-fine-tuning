@@ -13,7 +13,6 @@ from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
 
 
 class AbstractTask(ABC):
-
     def __init__(self, corpus: Corpus, labels: List[str], config):
         self.save_best_model = None
         fix_random_seed(config.seed)
@@ -24,20 +23,25 @@ class AbstractTask(ABC):
 
         self.train_size = int(len(corpus) * (1 - config.val_size))
 
-        train_corpus = bug_corpus[:self.train_size]
-        train_disc_ids = labels[:self.train_size]
-        val_corpus = bug_corpus[self.train_size:]
-        val_disc_ids = labels[self.train_size:]
+        train_corpus = bug_corpus[: self.train_size]
+        train_disc_ids = labels[: self.train_size]
+        val_corpus = bug_corpus[self.train_size :]
+        val_disc_ids = labels[self.train_size :]
 
-        self.tapt_data = corpus[:self.train_size]
+        self.tapt_data = corpus[: self.train_size]
 
         self.dataset = self._get_dataset(train_corpus, train_disc_ids, config.n_examples)
         self.eval_dataset = self._get_dataset(val_corpus, val_disc_ids, "all")
         self.evaluator = self._get_evaluator(train_corpus, train_disc_ids, val_corpus, val_disc_ids)
 
-    def train(self, word_embedding_model: models.Transformer, save_to_dir: str,
-              step_metric: Optional[str], report_wandb: bool = False,
-              hp_search_mode: bool = False) -> SentenceTransformer:
+    def train(
+        self,
+        word_embedding_model: models.Transformer,
+        save_to_dir: str,
+        step_metric: Optional[str],
+        report_wandb: bool = False,
+        hp_search_mode: bool = False,
+    ) -> SentenceTransformer:
         model = self._create_model(word_embedding_model)
 
         train_dataloader = DataLoader(self.dataset, shuffle=True, batch_size=self.config.batch_size)
@@ -84,8 +88,9 @@ class AbstractTask(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_evaluator(self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str],
-                       val_labels: List[str]) -> SentenceEvaluator:
+    def _get_evaluator(
+        self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
+    ) -> SentenceEvaluator:
         raise NotImplementedError()
 
     @abstractmethod

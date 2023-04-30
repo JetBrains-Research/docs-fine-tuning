@@ -33,17 +33,17 @@ class BertDomainModel(AbstractModel):
     """
 
     def __init__(
-            self,
-            target_task: AbstractTask = None,
-            cnf_dapt_tasks: Union[DictConfig, ListConfig] = None,
-            domain_adaptation_tasks: List[str] = None,
-            pretrained_model: str = "bert-base-uncased",
-            start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
-            seed: int = 42,
-            save_to_path: str = "./",
-            report_wandb: bool = False,
-            wandb_config: Union[DictConfig, ListConfig] = None,
-            hp_search_mode: bool = False,
+        self,
+        target_task: AbstractTask = None,
+        cnf_dapt_tasks: Union[DictConfig, ListConfig] = None,
+        domain_adaptation_tasks: List[str] = None,
+        pretrained_model: str = "bert-base-uncased",
+        start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
+        seed: int = 42,
+        save_to_path: str = "./",
+        report_wandb: bool = False,
+        wandb_config: Union[DictConfig, ListConfig] = None,
+        hp_search_mode: bool = False,
     ):
         super().__init__(pretrained_model=pretrained_model, seed=seed, save_to_path=save_to_path)
 
@@ -78,7 +78,9 @@ class BertDomainModel(AbstractModel):
         self.model = self.task.train(
             word_embedding_model,
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.TASK),
-            "task/global_steps", self.report_wandb, self.hp_search_mode
+            "task/global_steps",
+            self.report_wandb,
+            self.hp_search_mode,
         )
         if self.hp_search_mode:
             self.best_metric = self.model.best_score  # type: ignore
@@ -88,7 +90,9 @@ class BertDomainModel(AbstractModel):
         self.model = self.task.train(
             word_embedding_model,
             os.path.join(self.save_to_path, self.name + "_" + TrainTypes.PT_TASK),
-            "pt_task/global_steps", self.report_wandb, self.hp_search_mode
+            "pt_task/global_steps",
+            self.report_wandb,
+            self.hp_search_mode,
         )
         if self.hp_search_mode:
             self.best_metric = self.model.best_score  # type: ignore
@@ -128,33 +132,27 @@ class BertDomainModel(AbstractModel):
         self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
 
     def __get_doc_model_name(self, training_type: str, dapt_task_name: str):
-        return os.path.join(
-            self.save_to_path, self.name + "_" + dapt_task_name + "_" + training_type, "output_docs"
-        )
+        return os.path.join(self.save_to_path, self.name + "_" + dapt_task_name + "_" + training_type, "output_docs")
 
     def __adapt_to_domain(
-            self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]
+        self, extra_corpus: Corpus, training_type: str, pretrained_model_supplier: Callable[[str], str]
     ):
         for dapt_task in self.domain_adaptation_tasks:
             self.logger.info(f"Start pre-training with {dapt_task.name} task")
-            self.__do_adapt_to_domain(
-                extra_corpus, dapt_task, pretrained_model_supplier(dapt_task.name), training_type
-            )
+            self.__do_adapt_to_domain(extra_corpus, dapt_task, pretrained_model_supplier(dapt_task.name), training_type)
             if self.hp_search_mode:
                 self.best_metric += self.model.best_score / len(self.domain_adaptation_tasks)  # type: ignore
                 wandb.log({"best_" + dapt_task.name + "_" + ValMetric.TASK: self.model.best_score})  # type: ignore
             self.logger.info(f"Train {training_type.replace('_', '+')} with {dapt_task.name} complete")
 
     def __do_adapt_to_domain(
-            self,
-            extra_corpus: Corpus,
-            dapt_task: AbstractPreTrainingTask,
-            pretrained_model: str,
-            save_to_path_suffix: str,
+        self,
+        extra_corpus: Corpus,
+        dapt_task: AbstractPreTrainingTask,
+        pretrained_model: str,
+        save_to_path_suffix: str,
     ):
-        save_to_dir = os.path.join(
-            self.save_to_path, self.name + "_" + dapt_task.name + "_" + save_to_path_suffix
-        )
+        save_to_dir = os.path.join(self.save_to_path, self.name + "_" + dapt_task.name + "_" + save_to_path_suffix)
         word_embedding_model = (
             dapt_task.train_on_docs(
                 pretrained_model,
@@ -168,9 +166,13 @@ class BertDomainModel(AbstractModel):
             else dapt_task.load(save_to_dir)
         )
 
-        self.model = self.task.train(word_embedding_model, save_to_dir, f"{dapt_task.name}_task/global_steps",
-                                     self.report_wandb,
-                                     self.hp_search_mode)
+        self.model = self.task.train(
+            word_embedding_model,
+            save_to_dir,
+            f"{dapt_task.name}_task/global_steps",
+            self.report_wandb,
+            self.hp_search_mode,
+        )
         if not self.task.config.save_best_model:
             self.save(save_to_dir)
 

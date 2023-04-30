@@ -25,20 +25,19 @@ class DuplicatesDetection(AbstractTask):
             out_features=self.config.vector_size,
             activation_function=nn.Tanh(),
         )
-        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dense_model],
-                                   device=self.config.device)
+        return SentenceTransformer(
+            modules=[word_embedding_model, pooling_model, dense_model], device=self.config.device
+        )
 
     def _get_loss(self, model: SentenceTransformer):
         return (
             losses.CosineSimilarityLoss(model)
             if self.config.loss == "cossim"
-            else losses.TripletLoss(
-                model=model, distance_metric=losses.TripletDistanceMetric.COSINE, triplet_margin=1
-            )
+            else losses.TripletLoss(model=model, distance_metric=losses.TripletDistanceMetric.COSINE, triplet_margin=1)
         )
 
     def _get_evaluator(
-            self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
+        self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
     ) -> SentenceEvaluator:
         queries = {qid: query for qid, query in enumerate(val_corpus)}
         corpus = {cid: doc for cid, doc in enumerate(train_corpus)}
@@ -69,4 +68,4 @@ class DuplicatesDetection(AbstractTask):
     def load(cls, data: pd.DataFrame, config):
         corpus = get_corpus(data, sentences=True)
         labels = data["disc_id"].tolist()
-        return DuplicatesDetection(corpus, labels, config)
+        return DuplicatesDetection(corpus, labels, config)  # type: ignore

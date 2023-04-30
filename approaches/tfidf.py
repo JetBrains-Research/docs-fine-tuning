@@ -37,4 +37,4 @@ class TfIdfApproach(DuplicatesDetectionApproach):
 
     def update_history(self, query_num: int):
         self.train_tfidf_vectors = vstack((self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]))
-        self.embeddings = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)
+        self.embeddings: np.ndarray = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)

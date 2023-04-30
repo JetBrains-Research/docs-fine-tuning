@@ -8,7 +8,6 @@ from omegaconf import OmegaConf
 import wandb
 from data_processing.util import load_config
 from text_models import BertDomainModel, TrainTypes
-from text_models.evaluation import ValMetric
 from text_models.task_models import finetuning_tasks
 
 hyperparameter_defaults = dict(
@@ -19,7 +18,7 @@ hyperparameter_defaults = dict(
     dataset="kotlin",
     load_path="text_models/saved/test",
     model_type=TrainTypes.PT_TASK,
-    task="duplicates_detection"
+    task="duplicates_detection",
 )
 
 config = load_config()
