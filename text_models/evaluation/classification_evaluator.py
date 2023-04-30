@@ -79,7 +79,7 @@ class AssignmentEvaluator(SentenceEvaluator):
                     writer = csv.writer(f)
                     writer.writerow([epoch, steps] + accuracy + precision + w_precision + recall + f1 + w_f1)
 
-        return accuracy[np.argmin(self.acc_at_k)]
+        return w_f1[np.argmin(self.f1_at_k)]
 
     def compute_metrics(self, model) -> Dict[str, List[float]]:
         model.eval()

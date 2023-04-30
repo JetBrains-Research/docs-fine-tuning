@@ -8,8 +8,8 @@ from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
 from torch.utils.data import Dataset, DataLoader
 
-from text_models.evaluation import LossEvaluator
 from data_processing.util import Corpus, fix_random_seed, flatten
+from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
 
 
 class AbstractTask(ABC):

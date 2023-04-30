@@ -3,7 +3,7 @@ dataset: kotlin # you can configure datasets with configs/datasets.yml
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: null # set null for stdout
+log_file: data/logs/log_kt.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
 model_types: ['PT_TASK'] # supported training/evaluation types
@@ -59,7 +59,7 @@ models:
   bert:
     domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
-    start_train_from: null # bugs / task / null
+    start_train_from: task # bugs / task / null
     seed: 42
     save_to_path: text_models/saved/test/assignment
     report_wandb: false
@@ -96,12 +96,12 @@ target_tasks:
       map_at_k: [ 5, 10 ] # validation metric
 
   assignment_recommendation:
-    epochs: 20
-    batch_size: 16
+    epochs: 15
+    batch_size: 32
     n_examples: all
     save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
     warmup_ratio: 0.1 # percent of training data
-    weight_decay: 0.0001
+    weight_decay: 0.001
     learning_rate: 1e-5
     dropout_ratio: 0.5
     max_len: 256
