@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 import pandas as pd
 
-from data_processing.util import flatten, get_corpus, get_docs_text, load_config
+from data_processing.util import flatten, get_corpus, get_docs_text, load_config, fix_random_seed
 from text_models import W2VModel, FastTextModel, BertDomainModel
 from text_models.task_models import finetuning_tasks
 
@@ -29,6 +29,8 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     config = load_config()
+
+    fix_random_seed()
 
     if args.gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id

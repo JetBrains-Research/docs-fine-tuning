@@ -39,13 +39,12 @@ class BertDomainModel(AbstractModel):
         domain_adaptation_tasks: List[str] = None,
         pretrained_model: str = "bert-base-uncased",
         start_train_from: Optional[str] = None,  # 'bugs'/'task'/None
-        seed: int = 42,
         save_to_path: str = "./",
         report_wandb: bool = False,
         wandb_config: Union[DictConfig, ListConfig] = None,
         hp_search_mode: bool = False,
     ):
-        super().__init__(pretrained_model=pretrained_model, seed=seed, save_to_path=save_to_path)
+        super().__init__(pretrained_model=pretrained_model, save_to_path=save_to_path)
 
         if target_task is not None:
             self.task = target_task
@@ -114,7 +113,7 @@ class BertDomainModel(AbstractModel):
     def train_doc_bugs_task(self, extra_corpus: Corpus):
         pretraining_model_supplier = lambda x: self.__create_and_save_model_from_scratch()
         if self.start_train_from == "bugs":
-            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
+            pretraining_model_supplier = lambda x: self.get_doc_model_name(TrainTypes.DOC_BUGS_TASK, x)
             extra_corpus = self.tapt_data
         else:
             extra_corpus += self.tapt_data
@@ -124,14 +123,14 @@ class BertDomainModel(AbstractModel):
     def train_pt_doc_bugs_task(self, extra_corpus: Corpus):
         pretraining_model_supplier = lambda x: self.pretrained_model
         if self.start_train_from == "bugs":
-            pretraining_model_supplier = lambda x: self.__get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
+            pretraining_model_supplier = lambda x: self.get_doc_model_name(TrainTypes.PT_DOC_BUGS_TASK, x)
             extra_corpus = self.tapt_data
         else:
             extra_corpus += self.tapt_data
 
         self.__adapt_to_domain(extra_corpus, TrainTypes.PT_DOC_BUGS_TASK, pretraining_model_supplier)
 
-    def __get_doc_model_name(self, training_type: str, dapt_task_name: str):
+    def get_doc_model_name(self, training_type: str, dapt_task_name: str):
         return os.path.join(self.save_to_path, self.name + "_" + dapt_task_name + "_" + training_type, "output_docs")
 
     def __adapt_to_domain(

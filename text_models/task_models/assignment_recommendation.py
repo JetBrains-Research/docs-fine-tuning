@@ -1,4 +1,4 @@
-from typing import List, Union, Iterable, Dict
+from typing import List, Union, Iterable, Dict, Optional
 
 import pandas as pd
 from sentence_transformers import models, SentenceTransformer
@@ -17,14 +17,15 @@ class SoftmaxClassifier(nn.Module):
         super().__init__()
         self.model = model
         self.classifier = nn.Linear(sentence_embedding_dimension, num_labels)
+        nn.init.xavier_uniform(self.classifier.weight)
         self.loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
+    def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Optional[Tensor] = None):
         embeddings = self.model(sentence_features[0])["sentence_embedding"]  # type: ignore
         output = self.classifier(embeddings)
         if labels is not None:
             return self.loss_fn(output, labels.view(-1))
-        return embeddings, output
+        return output
 
 
 class AssignmentRecommendationTask(AbstractTask):

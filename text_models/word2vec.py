@@ -29,10 +29,9 @@ class W2VModel(AbstractModel):
         min_count: int = 1,
         pretrained_model: str = "word2vec-google-news-300",
         tmp_file: str = get_tmpfile("pretrained_vectors.txt"),
-        seed: int = 42,
         save_to_path: str = "./",
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
+        super().__init__(vector_size, epochs, pretrained_model, save_to_path)
         self.tmp_file = tmp_file or get_tmpfile("pretrained_vectors.txt")
         self.init_vocab = self.__get_init_vocab()
         self.min_count = min_count

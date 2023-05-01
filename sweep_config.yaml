@@ -6,23 +6,25 @@ metric:
 parameters:
   learning_rate:
     distribution: categorical
-    values: [1e-5, 9e-6]
+    values: [1e-5, 9e-6, 5e-6, 3e-6, 1e-7]
   warmup_ratio:
     values: [0.1, 0.15, 0.2]
   weight_decay:
     distribution: categorical
     values: [0.001, 0.0001, 0.00001]
   dropout_ratio:
-    values: [0.4, 0.5]
+    value: 0.5
   epochs:
     value: 25
+  batch_size:
+    value: 16
   dataset:
     value: kotlin
   load_path:
-    value: text_models/saved/test
+    value: text_models/saved/assignment/kotlin/bert_base
   domain_adaptation_tasks:
-    value: ['mlm', 'tsdae']
+    value: ['mlm']
   model_type:
-    value: PT_TASK
+    value: DOC_BUGS_TASK
   task:
     value: assignment_recommendation

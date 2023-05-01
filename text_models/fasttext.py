@@ -23,10 +23,9 @@ class FastTextModel(AbstractModel):
         epochs: int = 5,
         min_count: int = 1,
         pretrained_model: str = "undefined",
-        seed: int = 42,
         save_to_path: str = "./",
     ):
-        super().__init__(vector_size, epochs, pretrained_model, seed, save_to_path)
+        super().__init__(vector_size, epochs, pretrained_model, save_to_path)
         self.min_count = min_count
 
     name = "FastText"

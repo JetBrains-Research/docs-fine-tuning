@@ -59,7 +59,6 @@ class AssignmentEvaluator(SentenceEvaluator):
             + [f"precision_at_{k}" for k in precision_at_k]
             + [f"w_precision_at_{k}" for k in precision_at_k]
             + [f"recall_at_{k}" for k in recall_at_k]
-            + [f"w_recall_at_{k}" for k in recall_at_k]
             + [f"f1_at_{k}" for k in f1_at_k]
             + [f"w_f1_at_{k}" for k in f1_at_k]
         )
@@ -108,7 +107,7 @@ class AssignmentEvaluator(SentenceEvaluator):
                 features[idx] = batch_to_device(features[idx], model.device)
             label_ids = label_ids.to(model.device)
             with torch.no_grad():
-                _, prediction = self.softmax_model(features, labels=None)  # type: ignore
+                prediction = self.softmax_model(features, labels=None)  # type: ignore
 
             preds_list.append(prediction.to(model.device))
             labels_list.append(label_ids)

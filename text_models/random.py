@@ -26,11 +26,10 @@ class RandomEmbeddingModel(AbstractModel):
         train_corpus: Optional[Section] = None,
         vector_size: int = 300,
         min_count: int = 1,
-        seed: int = 42,
         rand_by_w2v: bool = False,
         save_to_path: str = "./",
     ):
-        super().__init__(vector_size=vector_size, seed=seed, save_to_path=save_to_path)
+        super().__init__(vector_size=vector_size, save_to_path=save_to_path)
         self.min_count = min_count
 
         if train_corpus is None:

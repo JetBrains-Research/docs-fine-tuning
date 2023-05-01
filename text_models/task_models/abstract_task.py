@@ -4,9 +4,12 @@ from typing import Optional, List, Union
 
 import numpy as np
 import pandas as pd
+import torch
 from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
+from torch import nn
 from torch.utils.data import Dataset, DataLoader
+from torch_lr_finder import LRFinder
 
 from data_processing.util import Corpus, fix_random_seed, flatten
 from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
@@ -15,7 +18,6 @@ from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
 class AbstractTask(ABC):
     def __init__(self, corpus: Corpus, labels: List[str], config):
         self.save_best_model = None
-        fix_random_seed(config.seed)
 
         self.config = config
 
@@ -78,6 +80,21 @@ class AbstractTask(ABC):
         )
 
         return model
+
+    def find_lr(self, word_embedding_model: models.Transformer, criterion: nn.Module, start_lr: float, end_lr: float,
+                iter_num: int = 100, step_mode="exp") -> LRFinder:
+        model = self._create_model(word_embedding_model)
+
+        trainloader = DataLoader(self.dataset, batch_size=self.config.batch_size,
+                                 collate_fn=model.smart_batching_collate)
+        val_loader = DataLoader(self.eval_dataset, batch_size=self.config.batch_size,
+                                collate_fn=model.smart_batching_collate)
+        train_loss = self._get_loss(model)
+        optimizer = torch.optim.AdamW(train_loss.parameters(), lr=start_lr, weight_decay=self.config.weight_decay)
+        lr_finder = LRFinder(train_loss, optimizer, criterion, device="cuda")
+        lr_finder.range_test(trainloader, val_loader=val_loader, step_mode=step_mode, end_lr=end_lr, num_iter=iter_num)
+
+        return lr_finder
 
     @abstractmethod
     def _create_model(self, word_embedding_model: models.Transformer) -> SentenceTransformer:

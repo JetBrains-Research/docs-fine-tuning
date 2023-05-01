@@ -6,7 +6,7 @@ import torch
 from omegaconf import OmegaConf
 
 import wandb
-from data_processing.util import load_config
+from data_processing.util import load_config, fix_random_seed
 from text_models import BertDomainModel, TrainTypes
 from text_models.task_models import finetuning_tasks
 
@@ -27,6 +27,8 @@ config = load_config()
 def train():
     wandb.init(config=hyperparameter_defaults)
 
+    fix_random_seed()
+
     wandb_config = wandb.config
     datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[wandb_config["dataset"]]
     task_config = config.target_tasks[config.target_task]
@@ -43,6 +45,8 @@ def train():
     task_config["weight_decay"] = wandb_config["weight_decay"]
     task_config["epochs"] = wandb_config["epochs"]
     task_config["dropout_ratio"] = wandb_config["dropout_ratio"]
+    task_config["batch_size"] = wandb_config["batch_size"]
+
 
     config.models.bert["domain_adaptation_tasks"] = wandb_config["domain_adaptation_tasks"]
     config.models.bert["save_to_path"] = wandb_config["load_path"]
