@@ -114,7 +114,7 @@ class AbstractPreTrainingTask(ABC):
             eval_steps=self.eval_steps,  # type: ignore
             load_best_model_at_end=self.save_best_model,
             metric_for_best_model=self.metric_for_best_model,
-            greater_is_better=(self.metric_for_best_model == "task_map"),
+            greater_is_better=(self.metric_for_best_model == ValMetric.TASK),
             warmup_ratio=self.warmup_ratio,
             weight_decay=self.weight_decay,
             disable_tqdm=False,

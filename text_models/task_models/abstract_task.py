@@ -50,7 +50,7 @@ class AbstractTask(ABC):
         train_loss = self._get_loss(model)
 
         evaluator = LossEvaluator(
-            self.evaluator, train_loss, None, self.eval_dataset, batch_size=self.config.evaluator_config.batch_size
+            self.evaluator, train_loss, None, self.eval_dataset, self.config.metric_for_best_model, self.config.evaluator_config.batch_size
         )
 
         evaluator = (

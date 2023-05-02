@@ -1,6 +1,9 @@
 from typing import List, Union, Iterable, Dict, Optional
 
+from sklearn.utils.class_weight import compute_class_weight
+
 import pandas as pd
+import torch
 from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.readers import InputExample
@@ -13,12 +16,12 @@ from text_models.task_models import AbstractTask
 
 
 class SoftmaxClassifier(nn.Module):
-    def __init__(self, model: SentenceTransformer, sentence_embedding_dimension: int, num_labels: int):
+    def __init__(self, model: SentenceTransformer, sentence_embedding_dimension: int, num_labels: int, weights: torch.Tensor = None):
         super().__init__()
         self.model = model
         self.classifier = nn.Linear(sentence_embedding_dimension, num_labels)
         nn.init.xavier_uniform_(self.classifier.weight)
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = nn.CrossEntropyLoss(weight=weights, reduction="mean")
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Optional[Tensor] = None):
         embeddings = self.model(sentence_features[0])["sentence_embedding"]  # type: ignore
@@ -33,6 +36,8 @@ class AssignmentRecommendationTask(AbstractTask):
         self.num_labels = len(set(labels))
         self.map_labels = self.numerate_labels(labels)
         super().__init__(corpus, labels, config)
+        self.classes_weights = compute_class_weight("balanced", classes=list(self.map_labels.values()),
+                                                    y=[self.map_labels[label] for label in labels[:self.train_size]])
 
     name = "assignment_recommendation"
 
@@ -44,7 +49,7 @@ class AssignmentRecommendationTask(AbstractTask):
         return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout], device=self.config.device)
 
     def _get_loss(self, model: SentenceTransformer):
-        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels)
+        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels, torch.tensor(self.classes_weights, dtype=torch.float))
         self.evaluator.softmax_model = loss
         return loss
 
