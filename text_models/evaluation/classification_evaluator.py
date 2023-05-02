@@ -99,8 +99,7 @@ class AssignmentEvaluator(SentenceEvaluator):
         preds_list = []
         labels_list = []
 
-        dataloader = DataLoader(self.dataset, batch_size=self.batch_size)
-        dataloader.collate_fn = model.smart_batching_collate
+        dataloader = DataLoader(self.dataset, batch_size=self.batch_size, collate_fn=model.smart_batching_collate)
         for step, batch in enumerate(dataloader):
             features, label_ids = batch
             for idx in range(len(features)):
@@ -108,8 +107,7 @@ class AssignmentEvaluator(SentenceEvaluator):
             label_ids = label_ids.to(model.device)
             with torch.no_grad():
                 prediction = self.softmax_model(features, labels=None)  # type: ignore
-
-            preds_list.append(prediction.to(model.device))
+            preds_list.append(prediction.softmax(dim=1).to(model.device))
             labels_list.append(label_ids)
 
         preds = torch.cat(preds_list).to(model.device)

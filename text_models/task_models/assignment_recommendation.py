@@ -17,7 +17,7 @@ class SoftmaxClassifier(nn.Module):
         super().__init__()
         self.model = model
         self.classifier = nn.Linear(sentence_embedding_dimension, num_labels)
-        nn.init.xavier_uniform(self.classifier.weight)
+        nn.init.xavier_uniform_(self.classifier.weight)
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Optional[Tensor] = None):
@@ -31,6 +31,7 @@ class SoftmaxClassifier(nn.Module):
 class AssignmentRecommendationTask(AbstractTask):
     def __init__(self, corpus: Corpus, labels: List[str], config):
         self.num_labels = len(set(labels))
+        self.map_labels = self.numerate_labels(labels)
         super().__init__(corpus, labels, config)
 
     name = "assignment_recommendation"
@@ -51,7 +52,7 @@ class AssignmentRecommendationTask(AbstractTask):
         return ListDataset(
             [
                 InputExample(texts=[bug_description], label=label)
-                for bug_description, label in zip(corpus, AssignmentRecommendationTask.numerate_labels(labels))
+                for bug_description, label in zip(corpus, [self.map_labels[label] for label in labels])
             ]
         )
 
@@ -61,9 +62,14 @@ class AssignmentRecommendationTask(AbstractTask):
         return AssignmentEvaluator(self.eval_dataset, self.num_labels, val_corpus, **self.config.evaluator_config)
 
     @staticmethod
-    def numerate_labels(labels: List[str]) -> List[int]:
-        d = {label: i for i, label in enumerate(set(labels))}
-        return [d[label] for label in labels]
+    def numerate_labels(labels: List[str]) -> Dict[str, int]:
+        result = {}
+        i = 0
+        for label in labels:
+            if label not in result:
+                result[label] = i
+                i += 1
+        return result
 
     @classmethod
     def load(cls, data: pd.DataFrame, config):

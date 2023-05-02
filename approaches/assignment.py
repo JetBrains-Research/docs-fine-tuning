@@ -27,7 +27,8 @@ class AssignmentApproach(AbstractApproach):
         num_labels = len(set(train.assignee.tolist() + test.assignee.tolist()))
 
         corpus = [" ".join(doc) for doc in list(map(flatten, get_corpus(test, sentences=True)))]  # type: ignore
-        labels = AssignmentRecommendationTask.numerate_labels(test["assignee"].tolist())
+        labels_map = AssignmentRecommendationTask.numerate_labels(train.assignee.tolist())
+        labels = [labels_map[label] for label in test.assignee.tolist()]
         self.dataset = ListDataset(
             [InputExample(texts=[sentence], label=label) for sentence, label in zip(corpus, labels)]
         )
