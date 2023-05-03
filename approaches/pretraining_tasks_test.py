@@ -3,7 +3,7 @@ from typing import List, Dict, Type
 
 import numpy as np
 
-from approaches import AbstractApproach
+from approaches.abstract_approach import AbstractApproach
 from text_models import AbstractModel, TrainTypes
 
 

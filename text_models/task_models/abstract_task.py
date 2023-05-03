@@ -11,7 +11,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from torch_lr_finder import LRFinder
 
-from data_processing.util import Corpus, fix_random_seed, flatten
+from data_processing.util import Corpus, flatten
 from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
 
 
@@ -91,7 +91,7 @@ class AbstractTask(ABC):
                                 collate_fn=model.smart_batching_collate)
         train_loss = self._get_loss(model)
         optimizer = torch.optim.AdamW(train_loss.parameters(), lr=start_lr, weight_decay=self.config.weight_decay)
-        lr_finder = LRFinder(train_loss, optimizer, criterion, device="cuda")
+        lr_finder = LRFinder(train_loss, optimizer, criterion, device=self.config.device)
         lr_finder.range_test(trainloader, val_loader=val_loader, step_mode=step_mode, end_lr=end_lr, num_iter=iter_num)
 
         return lr_finder

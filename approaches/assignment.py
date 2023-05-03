@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sentence_transformers.readers import InputExample
 
-from approaches import AbstractApproach
+from approaches.abstract_approach import AbstractApproach
 from data_processing.util import get_corpus, fix_random_seed, flatten
 from text_models.evaluation import AssignmentEvaluator, ListDataset, AssigneeMetrics
 from text_models.task_models import AssignmentRecommendationTask
@@ -36,4 +36,5 @@ class AssignmentApproach(AbstractApproach):
         self.evaluator = AssignmentEvaluator(self.dataset, num_labels, write_csv=False)
 
     def evaluate(self, model, topns):
+        self.evaluator.softmax_model = model.task
         return {metric_name: np.array(val) for metric_name, val in self.evaluator.compute_metrics(model.model).items()}

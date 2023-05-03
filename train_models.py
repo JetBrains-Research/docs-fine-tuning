@@ -40,7 +40,7 @@ def main():
         tempfile.tempdir = config.tmpdir
 
     logging.basicConfig(
-        filename=config.log_file, level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
     )
 
     train = pd.read_csv(config.datasets.train)
@@ -56,7 +56,7 @@ def main():
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
     if config.text_model == "bert":
-        os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
+        os.environ["WANDB_RUN_GROUP"] = "asr-" + config.dataset + "-so-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
         target_task = finetuning_tasks[config.target_task].load(train, config.target_tasks[config.target_task])
         model = BertDomainModel(target_task, config.dapt_tasks, **config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)

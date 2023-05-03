@@ -5,7 +5,7 @@ from typing import List, Optional, Dict
 import numpy as np
 import pandas as pd
 
-from approaches import AbstractApproach
+from approaches.abstract_approach import AbstractApproach
 from data_processing.util import get_corpus
 from text_models import AbstractModel
 

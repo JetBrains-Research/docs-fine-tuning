@@ -1,5 +1,8 @@
+import logging
 from typing import List, Union, Iterable, Dict, Optional
 
+import numpy as np
+import wandb
 from sklearn.utils.class_weight import compute_class_weight
 
 import pandas as pd
@@ -14,9 +17,12 @@ from data_processing.util import get_corpus, Corpus
 from text_models.evaluation import ListDataset, AssignmentEvaluator
 from text_models.task_models import AbstractTask
 
+logger = logging.getLogger(__name__)
+
 
 class SoftmaxClassifier(nn.Module):
-    def __init__(self, model: SentenceTransformer, sentence_embedding_dimension: int, num_labels: int, weights: torch.Tensor = None):
+    def __init__(self, model: SentenceTransformer, sentence_embedding_dimension: int, num_labels: int,
+                 weights: torch.Tensor = None):
         super().__init__()
         self.model = model
         self.classifier = nn.Linear(sentence_embedding_dimension, num_labels)
@@ -41,6 +47,25 @@ class AssignmentRecommendationTask(AbstractTask):
 
     name = "assignment_recommendation"
 
+    def train(
+            self,
+            word_embedding_model: models.Transformer,
+            save_to_dir: str,
+            step_metric: Optional[str],
+            report_wandb: bool = False,
+            hp_search_mode: bool = False,
+    ) -> SentenceTransformer:
+        criterion = nn.CrossEntropyLoss(
+            weight=torch.tensor(self.classes_weights, dtype=torch.float).to(self.config.device))
+        lr_finder = self.find_lr(word_embedding_model, criterion, 1e-8, 1e-5, 200)
+        min_grad_idx = (np.gradient(np.array(lr_finder.history["loss"]))).argmin()
+        self.config.learning_rate = lr_finder.history["lr"][min_grad_idx]
+        logger.info(f"lr: {self.config.learning_rate}")
+        if report_wandb:
+            wandb.log({"lr": self.config.learning_rate})
+        lr_finder.reset()
+        return super().train(word_embedding_model, save_to_dir, step_metric, report_wandb, hp_search_mode)
+
     def _create_model(self, word_embedding_model: models.Transformer) -> SentenceTransformer:
         pooling_model = models.Pooling(
             word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.config.pooling_mode
@@ -49,7 +74,8 @@ class AssignmentRecommendationTask(AbstractTask):
         return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout], device=self.config.device)
 
     def _get_loss(self, model: SentenceTransformer):
-        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels, torch.tensor(self.classes_weights, dtype=torch.float))
+        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels,
+                                 torch.tensor(self.classes_weights, dtype=torch.float))
         self.evaluator.softmax_model = loss
         return loss
 
@@ -62,7 +88,7 @@ class AssignmentRecommendationTask(AbstractTask):
         )
 
     def _get_evaluator(
-        self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
+            self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
     ) -> SentenceEvaluator:
         return AssignmentEvaluator(self.eval_dataset, self.num_labels, val_corpus, **self.config.evaluator_config)
 

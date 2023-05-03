@@ -63,9 +63,9 @@ def main():
         raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
     if cnf_eval.is_tasks_test and config.text_model == "bert":
-        evaluator = PretrainingTasksTest(evaluator, config.models.siamese.domain_adaptation_tasks)
+        evaluator = PretrainingTasksTest(evaluator, config.models.bert.domain_adaptation_tasks)
 
-    if cnf_eval.target_task == "duplicates_detection":
+    if config.target_task == "duplicates_detection":
         if cnf_eval.approach == "intersection":
             logger.info(
                 f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}"

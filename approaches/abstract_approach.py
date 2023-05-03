@@ -49,7 +49,7 @@ class AbstractApproach(ABC):
             print(self.results)
 
     @abstractmethod
-    def evaluate(self, model, topns):
+    def evaluate(self, model: AbstractModel, topns: List[int]):
         raise NotImplementedError()
 
     def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
