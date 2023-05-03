@@ -2,14 +2,13 @@ import logging
 from typing import List, Union, Iterable, Dict, Optional
 
 import numpy as np
-import wandb
-from sklearn.utils.class_weight import compute_class_weight
-
 import pandas as pd
 import torch
+import wandb
 from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.readers import InputExample
+from sklearn.utils.class_weight import compute_class_weight
 from torch import nn, Tensor
 from torch.utils.data import Dataset
 
@@ -88,7 +87,7 @@ class AssignmentRecommendationTask(AbstractTask):
     def _get_evaluator(
             self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
     ) -> SentenceEvaluator:
-        return AssignmentEvaluator(self.eval_dataset, self.num_labels, val_corpus, **self.config.evaluator_config)
+        return AssignmentEvaluator(val_corpus, [self.map_labels[label] for label in val_labels], self.num_labels, val_corpus, **self.config.evaluator_config)
 
     @staticmethod
     def numerate_labels(labels: List[str]) -> Dict[str, int]:

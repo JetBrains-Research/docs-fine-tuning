@@ -33,7 +33,7 @@ class AssignmentApproach(AbstractApproach):
             [InputExample(texts=[sentence], label=label) for sentence, label in zip(corpus, labels)]
         )
 
-        self.evaluator = AssignmentEvaluator(self.dataset, num_labels, write_csv=False)
+        self.evaluator = AssignmentEvaluator(corpus, labels, num_labels, write_csv=False)
 
     def evaluate(self, model, topns):
         self.evaluator.acc_at_k = topns

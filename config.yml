@@ -6,7 +6,7 @@ tmpdir: null # if null default tmp directory will be used
 log_file: null # data/logs/log_kt.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK'] # supported training/evaluation types
+model_types: ['PT_TASK'] # supported training/evaluation types
 
 text_model: bert # see available text models in the corresponding section
 target_task: assignment_recommendation # see available tasks in 'target_tasks' section
@@ -57,8 +57,8 @@ models:
     domain_adaptation_tasks: ['mlm'] # see available strategies in 'bert_tasks' section
     pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     start_train_from: task # bugs / task / null
-    save_to_path: text_models/saved/assignment/kotlin/bert_base
-    report_wandb: true
+    save_to_path: text_models/saved/test
+    report_wandb: false
 
     wandb_config:
       project: docs-fine-tuning # insert your project

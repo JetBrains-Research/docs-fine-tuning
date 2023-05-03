@@ -33,7 +33,8 @@ class AssigneeMetrics:
 class AssignmentEvaluator(SentenceEvaluator):
     def __init__(
         self,
-        dataset: Dataset,
+        corpus: List[str],
+        labels: List[int],
         num_labels: int,
         val_corpus: Optional[List[str]] = None,
         acc_at_k: List[int] = [1, 5, 10],
@@ -43,7 +44,9 @@ class AssignmentEvaluator(SentenceEvaluator):
         batch_size=16,
         write_csv: bool = True,
     ):
-        self.dataset = dataset
+        # self.dataset = dataset
+        self.corpus = corpus
+        self.labels = labels
         self.val_dataset = val_corpus
         self.batch_size = batch_size
         self.num_labels = num_labels
@@ -96,24 +99,9 @@ class AssignmentEvaluator(SentenceEvaluator):
         return w_f1[np.argmin(self.f1_at_k)]
 
     def compute_metrics(self, model) -> Dict[str, List[float]]:
-        model.eval()
 
-        preds_list = []
-        labels_list = []
-
-        dataloader = DataLoader(self.dataset, batch_size=self.batch_size, collate_fn=model.smart_batching_collate)
-        for batch in tqdm(dataloader):
-            features, label_ids = batch
-            for idx in range(len(features)):
-                features[idx] = batch_to_device(features[idx], model.device)
-            label_ids = label_ids.to(model.device)
-            with torch.no_grad():
-                prediction = model(features[0])["sentence_embedding"]  # type: ignore
-            preds_list.append(prediction.softmax(dim=1).to(model.device))
-            labels_list.append(label_ids)
-
-        preds = torch.cat(preds_list).to(model.device)
-        labels = torch.cat(labels_list).to(model.device)
+        preds = model.encode(self.corpus, self.batch_size, True, convert_to_numpy=False, convert_to_tensor=True).softmax(dim=1).to(model.device)
+        labels = torch.tensor(self.labels).to(model.device)
 
         metrics = {
             AssigneeMetrics.ACC: [
