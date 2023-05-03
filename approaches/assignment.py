@@ -24,7 +24,7 @@ class AssignmentApproach(AbstractApproach):
         )
         fix_random_seed(42)
 
-        num_labels = len(set(train.assignee.tolist() + test.assignee.tolist()))
+        num_labels = len(set(train.assignee.tolist()))
 
         corpus = [" ".join(doc) for doc in list(map(flatten, get_corpus(test, sentences=True)))]  # type: ignore
         labels_map = AssignmentRecommendationTask.numerate_labels(train.assignee.tolist())
@@ -36,5 +36,8 @@ class AssignmentApproach(AbstractApproach):
         self.evaluator = AssignmentEvaluator(self.dataset, num_labels, write_csv=False)
 
     def evaluate(self, model, topns):
-        self.evaluator.softmax_model = model.task
+        self.evaluator.acc_at_k = topns
+        self.evaluator.f1_at_k = topns
+        self.evaluator.recall_at_k = topns
+        self.evaluator.precision_at_k = topns
         return {metric_name: np.array(val) for metric_name, val in self.evaluator.compute_metrics(model.model).items()}

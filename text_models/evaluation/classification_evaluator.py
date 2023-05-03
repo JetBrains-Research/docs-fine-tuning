@@ -3,6 +3,8 @@ import logging
 import os
 from typing import List, Optional, Dict
 
+from tqdm import tqdm
+
 import numpy as np
 import torch
 from sentence_transformers.evaluation import SentenceEvaluator
@@ -100,13 +102,13 @@ class AssignmentEvaluator(SentenceEvaluator):
         labels_list = []
 
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, collate_fn=model.smart_batching_collate)
-        for step, batch in enumerate(dataloader):
+        for batch in tqdm(dataloader):
             features, label_ids = batch
             for idx in range(len(features)):
                 features[idx] = batch_to_device(features[idx], model.device)
             label_ids = label_ids.to(model.device)
             with torch.no_grad():
-                prediction = self.softmax_model(features, labels=None)  # type: ignore
+                prediction = model(features[0])["sentence_embedding"]  # type: ignore
             preds_list.append(prediction.softmax(dim=1).to(model.device))
             labels_list.append(label_ids)
 

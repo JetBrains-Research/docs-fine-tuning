@@ -21,17 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class SoftmaxClassifier(nn.Module):
-    def __init__(self, model: SentenceTransformer, sentence_embedding_dimension: int, num_labels: int,
-                 weights: torch.Tensor = None):
+    def __init__(self, model: SentenceTransformer, weights: torch.Tensor = None):
         super().__init__()
         self.model = model
-        self.classifier = nn.Linear(sentence_embedding_dimension, num_labels)
-        nn.init.xavier_uniform_(self.classifier.weight)
         self.loss_fn = nn.CrossEntropyLoss(weight=weights, reduction="mean")
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Optional[Tensor] = None):
-        embeddings = self.model(sentence_features[0])["sentence_embedding"]  # type: ignore
-        output = self.classifier(embeddings)
+        output = self.model(sentence_features[0])["sentence_embedding"]  # type: ignore
         if labels is not None:
             return self.loss_fn(output, labels.view(-1))
         return output
@@ -71,11 +67,13 @@ class AssignmentRecommendationTask(AbstractTask):
             word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.config.pooling_mode
         )
         dropout = models.Dropout(dropout=self.config.dropout_ratio)
-        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout], device=self.config.device)
+        classifier = models.Dense(word_embedding_model.get_word_embedding_dimension(), self.num_labels,
+                                  activation_function=nn.Identity())
+        nn.init.xavier_uniform_(classifier.linear.weight)
+        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout, classifier], device=self.config.device)
 
     def _get_loss(self, model: SentenceTransformer):
-        loss = SoftmaxClassifier(model, model.get_sentence_embedding_dimension(), self.num_labels,
-                                 torch.tensor(self.classes_weights, dtype=torch.float))
+        loss = SoftmaxClassifier(model, torch.tensor(self.classes_weights, dtype=torch.float))
         self.evaluator.softmax_model = loss
         return loss
 

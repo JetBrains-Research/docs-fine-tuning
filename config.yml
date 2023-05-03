@@ -3,10 +3,10 @@ dataset: kotlin # you can configure datasets with configs/datasets.yml
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: data/logs/log_kt3.txt # set null for stdout
+log_file: null # data/logs/log_kt.txt # set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+model_types: ['TASK', 'PT_TASK'] # supported training/evaluation types
 
 text_model: bert # see available text models in the corresponding section
 target_task: assignment_recommendation # see available tasks in 'target_tasks' section
@@ -17,10 +17,10 @@ evaluation:
   topns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   save_results: true
   save_graph: true
-  models_path: text_models/saved/assignment/kotlin/bert_base
+  models_path: text_models/saved/test
   results_path: ./results/assignment/kotlin/bert_base
 
-  is_tasks_test: true # available only if siamese text model will be used
+  is_tasks_test: false # available only if siamese text model will be used
 
 
 approaches:
@@ -54,10 +54,10 @@ models:
     save_to_path: text_models/saved
     
   bert:
-    domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
-    pretrained_model: giganticode/bert-base-StackOverflow-comments_1M
+    domain_adaptation_tasks: ['mlm'] # see available strategies in 'bert_tasks' section
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     start_train_from: task # bugs / task / null
-    save_to_path: text_models/saved/assignment/kotlin/bert_so
+    save_to_path: text_models/saved/assignment/kotlin/bert_base
     report_wandb: true
 
     wandb_config:

@@ -15,7 +15,7 @@ parameters:
   dropout_ratio:
     value: 0.5
   epochs:
-    value: 25
+    value: 20
   batch_size:
     value: 16
   dataset:
