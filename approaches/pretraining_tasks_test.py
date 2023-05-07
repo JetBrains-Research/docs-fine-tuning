@@ -42,6 +42,3 @@ class PretrainingTasksTest(AbstractApproach):
 
     def evaluate(self, model: AbstractModel, topks: List[int]) -> Dict[str, np.ndarray]:
         return self.approach.evaluate(model, topks)
-
-    def save_results(self, save_to_path: str, model_name: str, plot: bool = False):
-        self.approach.save_results(save_to_path, model_name, plot)

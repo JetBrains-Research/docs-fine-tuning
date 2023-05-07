@@ -50,15 +50,16 @@ class AssignmentRecommendationTask(AbstractTask):
             report_wandb: bool = False,
             hp_search_mode: bool = False,
     ) -> SentenceTransformer:
-        criterion = nn.CrossEntropyLoss(
-            weight=torch.tensor(self.classes_weights, dtype=torch.float).to(self.config.device))
-        lr_finder = self.find_lr(word_embedding_model, criterion, 1e-8, 1e-5, 200)
-        min_grad_idx = (np.gradient(np.array(lr_finder.history["loss"]))).argmin()
-        self.config.learning_rate = lr_finder.history["lr"][min_grad_idx]
-        logger.info(f"lr: {self.config.learning_rate}")
-        if report_wandb:
-            wandb.log({"lr": self.config.learning_rate})
-        lr_finder.reset()
+        if self.config.find_lr:
+            criterion = nn.CrossEntropyLoss(
+                weight=torch.tensor(self.classes_weights, dtype=torch.float).to(self.config.device))
+            lr_finder = self.find_lr(word_embedding_model, criterion, 1e-8, 1e-5, 200)
+            min_grad_idx = (np.gradient(np.array(lr_finder.history["loss"]))).argmin()
+            self.config.learning_rate = lr_finder.history["lr"][min_grad_idx]
+            logger.info(f"lr: {self.config.learning_rate}")
+            if report_wandb:
+                wandb.log({"lr": self.config.learning_rate})
+            lr_finder.reset()
         return super().train(word_embedding_model, save_to_dir, step_metric, report_wandb, hp_search_mode)
 
     def _create_model(self, word_embedding_model: models.Transformer) -> SentenceTransformer:
