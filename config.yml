@@ -1,24 +1,24 @@
-dataset: idea # you can configure datasets with configs/datasets.yml
+dataset: kotlin # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: null # data/logs/log_idea.txt # set null for stdout
+log_file: null #  set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
-model_types: ['PT_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
+model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
 
 text_model: bert # see available text models in the corresponding section
 target_task: assignment_recommendation # see available tasks in 'target_tasks' section
 
 
 evaluation:
-  approach: assignment # see available approaches in the corresponding section
-  topns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  approach: simple # see available approaches in the corresponding section
+  topns: [1, 5, 10, 15, 20, 25]
   save_results: true
   save_graph: true
-  models_path: text_models/saved/assignment/idea/bert_so
-  results_path: ./results/assignment/idea/bert_so
+  models_path: text_models/saved/test
+  results_path: ./results/test
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -55,14 +55,14 @@ models:
     
   bert:
     domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
-    pretrained_model: giganticode/bert-base-StackOverflow-comments_1M
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
     start_train_from: task # bugs / task / null
-    save_to_path: text_models/saved/assignment/idea/bert_so
-    report_wandb: true
+    save_to_path: text_models/saved/test
+    report_wandb: false
 
     wandb_config:
-      project: docs-fine-tuning # insert your project
-      entity: 890readrid # insert entity
+      project: INSERT_PROJECT # insert your project
+      entity: INSERT_ENTITY # insert entity
 
 
 target_tasks:
