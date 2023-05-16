@@ -6,9 +6,9 @@ import torch
 from omegaconf import OmegaConf
 
 import wandb
-from data_processing.util import load_config, get_corpus
-from text_models import BertSiameseModel, TrainTypes
-from text_models.bert_tasks.evaluation import ValMetric
+from data_processing.util import load_config, fix_random_seed
+from text_models import BertDomainModel, TrainTypes
+from text_models.task_models import finetuning_tasks
 
 hyperparameter_defaults = dict(
     learning_rate=2e-5,
@@ -18,46 +18,48 @@ hyperparameter_defaults = dict(
     dataset="kotlin",
     load_path="text_models/saved/test",
     model_type=TrainTypes.PT_TASK,
+    task="duplicates_detection",
 )
 
-siamese_config = load_config()
+config = load_config()
 
 
 def train():
-
     wandb.init(config=hyperparameter_defaults)
 
-    config = wandb.config
+    fix_random_seed()
 
-    datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[config["dataset"]]
-
-    train_df = pd.read_csv(datasets_config.datasets.train)
-    train_corpus_sent = get_corpus(train_df, sentences=True)
-    disc_ids = train_df["disc_id"].tolist()
-
+    wandb_config = wandb.config
+    datasets_config = OmegaConf.load(os.path.join("data", "datasets_config.yml"))[wandb_config["dataset"]]
+    task_config = config.target_tasks[config.target_task]
     logging.basicConfig(
-        filename=os.path.join("data", "logs", "hp_" + siamese_config.dataset + "_" + config["model_type"] + ".txt"),
+        filename=os.path.join("data", "logs", "hp_" + config.dataset + "_" + wandb_config["model_type"] + ".txt"),
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s: %(message)s",
     )
 
-    siamese_config.models.siamese["learning_rate"] = config["learning_rate"]
-    siamese_config.models.siamese["save_to_path"] = config["load_path"]
-    siamese_config.models.siamese["warmup_ratio"] = config["warmup_ratio"]
-    siamese_config.models.siamese["weight_decay"] = config["weight_decay"]
-    siamese_config.models.siamese["epochs"] = config["epochs"]
-    siamese_config.models.siamese["finetuning_strategies"] = config["finetuning_strategies"]
+    train_df = pd.read_csv(datasets_config.datasets.train)
 
-    siamese_config.models.siamese["report_wandb"] = True
-    siamese_config.models.siamese["hp_search_mode"] = True
-    siamese_config.models.siamese["start_train_from_task"] = True
+    task_config["learning_rate"] = wandb_config["learning_rate"]
+    task_config["warmup_ratio"] = wandb_config["warmup_ratio"]
+    task_config["weight_decay"] = wandb_config["weight_decay"]
+    task_config["epochs"] = wandb_config["epochs"]
+    task_config["dropout_ratio"] = wandb_config["dropout_ratio"]
+    task_config["batch_size"] = wandb_config["batch_size"]
 
-    model_type = config["model_type"]
+    config.models.bert["domain_adaptation_tasks"] = wandb_config["domain_adaptation_tasks"]
+    config.models.bert["save_to_path"] = wandb_config["load_path"]
+    config.models.bert["report_wandb"] = True
+    config.models.bert["hp_search_mode"] = True
+    config.models.bert["start_train_from"] = "task"
+
+    model_type = wandb_config["model_type"]
 
     if model_type == TrainTypes.DOC_TASK or model_type == TrainTypes.BUGS_TASK:
-        siamese_config.models.siamese["finetuning_strategies"] = ["mlm"]
+        config.models.bert["domain_adaptation_tasks"] = ["mlm"]
 
-    model = BertSiameseModel(train_corpus_sent, disc_ids, siamese_config.bert_tasks, **siamese_config.models.siamese)
+    target_task = finetuning_tasks[config.target_task].load(train_df, task_config)
+    model = BertDomainModel(target_task, config.dapt_tasks, **config.models.bert)
 
     if model_type == TrainTypes.DOC_TASK:
         model.train_doc_task([], [])
@@ -72,11 +74,11 @@ def train():
     elif model_type == TrainTypes.PT_DOC_BUGS_TASK:
         model.train_pt_doc_bugs_task([])
     elif model_type == TrainTypes.PT_TASK:
-        model.train_pt_task(train_corpus_sent)
+        model.train_pt_task([])
     elif model_type == TrainTypes.TASK:
-        model.train_task(train_corpus_sent)
+        model.train_task([])
 
-    wandb.log({"best_" + ValMetric.TASK: model.best_metric})
+    wandb.log({"best_w_f1": model.best_metric})
 
     torch.cuda.empty_cache()
 

@@ -4,10 +4,10 @@ from scipy.sparse import vstack
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from approaches import AbstractApproach
+from approaches import DuplicatesDetectionApproach
 
 
-class TfIdfApproach(AbstractApproach):
+class TfIdfApproach(DuplicatesDetectionApproach):
     """
     We build a term frequency-inverse document frequency(TF-IDF) matrix and take the sum of the metrics for text model
     embeddings and TF-IDF embeddings with coefficients w and (1 − w) as the final similarity metric.
@@ -37,4 +37,4 @@ class TfIdfApproach(AbstractApproach):
 
     def update_history(self, query_num: int):
         self.train_tfidf_vectors = vstack((self.train_tfidf_vectors, self.test_tfidf_vectors[query_num]))
-        self.embeddings = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)
+        self.embeddings: np.ndarray = np.append(self.embeddings, self.test_embs[query_num].reshape(1, -1), axis=0)

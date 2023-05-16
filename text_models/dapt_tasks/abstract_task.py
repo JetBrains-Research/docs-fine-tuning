@@ -8,12 +8,12 @@ from torch.utils.data import random_split, Dataset
 from transformers import IntervalStrategy, TrainingArguments, PreTrainedTokenizer, PreTrainedModel, DataCollator
 
 from data_processing.util import Corpus
-from text_models.bert_tasks.evaluation import IREvalTrainer, ValMetric
+from text_models.evaluation import IREvalTrainer, ValMetric
 
 
-class AbstractTask(ABC):
+class AbstractPreTrainingTask(ABC):
     """
-    Base class for all fine-tuning tasks.
+    Base class for all domain adaptation tasks.
 
     :param epochs: Number of fine-tuning epochs
     :param batch_size: Batch size used for fine-tuning
@@ -54,7 +54,7 @@ class AbstractTask(ABC):
         self.weight_decay = weight_decay
 
     @abstractmethod
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: Corpus,  # list of list(sections) of list(sentences) of tokens(words)
@@ -64,7 +64,7 @@ class AbstractTask(ABC):
         report_wandb: bool = False,
     ) -> models.Transformer:
         """
-        Load, fine-tune and save model.
+        Load, train and save model.
 
         :param pretrained_model: Path on disk or name of pre-trained model
         :param docs_corpus: Corpus of documentation sections
@@ -114,7 +114,7 @@ class AbstractTask(ABC):
             eval_steps=self.eval_steps,  # type: ignore
             load_best_model_at_end=self.save_best_model,
             metric_for_best_model=self.metric_for_best_model,
-            greater_is_better=(self.metric_for_best_model == "task_map"),
+            greater_is_better=(self.metric_for_best_model == ValMetric.TASK),
             warmup_ratio=self.warmup_ratio,
             weight_decay=self.weight_decay,
             disable_tqdm=False,

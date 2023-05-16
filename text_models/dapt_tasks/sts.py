@@ -3,14 +3,15 @@ from typing import List, Union, Optional
 
 import numpy as np
 from sentence_transformers import models, InputExample, losses, SentenceTransformer, evaluation
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 from data_processing.util import sections_to_sentences
-from text_models.bert_tasks import AbstractTask
-from text_models.bert_tasks.evaluation import LossEvaluator, ValMetric, WandbLoggingEvaluator
+from text_models.dapt_tasks import AbstractPreTrainingTask
+from text_models.evaluation import LossEvaluator, ValMetric, WandbLoggingEvaluator
+from text_models.evaluation import ListDataset
 
 
-class STSTask(AbstractTask):
+class STSTask(AbstractPreTrainingTask):
     """
     Semantic Textual Similarity Task. We assume that two adjacent sentences are similar in meaning.
 
@@ -23,16 +24,6 @@ class STSTask(AbstractTask):
     """
 
     name = "sts"
-
-    class ListDataset(Dataset):
-        def __init__(self, data_list: list):
-            self.data = data_list
-
-        def __getitem__(self, item):
-            return self.data[item]
-
-        def __len__(self):
-            return len(self.data)
 
     def __init__(
         self,
@@ -68,7 +59,7 @@ class STSTask(AbstractTask):
         self.forget_const = forget_const
         self.pooling_mode = pooling_mode
 
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: List[List[List[str]]],
@@ -136,7 +127,7 @@ class STSTask(AbstractTask):
                 )
         n_examples = len(train_data) if self.n_examples == "all" else int(self.n_examples)
 
-        return STSTask.ListDataset(train_data[:n_examples])
+        return ListDataset(train_data[:n_examples])
 
     def load(self, load_from_path) -> models.Transformer:
         load_from_path = os.path.join(load_from_path, "output_docs")

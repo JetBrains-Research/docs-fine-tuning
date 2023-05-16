@@ -6,7 +6,7 @@ from sentence_transformers.evaluation import SentenceEvaluator
 from torch.nn import Module
 from torch.utils.data import Dataset, DataLoader
 
-from text_models.bert_tasks.evaluation.util import write_csv_loss, ValMetric
+from text_models.evaluation.util import write_csv_loss, ValMetric
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,6 @@ class LossEvaluator(SentenceEvaluator):
             )
         if output_path is not None:
             write_csv_loss(loss_value, loss_task_value, output_path, epoch, steps)
-
         base_metric = self.base_evaluator(model, output_path, epoch, steps)
         logger.info(f"Epoch: {epoch} Step: {steps} Base Metric: {base_metric}")
 

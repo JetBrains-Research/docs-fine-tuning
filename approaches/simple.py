@@ -1,10 +1,10 @@
 import faiss
 import numpy as np
 
-from approaches import AbstractApproach
+from approaches import DuplicatesDetectionApproach
 
 
-class SimpleApproach(AbstractApproach):
+class SimpleApproach(DuplicatesDetectionApproach):
     """
     Default Approach where bug report embedding is its description embedding.
     """

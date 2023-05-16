@@ -1,14 +1,15 @@
-dataset: idea # you can configure datasets with configs/datasets.yml
+dataset: kotlin # you can configure datasets with configs/datasets.yml
 
 test_size: 0.1
 
 tmpdir: null # if null default tmp directory will be used
-log_file: null # set null for stdout
+log_file: null #  set null for stdout
 docs_directory: data/docs
 docs_formats: ['html', 'pdf', 'md', 'rst'] # supported format extensions
 model_types: ['TASK', 'PT_TASK', 'DOC_TASK', 'BUGS_TASK', 'DOC_BUGS_TASK', 'PT_DOC_TASK', 'PT_BUGS_TASK', 'PT_DOC_BUGS_TASK'] # supported training/evaluation types
 
-text_model: siamese # see available text models in the corresponding section
+text_model: bert # see available text models in the corresponding section
+target_task: assignment_recommendation # see available tasks in 'target_tasks' section
 
 
 evaluation:
@@ -17,7 +18,7 @@ evaluation:
   save_results: true
   save_graph: true
   models_path: text_models/saved/test
-  results_path: ./results/last/idea/bert_so
+  results_path: ./results/test
 
   is_tasks_test: true # available only if siamese text model will be used
 
@@ -35,7 +36,6 @@ models:
     vector_size: 300
     min_count: 1
     rand_by_w2v: false
-    seed: 42
     save_to_path: text_models/saved
 
   word2vec:
@@ -44,7 +44,6 @@ models:
     min_count: 1
     tmp_file: null
     pretrained_model: word2vec-google-news-300 # must match vector_size
-    seed: 42
     save_to_path: text_models/saved
 
   fasttext:
@@ -52,10 +51,22 @@ models:
     vector_size: 300
     min_count: 1
     pretrained_model: text_models/pretrained/cc.en.300.bin # must match vector_size
-    seed: 42
     save_to_path: text_models/saved
     
-  siamese:
+  bert:
+    domain_adaptation_tasks: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
+    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    start_train_from: task # bugs / task / null
+    save_to_path: text_models/saved/test
+    report_wandb: false
+
+    wandb_config:
+      project: INSERT_PROJECT # insert your project
+      entity: INSERT_ENTITY # insert entity
+
+
+target_tasks:
+  duplicates_detection:
     vector_size: 300
     epochs: 3
     batch_size: 16
@@ -65,31 +76,48 @@ models:
     weight_decay: 0.001
     learning_rate: 1e-5
     max_len: 256
-    task_loss: triplet # 'triplet' or 'cossim'
-    finetuning_strategies: ['mlm', 'tsdae'] # see available strategies in 'bert_tasks' section
-    pretrained_model: bert-base-uncased # giganticode/bert-base-StackOverflow-comments_1M
+    scheduler: WarmupLinear # constantlr / warmupconstant / warmuplinear / warmupcosine / warmupcosinewithhardrestarts
+    loss: triplet # 'triplet' or 'cossim'
     pooling_mode: mean # mean/max/cls
     evaluation_steps: null
     save_steps: null
+    metric_for_best_model: task # loss_task / task
     val_size: 0.1
     device: cuda # 'cpu' or 'cuda'
-    start_train_from: null # bugs / task / null
-    seed: 42
-    save_to_path: text_models/saved/test
-    report_wandb: true
-
-    wandb_config:
-      project: null # insert your project
-      entity: null # insert entity
 
     evaluator_config:
       batch_size: 16
-      precision_recall_at_k: [5]
-      accuracy_at_k: [1, 5, 10, 15, 20] # success rate like metric
-      map_at_k: [5, 10] # validation metric
+      precision_recall_at_k: [ 5 ]
+      accuracy_at_k: [ 1, 5, 10, 15, 20 ] # success rate like metric
+      map_at_k: [ 5, 10 ] # validation metric
+
+  assignment_recommendation:
+    epochs: 20
+    batch_size: 16
+    n_examples: all
+    save_best_model: true # When set to True, save_steps must be a round multiple of eval_steps.
+    warmup_ratio: 0.1 # percent of training data
+    weight_decay: 0.0001
+    learning_rate: 4e-6
+    dropout_ratio: 0.2
+    max_len: 256
+    find_lr: false
+    scheduler: constantlr # constantlr / warmupconstant / warmuplinear / warmupcosine / warmupcosinewithhardrestarts
+    pooling_mode: mean # mean/max/cls
+    evaluation_steps: null
+    save_steps: null
+    metric_for_best_model: loss_task # loss_task / task
+    val_size: 0.1
+    device: cuda # 'cpu' or 'cuda'
+    evaluator_config:
+      batch_size: 16
+      acc_at_k: [1, 5, 10]
+      f1_at_k: [1, 5, 10]
+      recall_at_k: [1, 5, 10]
+      precision_at_k: [1, 5, 10]
 
 
-bert_tasks:
+dapt_tasks:
   mlm:
     epochs: 23
     batch_size: 64

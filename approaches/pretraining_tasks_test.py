@@ -3,20 +3,20 @@ from typing import List, Dict, Type
 
 import numpy as np
 
-from approaches import AbstractApproach
+from approaches.abstract_approach import AbstractApproach
 from text_models import AbstractModel, TrainTypes
 
 
 class PretrainingTasksTest(AbstractApproach):
     """
-    The approach to evaluate all fine-tuning tasks for a transformer-based model (BertSiameseModel).
+    The approach to evaluate all fine-tuning tasks for a transformer-based model (BertDomainModel).
 
     :param approach: Base approach
     :param pretraining_tasks: Tasks to evaluate
     """
 
     def __init__(self, approach: AbstractApproach, pretraining_tasks: List[str]):
-        super(PretrainingTasksTest, self).__init__(approach.train, approach.test)
+        super(PretrainingTasksTest, self).__init__(approach.train, approach.test, approach.metrics)
         self.approach = approach
         self.pretraining_tasks = pretraining_tasks
 
@@ -42,12 +42,3 @@ class PretrainingTasksTest(AbstractApproach):
 
     def evaluate(self, model: AbstractModel, topks: List[int]) -> Dict[str, np.ndarray]:
         return self.approach.evaluate(model, topks)
-
-    def setup_approach(self):
-        pass
-
-    def get_duplicated_ids(self, query_num: int, topn: int) -> np.ndarray:
-        pass
-
-    def update_history(self, query_num: int):
-        pass

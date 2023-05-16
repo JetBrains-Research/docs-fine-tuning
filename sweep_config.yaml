@@ -2,23 +2,29 @@ program: hp_search_train.py
 method: bayes
 metric:
   goal: maximize
-  name: best_task_map
+  name: best_w_f1
 parameters:
   learning_rate:
     distribution: categorical
-    values: [7e-6, 5e-6, 3e-6, 1e-6, 8e-7, 5e-7]
+    values: [1e-5, 9e-6, 5e-6, 3e-6, 1e-7]
   warmup_ratio:
     values: [0.1, 0.15, 0.2]
   weight_decay:
     distribution: categorical
     values: [0.001, 0.0001, 0.00001]
+  dropout_ratio:
+    value: 0.5
   epochs:
-    value: 3
+    value: 20
+  batch_size:
+    value: 16
   dataset:
-    value: idea
+    value: kotlin
   load_path:
-    value: text_models/saved/test
-  finetuning_strategies:
-    value: ['mlm', 'tsdae']
+    value: text_models/saved/assignment/kotlin/bert_base
+  domain_adaptation_tasks:
+    value: ['mlm']
   model_type:
-    value: PT_DOC_TASK
+    value: DOC_BUGS_TASK
+  task:
+    value: assignment_recommendation

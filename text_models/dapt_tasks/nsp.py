@@ -4,8 +4,8 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from data_processing.util import sections_to_sentences, Corpus
-from text_models.bert_tasks.evaluation import ValMetric
-from text_models.bert_tasks.sentences_classification import SentencesClassificationTask
+from text_models.evaluation import ValMetric
+from text_models.dapt_tasks.sentences_classification import SentencesClassificationTask
 from text_models.datasets import NextSentenceDataset
 
 

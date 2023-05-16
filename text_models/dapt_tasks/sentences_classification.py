@@ -11,17 +11,17 @@ from transformers import (
 )
 
 from data_processing.util import Corpus
-from text_models.bert_tasks import AbstractTask
+from text_models.dapt_tasks import AbstractPreTrainingTask
 
 
-class SentencesClassificationTask(AbstractTask):
+class SentencesClassificationTask(AbstractPreTrainingTask):
     """
     Base class for all sentence classification tasks.
     """
 
     name = "abstract_sentence_classification"
 
-    def finetune_on_docs(
+    def train_on_docs(
         self,
         pretrained_model: str,
         docs_corpus: Corpus,

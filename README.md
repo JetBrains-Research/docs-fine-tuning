@@ -5,21 +5,23 @@
 ![CI](https://github.com/JetBrains-Research/docs-fine-tuning/actions/workflows/ubuntu-python.yml/badge.svg)
 
 
-This repository contains a machine learning pipeline for solving the problem of finding duplicate bug reports 
-using text models trained on the documentation of the corresponding projects. 
+This repository contains a machine learning pipeline for adapting to the domain of text models.
+Available target tasks:
+* Detecting duplicate bug reports
+* Assignee recommendation
 
 You can see available text models and solution approaches in [`config.yml`](config.yml).
 
 ## Data Preparation
 
-To use this pipeline, your data should be in csv format and must look like this 
+To use this pipeline for solving one of the available target tasks, your data should be in csv format and must look like this 
 
-|  id  | ... |   summary   |  ...  |  description  |  ...  | disc_id |
-|:----:|-----|:-----------:|:-----:|:-------------:|:-----:|:-------:|
-| ...  | ... |     ...     |  ...  |      ...      |  ...  |   ...   |
-|  33  | ... | bug example |  ...  | this is a bug |  ...  |   11    |
+|  id  | ... |   summary   |  ...  |  description  |  ...  | disc_id |  assignee   |
+|:----:|-----|:-----------:|:-----:|:-------------:|:-----:|:-------:|:-----------:|
+| ...  | ... |     ...     |  ...  |      ...      |  ...  |   ...   |     ...     |
+|  33  | ... | bug example |  ...  | this is a bug |  ...  |   11    | developer_1 |
 
-where **disc_id** is the id of the oldest duplicate bug report.
+where **disc_id** is the id of the oldest duplicate bug report and **assignee** is the name of developer for assignment
 
 You can configure your dataset paths with [`data/datasets_config.yml`](data/datasets_config.yml) and select them in [`config.yml`](config.yml).
 To preprocess your csv data, use this command:

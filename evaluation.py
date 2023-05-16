@@ -6,13 +6,13 @@ import warnings
 
 import pandas as pd
 
-from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, PretrainingTasksTest
+from approaches import SimpleApproach, TfIdfApproach, IntersectionApproach, AssignmentApproach, PretrainingTasksTest
 from data_processing.util import get_corpus, load_config
 from text_models import (
     W2VModel,
     FastTextModel,
     RandomEmbeddingModel,
-    BertSiameseModel,
+    BertDomainModel,
 )
 
 warnings.simplefilter(action="ignore", category=FutureWarning)  # for pd.DataFrame.append() method
@@ -57,29 +57,32 @@ def main():
         evaluator = IntersectionApproach(train, test, config.approaches.intersection.min_count)
     elif cnf_eval.approach == "simple":
         evaluator = SimpleApproach(train, test)
+    elif cnf_eval.approach == "assignment":
+        evaluator = AssignmentApproach(train, test)
     else:
         raise ValueError(f"Approach ${cnf_eval.approach} is not supported")
 
-    if cnf_eval.is_tasks_test and config.text_model == "siamese":
-        evaluator = PretrainingTasksTest(evaluator, config.models.siamese.finetuning_strategies)
+    if cnf_eval.is_tasks_test and config.text_model == "bert":
+        evaluator = PretrainingTasksTest(evaluator, config.models.bert.domain_adaptation_tasks)
 
-    if cnf_eval.approach == "intersection":
-        logger.info(
-            f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}"
-        )
-        return
+    if config.target_task == "duplicates_detection":
+        if cnf_eval.approach == "intersection":
+            logger.info(
+                f"Success Rate 'intersection' = {evaluator.evaluate(IntersectionApproach.UtilModel(), cnf_eval.topns)}"
+            )
+            return
 
-    if config.text_model == "random":
-        model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
-        logger.info(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
-        return
+        if config.text_model == "random":
+            model = RandomEmbeddingModel(get_corpus(train), **config.models.random)
+            logger.info(f"Success Rate 'random' = {evaluator.evaluate(model, cnf_eval.topns)}")
+            return
 
     if config.text_model == "word2vec":
         model_class = W2VModel
     elif config.text_model == "fasttext":
         model_class = FastTextModel
-    elif config.text_model == "siamese":
-        model_class = BertSiameseModel
+    elif config.text_model == "bert":
+        model_class = BertDomainModel
     else:
         raise ValueError(f"Text model ${config.text_model} is not supported")
 

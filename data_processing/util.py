@@ -1,5 +1,6 @@
 import ast
 import os.path
+import random
 import re
 from json import JSONEncoder
 from pathlib import Path
@@ -135,12 +136,13 @@ def randint_except(low: int, high: int, excluding: Union[List[int], np.ndarray])
     return result
 
 
-def fix_random_seed(seed: int):
-    os.environ["PYTHONHASHSEED"] = str(seed)
+def fix_random_seed(seed: int = 42):
+    np.random.seed(seed)
+    random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
 
 def load_config(path: str = CONFIG_PATH) -> Union[ListConfig, DictConfig]:

@@ -6,8 +6,9 @@ import tempfile
 from datetime import datetime
 import pandas as pd
 
-from data_processing.util import flatten, get_corpus, get_docs_text, load_config
-from text_models import W2VModel, FastTextModel, BertSiameseModel
+from data_processing.util import flatten, get_corpus, get_docs_text, load_config, fix_random_seed
+from text_models import W2VModel, FastTextModel, BertDomainModel
+from text_models.task_models import finetuning_tasks
 
 
 def parse_arguments():
@@ -29,6 +30,8 @@ def main():
     args = parse_arguments()
     config = load_config()
 
+    fix_random_seed()
+
     if args.gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
@@ -37,7 +40,7 @@ def main():
         tempfile.tempdir = config.tmpdir
 
     logging.basicConfig(
-        filename=config.log_file, level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
+        filename=config.log_file, level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s"
     )
 
     train = pd.read_csv(config.datasets.train)
@@ -52,10 +55,10 @@ def main():
         model = FastTextModel(**config.models.fasttext)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
-    if config.text_model == "siamese":
-        os.environ["WANDB_RUN_GROUP"] = config.dataset + "-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
-        disc_ids = train["disc_id"].tolist()
-        model = BertSiameseModel(train_corpus_sent, disc_ids, config.bert_tasks, **config.models.siamese)
+    if config.text_model == "bert":
+        os.environ["WANDB_RUN_GROUP"] = "asr-" + config.dataset + "-so-" + datetime.now().strftime("%d-%m-%yT%H:%M:%S")
+        target_task = finetuning_tasks[config.target_task].load(train, config.target_tasks[config.target_task])
+        model = BertDomainModel(target_task, config.dapt_tasks, **config.models.bert)
         model.train_and_save_all(train_corpus, docs_corpus, config.model_types)
 
 

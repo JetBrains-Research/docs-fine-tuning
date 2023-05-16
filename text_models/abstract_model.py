@@ -5,7 +5,7 @@ from typing import List, Optional, Any
 
 import numpy as np
 
-from data_processing.util import Section, Corpus, fix_random_seed, flatten
+from data_processing.util import Section, Corpus, flatten
 
 
 class TrainTypes:
@@ -37,7 +37,6 @@ class AbstractModel(ABC):
         vector_size: int = 300,
         epochs: int = 5,
         pretrained_model: str = "undefined",
-        seed: int = 42,
         save_to_path: str = "./",
     ):
         self.logger = logging.getLogger(self.name)
@@ -46,8 +45,6 @@ class AbstractModel(ABC):
         self.model: Optional[Any] = None
         self.pretrained_model = pretrained_model
         self.save_to_path = save_to_path
-
-        fix_random_seed(seed)
 
     @abstractmethod
     def train_task(self, corpus: Section):
