@@ -23,3 +23,4 @@ wandb~=0.13.9
 docutils~=0.19
 datasets==2.9.0
 torch-lr-finder==0.2.1
+torchmetrics==0.11.4
