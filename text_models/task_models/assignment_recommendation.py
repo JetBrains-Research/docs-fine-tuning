@@ -37,22 +37,26 @@ class AssignmentRecommendationTask(AbstractTask):
         self.num_labels = len(set(labels))
         self.map_labels = self.numerate_labels(labels)
         super().__init__(corpus, labels, config)
-        self.classes_weights = compute_class_weight("balanced", classes=list(self.map_labels.values()),
-                                                    y=[self.map_labels[label] for label in labels[:self.train_size]])
+        self.classes_weights = compute_class_weight(
+            "balanced",
+            classes=list(self.map_labels.values()),
+            y=[self.map_labels[label] for label in labels[: self.train_size]],
+        )
 
     name = "assignment_recommendation"
 
     def train(
-            self,
-            word_embedding_model: models.Transformer,
-            save_to_dir: str,
-            step_metric: Optional[str],
-            report_wandb: bool = False,
-            hp_search_mode: bool = False,
+        self,
+        word_embedding_model: models.Transformer,
+        save_to_dir: str,
+        step_metric: Optional[str],
+        report_wandb: bool = False,
+        hp_search_mode: bool = False,
     ) -> SentenceTransformer:
         if self.config.find_lr:
             criterion = nn.CrossEntropyLoss(
-                weight=torch.tensor(self.classes_weights, dtype=torch.float).to(self.config.device))
+                weight=torch.tensor(self.classes_weights, dtype=torch.float).to(self.config.device)
+            )
             lr_finder = self.find_lr(word_embedding_model, criterion, 1e-8, 1e-5, 200)
             min_grad_idx = (np.gradient(np.array(lr_finder.history["loss"]))).argmin()
             self.config.learning_rate = lr_finder.history["lr"][min_grad_idx]
@@ -67,10 +71,13 @@ class AssignmentRecommendationTask(AbstractTask):
             word_embedding_model.get_word_embedding_dimension(), pooling_mode=self.config.pooling_mode
         )
         dropout = models.Dropout(dropout=self.config.dropout_ratio)
-        classifier = models.Dense(word_embedding_model.get_word_embedding_dimension(), self.num_labels,
-                                  activation_function=nn.Identity())
+        classifier = models.Dense(
+            word_embedding_model.get_word_embedding_dimension(), self.num_labels, activation_function=nn.Identity()
+        )
         nn.init.xavier_uniform_(classifier.linear.weight)
-        return SentenceTransformer(modules=[word_embedding_model, pooling_model, dropout, classifier], device=self.config.device)
+        return SentenceTransformer(
+            modules=[word_embedding_model, pooling_model, dropout, classifier], device=self.config.device
+        )
 
     def _get_loss(self, model: SentenceTransformer):
         loss = SoftmaxClassifier(model, torch.tensor(self.classes_weights, dtype=torch.float))
@@ -86,9 +93,15 @@ class AssignmentRecommendationTask(AbstractTask):
         )
 
     def _get_evaluator(
-            self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
+        self, train_corpus: List[str], train_labels: List[str], val_corpus: List[str], val_labels: List[str]
     ) -> SentenceEvaluator:
-        return AssignmentEvaluator(val_corpus, [self.map_labels[label] for label in val_labels], self.num_labels, val_corpus, **self.config.evaluator_config)
+        return AssignmentEvaluator(
+            val_corpus,
+            [self.map_labels[label] for label in val_labels],
+            self.num_labels,
+            val_corpus,
+            **self.config.evaluator_config,
+        )
 
     @staticmethod
     def numerate_labels(labels: List[str]) -> Dict[str, int]:

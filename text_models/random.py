@@ -41,7 +41,7 @@ class RandomEmbeddingModel(AbstractModel):
 
         dumb_w2v = None
         if rand_by_w2v:
-            dumb_w2v = Word2Vec(vector_size=self.vector_size, seed=seed, min_count=self.min_count)
+            dumb_w2v = Word2Vec(vector_size=self.vector_size, min_count=self.min_count)
             dumb_w2v.build_vocab(train_corpus)
 
         self.model = {}

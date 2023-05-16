@@ -9,7 +9,7 @@ from sentence_transformers import models, SentenceTransformer
 from sentence_transformers.evaluation import SentenceEvaluator
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-from torch_lr_finder import LRFinder
+from torch_lr_finder import LRFinder  # type: ignore
 
 from data_processing.util import Corpus, flatten
 from text_models.evaluation import LossEvaluator, WandbLoggingEvaluator
@@ -50,7 +50,12 @@ class AbstractTask(ABC):
         train_loss = self._get_loss(model)
 
         evaluator = LossEvaluator(
-            self.evaluator, train_loss, None, self.eval_dataset, self.config.metric_for_best_model, self.config.evaluator_config.batch_size
+            self.evaluator,
+            train_loss,
+            None,
+            self.eval_dataset,
+            self.config.metric_for_best_model,
+            self.config.evaluator_config.batch_size,
         )
 
         evaluator = (
@@ -81,14 +86,23 @@ class AbstractTask(ABC):
 
         return model
 
-    def find_lr(self, word_embedding_model: models.Transformer, criterion: nn.Module, start_lr: float, end_lr: float,
-                iter_num: int = 100, step_mode="exp") -> LRFinder:
+    def find_lr(
+        self,
+        word_embedding_model: models.Transformer,
+        criterion: nn.Module,
+        start_lr: float,
+        end_lr: float,
+        iter_num: int = 100,
+        step_mode="exp",
+    ) -> LRFinder:
         model = self._create_model(word_embedding_model)
 
-        trainloader = DataLoader(self.dataset, batch_size=self.config.batch_size,
-                                 collate_fn=model.smart_batching_collate)
-        val_loader = DataLoader(self.eval_dataset, batch_size=self.config.batch_size,
-                                collate_fn=model.smart_batching_collate)
+        trainloader = DataLoader(
+            self.dataset, batch_size=self.config.batch_size, collate_fn=model.smart_batching_collate
+        )
+        val_loader = DataLoader(
+            self.eval_dataset, batch_size=self.config.batch_size, collate_fn=model.smart_batching_collate
+        )
         train_loss = self._get_loss(model)
         optimizer = torch.optim.AdamW(train_loss.parameters(), lr=start_lr, weight_decay=self.config.weight_decay)
         lr_finder = LRFinder(train_loss, optimizer, criterion, device=self.config.device)

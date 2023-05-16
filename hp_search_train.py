@@ -47,7 +47,6 @@ def train():
     task_config["dropout_ratio"] = wandb_config["dropout_ratio"]
     task_config["batch_size"] = wandb_config["batch_size"]
 
-
     config.models.bert["domain_adaptation_tasks"] = wandb_config["domain_adaptation_tasks"]
     config.models.bert["save_to_path"] = wandb_config["load_path"]
     config.models.bert["report_wandb"] = True

@@ -5,7 +5,7 @@ from typing import List, Optional, Any
 
 import numpy as np
 
-from data_processing.util import Section, Corpus, fix_random_seed, flatten
+from data_processing.util import Section, Corpus, flatten
 
 
 class TrainTypes:
@@ -45,7 +45,6 @@ class AbstractModel(ABC):
         self.model: Optional[Any] = None
         self.pretrained_model = pretrained_model
         self.save_to_path = save_to_path
-
 
     @abstractmethod
     def train_task(self, corpus: Section):

@@ -100,7 +100,11 @@ class AssignmentEvaluator(SentenceEvaluator):
 
     def compute_metrics(self, model) -> Dict[str, List[float]]:
 
-        preds = model.encode(self.corpus, self.batch_size, True, convert_to_numpy=False, convert_to_tensor=True).softmax(dim=1).to(model.device)
+        preds = (
+            model.encode(self.corpus, self.batch_size, True, convert_to_numpy=False, convert_to_tensor=True)
+            .softmax(dim=1)
+            .to(model.device)
+        )
         labels = torch.tensor(self.labels).to(model.device)
 
         metrics = {
